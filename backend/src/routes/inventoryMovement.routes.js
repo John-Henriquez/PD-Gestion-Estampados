@@ -7,7 +7,10 @@ const router = Router();
 
 router.use(authenticateJwt);
 
-router.get("/report", isAdmin, inventoryMovementController.getInventoryMovements);
-
+router.get(
+  "/report",
+  isAdmin,
+  inventoryMovementController.getInventoryMovements,
+);
 
 export default router;

@@ -10,7 +10,10 @@ export const inventoryMovementService = {
       const where = {};
 
       if (filters.startDate && filters.endDate) {
-        where.createdAt = Between(new Date(filters.startDate), new Date(filters.endDate));
+        where.createdAt = Between(
+          new Date(filters.startDate),
+          new Date(filters.endDate),
+        );
       }
 
       if (filters.type) {
@@ -31,13 +34,10 @@ export const inventoryMovementService = {
         order: { createdAt: "DESC" },
       });
 
-      const totals = movements.reduce(
-        (acc, mov) => {
-          acc[mov.type] = (acc[mov.type] || 0) + mov.quantity;
-          return acc;
-        },
-        {}
-      );
+      const totals = movements.reduce((acc, mov) => {
+        acc[mov.type] = (acc[mov.type] || 0) + mov.quantity;
+        return acc;
+      }, {});
 
       return [{ movements, totals }, null];
     } catch (error) {

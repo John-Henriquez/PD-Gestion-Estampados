@@ -21,7 +21,8 @@ export async function login(req, res) {
     }
     const [accessToken, errorToken] = await loginService(body);
 
-    if (errorToken) return handleErrorClient(res, 400, "Error iniciando sesión", errorToken);
+    if (errorToken)
+      return handleErrorClient(res, 400, "Error iniciando sesión", errorToken);
 
     res.cookie("jwt", accessToken, {
       httpOnly: true,
@@ -45,7 +46,13 @@ export async function register(req, res) {
 
     const [newUser, errorNewUser] = await registerService(body);
 
-    if (errorNewUser) return handleErrorClient(res, 400, "Error registrando al usuario", errorNewUser);
+    if (errorNewUser)
+      return handleErrorClient(
+        res,
+        400,
+        "Error registrando al usuario",
+        errorNewUser,
+      );
 
     handleSuccess(res, 201, "Usuario registrado con éxito", newUser);
   } catch (error) {

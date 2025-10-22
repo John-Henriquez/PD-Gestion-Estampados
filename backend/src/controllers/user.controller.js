@@ -43,11 +43,7 @@ export async function getUsers(req, res) {
       ? handleSuccess(res, 204)
       : handleSuccess(res, 200, "Usuarios encontrados", users);
   } catch (error) {
-    handleErrorServer(
-      res,
-      500,
-      error.message,
-    );
+    handleErrorServer(res, 500, error.message);
   }
 }
 
@@ -83,7 +79,13 @@ export async function updateUser(req, res) {
 
     const [user, userError] = await updateUserService({ rut, id, email }, body);
 
-    if (userError) return handleErrorClient(res, 400, "Error modificando al usuario", userError);
+    if (userError)
+      return handleErrorClient(
+        res,
+        400,
+        "Error modificando al usuario",
+        userError,
+      );
 
     handleSuccess(res, 200, "Usuario modificado correctamente", user);
   } catch (error) {
@@ -116,7 +118,13 @@ export async function deleteUser(req, res) {
       email,
     });
 
-    if (errorUserDelete) return handleErrorClient(res, 404, "Error eliminado al usuario", errorUserDelete);
+    if (errorUserDelete)
+      return handleErrorClient(
+        res,
+        404,
+        "Error eliminado al usuario",
+        errorUserDelete,
+      );
 
     handleSuccess(res, 200, "Usuario eliminado correctamente", userDelete);
   } catch (error) {

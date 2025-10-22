@@ -18,16 +18,16 @@ async function createUsers() {
           email: "user@admin.com",
           password: await encryptPassword("admin123"),
           rol: "administrador",
-        })
+        }),
       ),
-        userRepository.save(
-          userRepository.create({
-            nombreCompleto: "Usuario Ausuario Busuario Cusuario",
-            rut: "22.222.222-2",
-            email: "user@usuario.com",
-            password: await encryptPassword("usuario123"),
-            rol: "usuario",
-          }),
+      userRepository.save(
+        userRepository.create({
+          nombreCompleto: "Usuario Ausuario Busuario Cusuario",
+          rut: "22.222.222-2",
+          email: "user@usuario.com",
+          password: await encryptPassword("usuario123"),
+          rol: "usuario",
+        }),
       ),
     ]);
     console.log("* => Usuarios creados exitosamente");

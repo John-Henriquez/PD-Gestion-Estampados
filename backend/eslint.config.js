@@ -20,7 +20,7 @@ export default {
     quotes: ["error", "double"],
     "operator-linebreak": [
       "warn",
-      "before",
+      "after",
       {
         overrides: {
           ":": "before",
@@ -30,12 +30,15 @@ export default {
     ],
     "no-trailing-spaces": "off",
     "linebreak-style": "off",
-    "sort-imports": ["error", {
-      "ignoreCase": true,
-      "ignoreDeclarationSort": true,
-      "ignoreMemberSort": false,
-      "memberSyntaxSortOrder": ["none", "all", "multiple", "single"]
-    }]
+    "sort-imports": [
+      "error",
+      {
+        ignoreCase: true,
+        ignoreDeclarationSort: true,
+        ignoreMemberSort: false,
+        memberSyntaxSortOrder: ["none", "all", "multiple", "single"],
+      },
+    ],
   },
   ignores: ["node_modules/**"],
 };

@@ -5,58 +5,58 @@ const PackSchema = new EntitySchema({
   name: "Pack",
   tableName: "packs",
   columns: {
-    id: { 
-      type: "int", 
-      primary: true, 
-      generated: true 
+    id: {
+      type: "int",
+      primary: true,
+      generated: true,
     },
-    name: { 
-      type: "varchar", 
-      length: 100, 
-      nullable: false 
+    name: {
+      type: "varchar",
+      length: 100,
+      nullable: false,
     },
-    description: { 
-      type: "text", 
-      nullable: true 
+    description: {
+      type: "text",
+      nullable: true,
     },
-    price: { 
-      type: "int", 
-      nullable: false 
+    price: {
+      type: "int",
+      nullable: false,
     },
-    discount: { 
-      type: "decimal", 
-      precision: 3,     
+    discount: {
+      type: "decimal",
+      precision: 3,
       scale: 2,
       default: 0.0,
-      nullable: false 
+      nullable: false,
     },
     autoCalculatePrice: {
       type: "boolean",
-      default: true
+      default: true,
     },
-    isActive: { 
-      type: "boolean", 
-      default: true 
+    isActive: {
+      type: "boolean",
+      default: true,
     },
-    validFrom: { 
-      type: "timestamp", 
-      nullable: true 
+    validFrom: {
+      type: "timestamp",
+      nullable: true,
     },
-    validUntil: { 
-      type: "timestamp", 
-      nullable: true 
+    validUntil: {
+      type: "timestamp",
+      nullable: true,
     },
-    createdAt: { 
-      type: "timestamp", 
-      createDate: true 
+    createdAt: {
+      type: "timestamp",
+      createDate: true,
     },
-    updatedAt: { 
-      type: "timestamp", 
-      updateDate: true 
+    updatedAt: {
+      type: "timestamp",
+      updateDate: true,
     },
-    deletedAt: { 
-      type: "timestamp", 
-      nullable: true 
+    deletedAt: {
+      type: "timestamp",
+      nullable: true,
     },
   },
   relations: {

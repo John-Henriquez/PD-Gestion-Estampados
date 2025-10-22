@@ -3,7 +3,7 @@ import passport from "passport";
 import {
   handleErrorClient,
   handleErrorServer,
-  } from "../handlers/responseHandlers.js";
+} from "../handlers/responseHandlers.js";
 
 export function authenticateJwt(req, res, next) {
   passport.authenticate("jwt", { session: false }, (err, user, info) => {
@@ -11,7 +11,7 @@ export function authenticateJwt(req, res, next) {
       return handleErrorServer(
         res,
         500,
-        "Error de autenticación en el servidor"
+        "Error de autenticación en el servidor",
       );
     }
 
@@ -20,11 +20,23 @@ export function authenticateJwt(req, res, next) {
         res,
         401,
         "No tienes permiso para acceder a este recurso",
-        { info: info ? info.message : "No se encontró el usuario" }
-      )
+        { info: info ? info.message : "No se encontró el usuario" },
+      );
     }
 
     req.user = user;
+    next();
+  })(req, res, next);
+}
+
+export function optionalAuth(req, res, next) {
+  passport.authenticate("jwt", { session: false }, (err, user, info) => {
+    if (err) {
+      console.error("Error en optionalAuth durante la autenticación:", err);
+    }
+    if (user) {
+      req.user = user;
+    }
     next();
   })(req, res, next);
 }

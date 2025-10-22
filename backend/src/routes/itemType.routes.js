@@ -6,7 +6,7 @@ import { itemTypeController } from "../controllers/itemType.controller.js";
 
 const router = Router();
 
-router.use(authenticateJwt); 
+router.use(authenticateJwt);
 
 router.get("/", itemTypeController.getItemTypes);
 
@@ -15,11 +15,19 @@ router.delete("/force/:id", isAdmin, itemTypeController.forceDeleteItemType);
 router.delete("/trash/empty", isAdmin, itemTypeController.emptyTrash);
 router.patch("/restore/:id", isAdmin, itemTypeController.restoreItemType);
 
-
 router.get("/:id", itemTypeController.getItemTypeById);
-router.post("/", isAdmin, upload.single("baseImage"), itemTypeController.createItemType);
-router.patch("/:id", isAdmin, upload.single("baseImage"), itemTypeController.updateItemType);
+router.post(
+  "/",
+  isAdmin,
+  upload.single("baseImage"),
+  itemTypeController.createItemType,
+);
+router.patch(
+  "/:id",
+  isAdmin,
+  upload.single("baseImage"),
+  itemTypeController.updateItemType,
+);
 router.delete("/:id", isAdmin, itemTypeController.deleteItemType);
 
-
-export default router; 
+export default router;

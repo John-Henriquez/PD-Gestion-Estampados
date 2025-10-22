@@ -34,7 +34,7 @@
   "devDependencies": {
     "eslint": "^9.9.1",
     "eslint-config-google": "^0.14.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "^5.2.1",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.4",

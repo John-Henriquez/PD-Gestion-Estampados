@@ -7,50 +7,50 @@ export function generateInventoryReason(action, field) {
     adjust: {
       in: {
         operation: "adjust_in",
-        reason: "Ajuste manual de entrada"
+        reason: "Ajuste manual de entrada",
       },
       out: {
         operation: "adjust_out",
-        reason: "Ajuste manual de salida"
+        reason: "Ajuste manual de salida",
       },
       default: {
         operation: "adjust",
-        reason: "Ajuste de inventario"
-      }
+        reason: "Ajuste de inventario",
+      },
     },
     update: {
       quantity: {
         operation: "update",
-        reason: "Ajuste de cantidad de stock"
+        reason: "Ajuste de cantidad de stock",
       },
       price: {
         operation: "update",
-        reason: "Actualización de precio"
+        reason: "Actualización de precio",
       },
       hexColor: {
         operation: "update",
-        reason: "Cambio de color"
+        reason: "Cambio de color",
       },
       size: {
         operation: "update",
-        reason: "Modificación de talla"
+        reason: "Modificación de talla",
       },
       images: {
         operation: "update",
-        reason: "Actualización de imágenes"
+        reason: "Actualización de imágenes",
       },
       minStock: {
         operation: "update",
-        reason: "Ajuste de stock mínimo"
+        reason: "Ajuste de stock mínimo",
       },
       isActive: {
         operation: "update",
-        reason: "Cambio de estado activo"
+        reason: "Cambio de estado activo",
       },
       default: {
         operation: "update",
-        reason: "Actualización de información del ítem"
-      }
+        reason: "Actualización de información del ítem",
+      },
     },
     deactivate: {
       operation: "deactivate",
@@ -81,15 +81,17 @@ export function generateInventoryReason(action, field) {
   if (action === "update") {
     const fieldMeta = metadata.update[field] || metadata.update.default;
     if (!fieldMeta?.operation) {
-      console.warn(`No se encontró metadata válida para el campo '${field}' en acción 'update'`);
+      console.warn(
+        `No se encontró metadata válida para el campo '${field}' en acción 'update'`,
+      );
     }
     return fieldMeta;
   }
 
   if (action === "adjust") {
-  const direction = field || "default"; 
-  const result = metadata.adjust[direction] || metadata.adjust.default;
-  return result;
+    const direction = field || "default";
+    const result = metadata.adjust[direction] || metadata.adjust.default;
+    return result;
   }
 
   const result = metadata[action] || {
@@ -128,6 +130,3 @@ export function createItemSnapshot(entity) {
     };
   }
 }
-
-
-

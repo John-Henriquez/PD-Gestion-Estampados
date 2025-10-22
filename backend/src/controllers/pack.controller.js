@@ -1,5 +1,9 @@
 import { packService } from "../services/pack.service.js";
-import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
+import {
+  handleErrorClient,
+  handleErrorServer,
+  handleSuccess,
+} from "../handlers/responseHandlers.js";
 
 export const packController = {
   async getPacks(req, res) {
@@ -11,26 +15,34 @@ export const packController = {
       }
 
       if (isActive && !["true", "false"].includes(isActive)) {
-        return handleErrorClient(res, 400, "isActive debe ser 'true' o 'false'");
+        return handleErrorClient(
+          res,
+          400,
+          "isActive debe ser 'true' o 'false'",
+        );
       }
 
       const [packs, error] = await packService.getPacks({
         id: id ? parseInt(id) : undefined,
-        isActive: isActive === "true" ? true : (isActive === "false" ? false : undefined)
+        isActive:
+          isActive === "true" ? true : isActive === "false" ? false : undefined,
       });
 
       if (error) return handleErrorClient(res, 404, error);
 
       handleSuccess(res, 200, "Packs obtenidos", packs);
     } catch (error) {
-      console.error("Error en getPacks controller:", error.message, error.stack);
+      console.error(
+        "Error en getPacks controller:",
+        error.message,
+        error.stack,
+      );
       handleErrorServer(res, 500, "Error interno del servidor");
     }
   },
 
   async createPack(req, res) {
     try {
-
       const [newPack, serviceError] = await packService.createPack({
         ...req.body,
         createdById: req.user.id,
@@ -53,10 +65,13 @@ export const packController = {
 
       const updateData = {
         ...req.body,
-        updatedById: req.user.id
+        updatedById: req.user.id,
       };
 
-      const [updatedPack, serviceError] = await packService.updatePack(parseInt(id), updateData);
+      const [updatedPack, serviceError] = await packService.updatePack(
+        parseInt(id),
+        updateData,
+      );
 
       if (serviceError) return handleErrorClient(res, 400, serviceError);
 
@@ -79,7 +94,10 @@ export const packController = {
         return handleErrorClient(res, 401, "Usuario no autenticado");
       }
 
-      const [result, error] = await packService.deletePack(parseInt(id), userId);
+      const [result, error] = await packService.deletePack(
+        parseInt(id),
+        userId,
+      );
       if (error) return handleErrorClient(res, 404, error);
 
       handleSuccess(res, 200, result.message, { id: result.id });
@@ -95,7 +113,10 @@ export const packController = {
         return handleErrorClient(res, 400, "ID debe ser un número");
       }
 
-      const [restoredPack, error] = await packService.restorePack(parseInt(id), req.user.id);
+      const [restoredPack, error] = await packService.restorePack(
+        parseInt(id),
+        req.user.id,
+      );
       if (error) return handleErrorClient(res, 404, error);
 
       handleSuccess(res, 200, "Pack restaurado correctamente", restoredPack);
@@ -117,7 +138,10 @@ export const packController = {
         return handleErrorClient(res, 401, "Usuario no autenticado");
       }
 
-      const [result, error] = await packService.forceDeletePack(parseInt(id), userId);
+      const [result, error] = await packService.forceDeletePack(
+        parseInt(id),
+        userId,
+      );
       if (error) return handleErrorClient(res, 404, error);
 
       handleSuccess(res, 200, result.message, { id: result.id });
@@ -137,9 +161,13 @@ export const packController = {
       const [deletedCount, error] = await packService.emptyTrash(userId);
       if (error) return handleErrorClient(res, 500, error);
 
-      handleSuccess(res, 200, `Papelera vaciada. Packs eliminados: ${deletedCount}`);
+      handleSuccess(
+        res,
+        200,
+        `Papelera vaciada. Packs eliminados: ${deletedCount}`,
+      );
     } catch (error) {
       handleErrorServer(res, 500, error.message);
     }
-  }
+  },
 };

@@ -11,7 +11,11 @@ router.use(authenticateJwt);
 
 router.delete("/trash", isAdmin, itemStockController.emptyTrash);
 router.patch("/restore/:id", isAdmin, itemStockController.restoreItemStock);
-router.delete("/force-delete/:id", isAdmin, itemStockController.forceDeleteItemStock);
+router.delete(
+  "/force-delete/:id",
+  isAdmin,
+  itemStockController.forceDeleteItemStock,
+);
 
 router.get("/", itemStockController.getItemStock);
 router.post("/", isAdmin, itemStockController.createItemStock);

@@ -5,55 +5,55 @@ const ItemTypeSchema = new EntitySchema({
   name: "ItemType",
   tableName: "item_types",
   columns: {
-    id: { 
-      type: "int", 
-      primary: true, 
-      generated: true 
+    id: {
+      type: "int",
+      primary: true,
+      generated: true,
     },
-    name: { 
+    name: {
       type: "varchar",
-      length: 100, 
-      unique: true, 
-      nullable: false 
+      length: 100,
+      unique: true,
+      nullable: false,
     },
-    description: { 
-      type: "text", 
-      nullable: true 
+    description: {
+      type: "text",
+      nullable: true,
     },
     category: {
       type: "enum",
       enum: ["clothing", "object"],
       nullable: false,
     },
-    printingMethods: { 
+    printingMethods: {
       type: "simple-array",
-      nullable: true 
+      nullable: true,
     },
-    sizesAvailable: { 
-      type: "simple-array", 
-      nullable: true 
+    sizesAvailable: {
+      type: "simple-array",
+      nullable: true,
     },
-    hasSizes: { 
-      type: "boolean", 
-      default: false, 
-      nullable: false 
+    hasSizes: {
+      type: "boolean",
+      default: false,
+      nullable: false,
     },
-    iconName: {  
+    iconName: {
       type: "varchar",
       length: 100,
-      nullable: true
+      nullable: true,
     },
-    isActive: { 
-      type: "boolean", 
-      default: true 
+    isActive: {
+      type: "boolean",
+      default: true,
     },
-    createdAt: { 
-      type: "timestamp", 
-      createDate: true
+    createdAt: {
+      type: "timestamp",
+      createDate: true,
     },
-    updatedAt: { 
-      type: "timestamp", 
-      updateDate: true 
+    updatedAt: {
+      type: "timestamp",
+      updateDate: true,
     },
   },
   relations: {

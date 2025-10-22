@@ -5,51 +5,51 @@ const InventoryMovementSchema = new EntitySchema({
   name: "InventoryMovement",
   tableName: "inventory_movements",
   columns: {
-    id: { 
-      type: "int", 
-      primary: true, 
-      generated: true 
+    id: {
+      type: "int",
+      primary: true,
+      generated: true,
     },
     type: {
       type: "enum",
       enum: ["entrada", "salida", "ajuste", "modificacion"],
       nullable: false,
     },
-    operation: { 
+    operation: {
       type: "varchar",
       length: 50,
       nullable: false,
     },
-    quantity: { 
-      type: "int", 
+    quantity: {
+      type: "int",
       nullable: false,
-      default: 0 
+      default: 0,
     },
-    reason: { 
-      type: "text", 
+    reason: {
+      type: "text",
       nullable: false,
-      default: "Movimiento generado automáticamente" 
+      default: "Movimiento generado automáticamente",
     },
     changedField: {
       type: "varchar",
       length: 50,
       nullable: true,
-      comment: "Campo específico que fue modificado"
+      comment: "Campo específico que fue modificado",
     },
     changes: {
       type: "json",
       nullable: true,
-      comment: "Detalles del cambio en formato {oldValue, newValue}"
+      comment: "Detalles del cambio en formato {oldValue, newValue}",
     },
-    createdAt: { 
-      type: "timestamp", 
+    createdAt: {
+      type: "timestamp",
       createDate: true,
-      default: () => "CURRENT_TIMESTAMP"
+      default: () => "CURRENT_TIMESTAMP",
     },
     updatedAt: {
       type: "timestamp",
       onUpdate: "CURRENT_TIMESTAMP",
-      nullable: true
+      nullable: true,
     },
     deletedAt: {
       type: "timestamp",
@@ -78,22 +78,22 @@ const InventoryMovementSchema = new EntitySchema({
       nullable: true,
       transformer: {
         to: (value) => value,
-        from: (value) => parseFloat(value)
-      }
+        from: (value) => parseFloat(value),
+      },
     },
     snapshotPackName: {
       type: "varchar",
       length: 255,
       nullable: true,
-    }
+    },
   },
   relations: {
     itemStock: {
       type: "many-to-one",
       target: "ItemStock",
-      joinColumn: { 
+      joinColumn: {
         name: "item_stock_id",
-        referencedColumnName: "id"
+        referencedColumnName: "id",
       },
       nullable: true,
       onDelete: "SET NULL",
@@ -101,9 +101,9 @@ const InventoryMovementSchema = new EntitySchema({
     pack: {
       type: "many-to-one",
       target: "Pack",
-      joinColumn: { 
+      joinColumn: {
         name: "pack_id",
-        referencedColumnName: "id"
+        referencedColumnName: "id",
       },
       nullable: true,
       onDelete: "SET NULL",
@@ -111,9 +111,9 @@ const InventoryMovementSchema = new EntitySchema({
     createdBy: {
       type: "many-to-one",
       target: "User",
-      joinColumn: { 
+      joinColumn: {
         name: "created_by",
-        referencedColumnName: "id"
+        referencedColumnName: "id",
       },
       nullable: false,
     },
@@ -121,13 +121,13 @@ const InventoryMovementSchema = new EntitySchema({
   indices: [
     {
       name: "IDX_MOVEMENT_CREATED_AT",
-      columns: ["createdAt"]
+      columns: ["createdAt"],
     },
     {
       name: "IDX_MOVEMENT_TYPE",
-      columns: ["type"]
+      columns: ["type"],
     },
-  ]
+  ],
 });
 
 export default InventoryMovementSchema;

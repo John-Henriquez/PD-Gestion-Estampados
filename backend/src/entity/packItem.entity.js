@@ -5,14 +5,14 @@ const PackItemSchema = new EntitySchema({
   name: "PackItem",
   tableName: "pack_items",
   columns: {
-    id: { 
-      type: "int", 
-      primary: true, 
-      generated: true 
+    id: {
+      type: "int",
+      primary: true,
+      generated: true,
     },
-    quantity: { 
-      type: "int", 
-      nullable: false 
+    quantity: {
+      type: "int",
+      nullable: false,
     },
   },
   relations: {

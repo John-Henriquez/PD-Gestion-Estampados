@@ -10,9 +10,9 @@ const itemStockSchema = Joi.object({
   size: Joi.when("requiresSize", {
     is: true,
     then: Joi.string().required().messages({
-      "any.required": "El campo size es obligatorio para este tipo de artículo"
+      "any.required": "El campo size es obligatorio para este tipo de artículo",
     }),
-    otherwise: Joi.string().optional().allow(null)
+    otherwise: Joi.string().optional().allow(null),
   }),
 
   quantity: Joi.number().integer().min(0).required(),
@@ -24,7 +24,7 @@ const itemStockSchema = Joi.object({
   minStock: Joi.number().integer().min(0).optional(),
 
   // Campo auxiliar para validar tamaño, no se enviaría al backend
-  requiresSize: Joi.boolean().optional()
+  requiresSize: Joi.boolean().optional(),
 }).unknown(true); // para permitir que se envíen otros campos como requiresSize
 
 const itemStockUpdateSchema = Joi.object({
@@ -42,7 +42,7 @@ const itemStockUpdateSchema = Joi.object({
 
   minStock: Joi.number().integer().min(0).optional(),
 
-  isActive: Joi.boolean().optional()
+  isActive: Joi.boolean().optional(),
 }).unknown(false);
 
 export { itemStockSchema, itemStockUpdateSchema };
