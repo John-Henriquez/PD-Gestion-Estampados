@@ -1,13 +1,15 @@
 import express from "express";
-import uploadService from "./../services/upload.service.js";
-import uploadController from "./../controllers/upload.controller.js";
+import uploadMiddleware from "../middlewares/uploadMiddleware.js";
+import uploadController from "../controllers/upload.controller.js";
+import { authenticateJwt } from "../middlewares/authentication.middleware.js"; 
 
 const router = express.Router();
 
 router.post(
-  "/upload-image",
-  uploadService.uploadSingle,
-  uploadController.uploadImage,
-);
+    "/stamp-image", 
+    authenticateJwt, 
+    uploadMiddleware.single("stampImage"), 
+    uploadController.uploadImage 
+ );
 
 export default router;

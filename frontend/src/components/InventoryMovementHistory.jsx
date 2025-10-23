@@ -24,7 +24,7 @@ const InventoryMovementHistory = () => {
   const handleChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
-  console.group('📦 InventoryMovementHistory Debug');
+  console.group('InventoryMovementHistory Debug');
   console.log('Movements:', movements);
   console.log('Totals:', totals);
   console.groupEnd();
@@ -32,13 +32,11 @@ const InventoryMovementHistory = () => {
 const getBorderColorByReason = (mov) => {
   const reason = mov.reason?.toLowerCase() || '';
 
-  // Caso especial: Ajustes de cantidad registrados como salidas/entradas
   if ((mov.type === 'salida' || mov.type === 'entrada') && 
       reason.includes('ajuste de cantidad')) {
-    return '#2196F3'; // Forzar color azul para ajustes de cantidad
+    return '#2196F3'; 
   }
 
-  // Lógica normal de colores
   if (reason.includes('eliminación permanente')) return '#D32F2F';
   if (reason.includes('desactivación lógica')) return '#FF9800';
   if (reason.includes('reactivación')) return '#4CAF50';

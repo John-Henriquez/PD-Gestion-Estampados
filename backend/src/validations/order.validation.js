@@ -9,8 +9,8 @@ const orderItemSchema = Joi.object({
     "number.positive": "La cantidad debe ser mayor que cero.",
     "any.required": "La cantidad es requerida.",
   }),
-  stampImageUrl: Joi.string().uri().allow(null, "").optional().messages({
-    "string.uri": "La URL de la imagen del estampado no es válida.",
+  stampImageUrl: Joi.string().allow(null, "").optional().messages({
+    
   }),
   stampInstructions: Joi.string().allow(null, "").optional(),
 })

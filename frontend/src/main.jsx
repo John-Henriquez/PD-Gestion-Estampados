@@ -5,6 +5,7 @@ import Home from './pages/Home.jsx';
 import Users from './pages/Users.jsx';
 import Inventory from './pages/Inventario.jsx';
 import Register from './pages/Register.jsx';
+import Checkout from './pages/Checkout.jsx';
 import Error404 from './pages/Error404.jsx';
 import Root from './pages/Root.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -31,7 +32,11 @@ const router = createBrowserRouter([
       {
         path: '/inventario',
         element: <Inventory />
-      }
+      },
+      {
+        path: '/checkout', 
+        element: <Checkout />
+      },
     ],
   },
   {

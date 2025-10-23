@@ -2,13 +2,11 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Asegura que exista el directorio uploads/
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
-// Configuración del storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -21,19 +19,33 @@ const storage = multer.diskStorage({
       .replace(/\s+/g, "_")
       .replace(/[^\w\-]+/g, "");
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, `${name}-${uniqueSuffix}${ext}`);
+    const finalName = `${name}-${uniqueSuffix}${ext}`.substring(0,250);
+    cb(null, finalName);
   },
 });
 
-// Filtro para permitir solo imágenes .png o .jpg
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype === "image/svg+xml") {
+const ImageFileFilter = (req, file, cb) => {
+  const allowedMimeTypes = [
+    "image/jpeg", 
+    "image/png", 
+    "image/gif", 
+    "image/webp",
+    "image/svg+xml"
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype)){
     cb(null, true);
   } else {
-    cb(new Error("Solo se permiten archivos SVG"), false);
+    cb(new Error("Tipo de archivo no permitido. Solo se aceptan imágenes (JPG, PNG, GIF, WEBP, SVG)."), false);
   }
 };
 
-const upload = multer({ storage, fileFilter });
+const upload = multer({ 
+  storage, 
+  ImageFileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  }
+});
 
 export default upload;

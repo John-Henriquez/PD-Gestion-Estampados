@@ -1,11 +1,13 @@
+import { handleErrorClient, handleSuccess } from "../handlers/responseHandlers.js";
+
 const uploadImage = (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ message: "No se envió ningún archivo" });
+    return handleErrorClient(res, 400, "No se envió ningún archivo.");
   }
 
   const imageUrl = `/uploads/${req.file.filename}`;
 
-  return res.status(200).json({ imageUrl });
+ return handleSuccess(res, 200, "Imagen subida correctamente", { imageUrl: imageUrl });
 };
 
 export default {
