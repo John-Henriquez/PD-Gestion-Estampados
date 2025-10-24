@@ -44,3 +44,24 @@ export async function uploadStampImage(file) {
     throw error.response?.data || new Error(error.message || 'Error de red o del servidor al subir imagen de estampado.');
   }
 }
+
+export async function uploadMultipleProductImages(files) {
+  if (!files || files.length === 0) return [];
+  const formData = new FormData();
+  files.forEach(file => formData.append('productImages', file));
+  try {
+    const response = await axios.post('/uploads/product-images/batch', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    // ... (manejo de respuesta) ...
+     if (response.status === 200 && response.data.status === 'Success' && Array.isArray(response.data.data?.imageUrls)) {
+        return response.data.data.imageUrls;
+     } else {
+        throw new Error(response.data.message || 'Respuesta inesperada del servidor.');
+     }
+  } catch (error) {
+    // ... (manejo de error) ...
+     console.error('Error al subir imágenes:', error.response?.data || error.message);
+     throw error.response?.data || new Error(error.message || 'Error de red o servidor.');
+  }
+}

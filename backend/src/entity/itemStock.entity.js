@@ -29,9 +29,9 @@ const ItemStockSchema = new EntitySchema({
       type: "int",
       nullable: false,
     },
-    images: {
-      type: "jsonb",
-      nullable: true,
+    productImageUrls: {
+      type: "simple-array",
+      nullable: true, 
     },
     minStock: {
       type: "int",
@@ -42,15 +42,15 @@ const ItemStockSchema = new EntitySchema({
       default: true,
     },
     createdAt: {
-      type: "timestamp",
+      type: "timestamp with time zone",
       createDate: true,
     },
     updatedAt: {
-      type: "timestamp",
+      type: "timestamp with time zone",
       updateDate: true,
     },
     deletedAt: {
-      type: "timestamp",
+      type: "timestamp with time zone",
       nullable: true,
     },
     deactivatedByItemType: {
@@ -62,14 +62,16 @@ const ItemStockSchema = new EntitySchema({
     itemType: {
       type: "many-to-one",
       target: "ItemType",
-      joinColumn: { name: "item_type_id" },
+      joinColumn: { name: "itemTypeId" },
       nullable: false,
+      onDelete: "RESTRICT", // !!
     },
     createdBy: {
       type: "many-to-one",
       target: "User",
       joinColumn: { name: "created_by" },
       nullable: true,
+      onDelete: "SET NULL",
     },
     updatedBy: {
       type: "many-to-one",

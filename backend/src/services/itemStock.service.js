@@ -9,9 +9,7 @@ import {
   createItemSnapshot,
   generateInventoryReason,
 } from "../helpers/inventory.helpers.js";
-
 import { MoreThan, Not } from "typeorm";
-import { parse } from "dotenv";
 
 export const itemStockService = {
   async createItemStock(itemData, userId) {
@@ -23,12 +21,13 @@ export const itemStockService = {
           size,
           quantity,
           price,
-          images,
+          productImageUrls,
           minStock,
         } = itemData;
         const itemStockRepo =
           transactionalEntityManager.getRepository(ItemStock);
-        const itemTypeRepo = transactionalEntityManager.getRepository(ItemType);
+        const itemTypeRepo = 
+          transactionalEntityManager.getRepository(ItemType);
         const movementRepo =
           transactionalEntityManager.getRepository(InventoryMovement);
 
@@ -64,13 +63,6 @@ export const itemStockService = {
           return [null, "Ya existe un stock con ese nombre y color"];
         }
 
-        const urlRegex = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif))$/i;
-        const processedImages = Array.isArray(images)
-          ? images.filter((url) => url && urlRegex.test(url))
-          : images && urlRegex.test(images)
-            ? [images]
-            : [];
-
         const MIN_STOCK_DEFAULTS = {
           clothing: 10,
           default: 20,
@@ -85,7 +77,7 @@ export const itemStockService = {
           size: itemType.hasSizes ? size : null,
           quantity,
           price,
-          images: processedImages,
+          productImageUrls: Array.isArray(productImageUrls) ? productImageUrls : [],
           minStock: minStockValue,
           itemType,
           createdBy: { id: userId },
@@ -237,19 +229,22 @@ export const itemStockService = {
         "size",
         "quantity",
         "price",
-        "images",
+        "productImageUrls",
         "minStock",
         "isActive",
       ];
 
       trackableFields.forEach((field) => {
-        if (
-          updateData[field] !== undefined &&
-          !deepEqual(updateData[field], item[field])
-        ) {
+        let updateValue = updateData[field];
+        if (field === "productImageUrls" && updateValue !== undefined && !Array.isArray(updateValue)) {
+            console.warn("productImageUrls recibido no era un array, se convertirá a array vacío.");
+            updateValue = []; 
+        }
+
+        if ( updateValue !== undefined && !deepEqual(updateValue, item[field]) ) {
           changes[field] = {
             oldValue: item[field],
-            newValue: updateData[field],
+            newValue: updateValue,
           };
         }
       });
@@ -261,7 +256,12 @@ export const itemStockService = {
       // 2. Aplicar cambios
       trackableFields.forEach((field) => {
         if (updateData[field] !== undefined) {
-          item[field] = updateData[field];
+          // Asegurar que productImageUrls se guarde como array
+           if (field === "productImageUrls" && !Array.isArray(updateData[field])) {
+               item[field] = [];
+           } else {
+               item[field] = updateData[field];
+           }
         }
       });
 
@@ -269,28 +269,30 @@ export const itemStockService = {
 
       // 3. Registrar movimientos
       const movementPromises = Object.keys(changes).map(async (field) => {
-        const { operation, reason } = generateInventoryReason("update", field);
 
-        const movementData = {
-          type: "ajuste",
-          quantity:
-            field === "quantity" ? Math.abs(changes.quantity.newValue - changes.quantity.oldValue)
-              : 0,
-          itemStock: item,
-          createdBy: { id: userId },
-          operation,
-          reason,
-          changedField: field,
-          changes: {
-            [field]: {
-              oldValue: changes[field].oldValue,
-              newValue: changes[field].newValue,
+        if (field !== "productImageUrls") {
+          const { operation, reason } = generateInventoryReason("update", field);
+          const movementData = {
+            type: "ajuste",
+            quantity:
+              field === "quantity" ? Math.abs(changes.quantity.newValue - changes.quantity.oldValue)
+                : 0,
+            itemStock: item,
+            createdBy: { id: userId },
+            operation,
+            reason,
+            changedField: field,
+            changes: {
+              [field]: {
+                oldValue: changes[field].oldValue,
+                newValue: changes[field].newValue,
+              },
             },
-          },
-          ...createItemSnapshot(item),
-        };
-
-        return movementRepo.save(movementData);
+            ...createItemSnapshot(updatedItem),
+          };
+          return movementRepo.save(movementData);
+        }
+        return Promise.resolve();
       });
 
       await Promise.all(movementPromises);

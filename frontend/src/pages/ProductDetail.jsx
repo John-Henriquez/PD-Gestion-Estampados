@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, CircularProgress, Alert, Chip, TextField } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, Alert, Chip, TextField, IconButton } from '@mui/material';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getItemStockById } from '../services/itemStock.service';
 import { iconMap } from '../data/iconCategories';
 import { COLOR_DICTIONARY } from '../data/colorDictionary';
@@ -12,6 +13,13 @@ const getColorName = (hex) => {
     return color ? color.name : hex;
 };
 
+const getFullImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    const backendUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:3000';
+    return `${backendUrl.replace('/api', '')}${url}`;
+};
+
 const ProductDetail = () => {
     const { itemStockId } = useParams(); 
     const navigate = useNavigate();
@@ -21,6 +29,8 @@ const ProductDetail = () => {
     const [error, setError] = useState(null);
     const [quantity, setQuantity] = useState(1); 
 
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
     useEffect(() => {
         const fetchProduct = async () => {
             try {
@@ -28,6 +38,7 @@ const ProductDetail = () => {
                 setError(null);
                 const data = await getItemStockById(itemStockId); 
                 setProduct(data);
+                setCurrentImageIndex(0);
             } catch (err) {
                 console.error("Error al cargar detalle del producto:", err);
                 setError(err.message || 'No se pudo cargar el producto.');
@@ -63,6 +74,13 @@ const ProductDetail = () => {
         navigate('/checkout', { state: { items: [itemToCheckout] } });
     };
 
+    const handlePrevImage = () => {
+        setCurrentImageIndex(prev => (prev === 0 ? (product.productImageUrls.length - 1) : prev - 1));
+    };
+    const handleNextImage = () => {
+        setCurrentImageIndex(prev => (prev === (product.productImageUrls.length - 1) ? 0 : prev + 1));
+    };
+
     if (loading) {
         return <Box className="shop-loading-container"><CircularProgress /></Box>;
     }
@@ -75,24 +93,35 @@ const ProductDetail = () => {
         return <Typography className="shop-empty-message">Producto no encontrado.</Typography>;
     }
 
-    const { price, size, hexColor, itemType } = product;
+    const { price, size, hexColor, itemType, productImageUrls = [] } = product;
     const name = itemType?.name || 'Producto Desconocido';
     const description = itemType?.description || 'Sin descripción.'; // Usar descripción del itemType
     const iconName = itemType?.iconName;
     const IconComponent = iconName ? iconMap[iconName] : null;
 
-    const imageUrl = null;
+    const currentImageUrl = productImageUrls.length > 0 ? getFullImageUrl(productImageUrls[currentImageIndex]) : null;
+    const hasMultipleImages = productImageUrls.length > 1;
 
     return (
         <div className="product-detail-container">
             <div className="product-detail-grid">
                 <section className="product-image-section">
-                    {imageUrl ? (
-                        <img src={imageUrl} alt={name} />
+                    {currentImageUrl ? (
+                        <img src={currentImageUrl} alt={`${name} - Imagen ${currentImageIndex + 1}`} loading="lazy"/>
                     ) : (
                         IconComponent
                             ? <IconComponent size={128} strokeWidth={1} className="product-image-placeholder"/>
                             : <Typography className="product-image-placeholder">Sin Imagen</Typography>
+                    )}
+                    {/* Controles de Navegación (si hay múltiples imágenes) */}
+                    {hasMultipleImages && (
+                        <Box sx={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 1, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: '20px', padding: '4px 8px' }}>
+                            <IconButton onClick={handlePrevImage} size="small" sx={{ color: 'white' }}> <ChevronLeft /> </IconButton>
+                            <Typography sx={{ color: 'white', alignSelf: 'center', fontSize: '0.9rem' }}>
+                                {currentImageIndex + 1} / {productImageUrls.length}
+                            </Typography>
+                            <IconButton onClick={handleNextImage} size="small" sx={{ color: 'white' }}> <ChevronRight /> </IconButton>
+                        </Box>
                     )}
                 </section>
 

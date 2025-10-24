@@ -1,0 +1,78 @@
+.image-upload-section {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md); 
+  background-color: var(--gray-100);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+  flex-grow: 1; 
+  min-height: 90px;
+  padding: var(--spacing-xs); 
+  background-color: #fff; 
+  border-radius: var(--border-radius-sm);
+}
+
+/* Cada miniatura de previsualización */
+.image-preview-item {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--gray-300);
+  flex-shrink: 0;
+  background-color: var(--gray-200); 
+}
+
+.image-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Botón 'X' para eliminar imagen */
+.image-preview-item__remove-btn {
+  position: absolute !important;
+  top: 3px !important;
+  right: 3px !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  color: white !important;
+  width: 22px !important; /* Un poco más grande */
+  height: 22px !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  border-radius: 50% !important;
+  z-index: 10;
+  transition: background-color var(--transition-fast) !important;
+}
+
+.image-preview-item__remove-btn:hover {
+    background-color: var(--error) !important;
+}
+
+/* Botón para seleccionar imágenes */
+.image-upload-button {
+  /* No necesita !important si no hay conflicto */
+  margin-top: var(--spacing-sm);
+  background-color: var(--secondary);
+  color: white; /* Asegurar texto blanco */
+}
+.image-upload-button:hover {
+    background-color: var(--secondary-dark);
+}
+
+/* Mensaje cuando no hay imágenes */
+.no-images-message {
+    text-align: center;
+    color: var(--gray-700);
+    font-style: italic;
+    padding: var(--spacing-md);
+}

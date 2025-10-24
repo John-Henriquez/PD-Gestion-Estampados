@@ -128,3 +128,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Ignorar archivos subidos por el usuario/admin
+/backend/uploads/

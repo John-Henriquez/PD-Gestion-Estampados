@@ -13,19 +13,23 @@ const getColorName = (hex) => {
 const ProductCard = ({ product }) => {
     const navigate = useNavigate();
 
-    const { id, price, size, hexColor, itemType, quantity } = product || {};
+    const { id, price, size, hexColor, itemType, quantity, productImageUrls } = product || {};
     const name = itemType?.name || 'Producto Desconocido';
     const iconName = itemType?.iconName;
     const IconComponent = iconName ? iconMap[iconName] : null;
 
-    const imageUrl = null; 
+    const backendUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:3000';
+
+    const firstImageUrlRelative = (Array.isArray(productImageUrls) && productImageUrls.length > 0)
+        ? productImageUrls[0]
+        : null;
+    const fullImageUrl = firstImageUrlRelative
+        ? `${backendUrl.replace('/api', '')}${firstImageUrlRelative}`
+        : null;
 
     const handleViewDetails = () => {
         navigate(`/product/${id}`); 
     };
-
-    const backendUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:3000';
-    const fullImageUrl = imageUrl ? `${backendUrl.replace('/api', '')}${imageUrl}` : null;
 
     return (
         <Card className='product-card'>
@@ -62,8 +66,7 @@ const ProductCard = ({ product }) => {
                     </Typography>
 
                     <Typography variant="caption" className="product-card__stock-status"
-                        sx={{ color: quantity === 0 ? 'var(--error)' : (quantity <= 5 ? 'var(--warning)' : 'transparent') }}
-                    >
+                        sx={{ color: quantity === 0 ? 'var(--error)' : (quantity <= 5 ? 'var(--warning)' : 'transparent') }}>
                         {quantity === 0 ? 'Agotado' : (quantity <= 5 ? '¡Últimas unidades!' : '')}
                     </Typography>
                 </Box>
