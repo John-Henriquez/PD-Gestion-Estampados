@@ -67,6 +67,32 @@ export const itemStockController = {
     }
   },
 
+  async getPublicStockById(req, res) {
+    try {
+      const { id } = req.params; 
+      const parsedId = parseInt(id, 10);
+
+      if (isNaN(parsedId)) {
+        return handleErrorClient(res, 400, "El ID del producto debe ser un número.");
+      }
+
+      const [item, error] = await itemStockService.getPublicItemStockById(parsedId);
+
+      if (error) {
+        return handleErrorClient(res, 404, error);
+      }
+      handleSuccess(res, 200, "Detalles del producto obtenidos", item);
+
+    } catch (error) { 
+      console.error(
+        "Error en getPublicStockById controller:",
+        error.message,
+        error.stack,
+      );
+      handleErrorServer(res, 500, "Error interno al obtener detalles del producto.");
+    }
+  },
+
   async createItemStock(req, res) {
     try {
       const { error } = itemStockSchema.validate(req.body);

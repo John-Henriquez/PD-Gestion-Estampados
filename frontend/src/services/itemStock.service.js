@@ -10,9 +10,25 @@ export async function getItemStock() {
     }
 }
 
+export async function getPublicItemStock() {
+    try {
+        const response = await axios.get('/item-stocks/public');
+
+        if (response.status === 200 && response.data.status === 'Success') {
+            console.log('Stock público obtenido:', response.data.data);
+            return response.data.data || []; 
+        } else {
+            throw new Error(response.data.message || 'Error inesperado al obtener el stock público');
+        }
+    } catch (error) {
+        console.error('Error al obtener stock público:', error.response?.data || error.message);
+        throw error.response?.data || new Error(error.message || 'Error de red o del servidor al obtener stock público');
+    }
+}
+
 export async function createItemStock(itemData) {
     try {
-        console.log('📦 Datos enviados al backend:', itemData);
+        console.log('Datos enviados al backend:', itemData);
         const response = await axios.post('/item-stocks', itemData);
         return response.data.data;
     } catch (error) {
@@ -27,7 +43,7 @@ export async function updateItemStock(id, updatedData) {
     return response.data.data;
   } catch (error) {
     const backendError = error.response?.data;
-    console.error('❌ Error actualizando stock:', backendError || error.message);
+    console.error('Error actualizando stock:', backendError || error.message);
     console.error('Detalles:', backendError?.details);
     throw backendError || error.message;
   }
@@ -107,3 +123,22 @@ export async function removeManualStock(id, quantity) {
     throw error.response?.data || error.message;
   }
 }
+
+export async function getItemStockById(id) {
+    try {
+        const response = await axios.get(`/item-stocks/${id}`); 
+
+        if (response.status === 200 && response.data.status === 'Success') {
+            console.log(`Detalles de ItemStock ${id} obtenidos:`, response.data.data);
+            const itemData = Array.isArray(response.data.data) ? response.data.data[0] : response.data.data;
+            if (!itemData) throw new Error('Item no encontrado');
+            return itemData;
+        } else {
+            throw new Error(response.data.message || `Error inesperado al obtener ItemStock ${id}`);
+        }
+    } catch (error) {
+        console.error(`Error al obtener ItemStock ${id}:`, error.response?.data || error.message);
+        throw error.response?.data || new Error(error.message || `Error de red o servidor al obtener ItemStock ${id}`);
+    }
+}
+

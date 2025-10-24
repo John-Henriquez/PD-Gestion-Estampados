@@ -6,6 +6,7 @@ import { itemStockController } from "../controllers/itemStock.controller.js";
 const router = Router();
 
 router.get("/public", itemStockController.getPublicStock);
+router.get("/public/:id", itemStockController.getPublicStockById);
 
 router.use(authenticateJwt);
 

@@ -10,7 +10,8 @@ import {
   generateInventoryReason,
 } from "../helpers/inventory.helpers.js";
 
-import { Not } from "typeorm";
+import { MoreThan, Not } from "typeorm";
+import { parse } from "dotenv";
 
 export const itemStockService = {
   async createItemStock(itemData, userId) {
@@ -118,34 +119,59 @@ export const itemStockService = {
       const parsedFilters = {
         ...filters,
         isActive:
-          filters.isActive === "false"
-            ? false
-            : filters.isActive === "true"
-              ? true
-              : filters.isActive,
+          filters.isActive === "false" ? false
+            : filters.isActive === "true" ? true
+            : filters.isActive,
       };
       if (parsedFilters.id) where.id = parsedFilters.id;
-      if (parsedFilters.itemTypeId)
-        where.itemType = { id: parsedFilters.itemTypeId };
+      if (parsedFilters.itemTypeId) where.itemType = { id: parsedFilters.itemTypeId };
       if (parsedFilters.size !== undefined) {
         where.size = parsedFilters.size === "N/A" ? null : parsedFilters.size;
       }
 
-      if (parsedFilters.isActive !== undefined) {
-        where.isActive = parsedFilters.isActive;
-      } else if (parsedFilters.publicOnly !== false) {
+      if(parsedFilters.publicOnly === true){
         where.isActive = true;
+        where.quantity = MoreThan(0);
+      } else if (parsedFilters !== undefined){
+        where.isActive = parsedFilters.isActive;
       }
+      
       const items = await repo.find({
         where,
         relations: ["itemType"],
-        order: { createdAt: "DESC" },
+        order: { itemType: { name: "ASC" } },
       });
 
       return [items, null];
     } catch (error) {
       console.error("Error detallado en getItemStock:", error);
       return [null, "Error al obtener el inventario"];
+    }
+  },
+
+  async getPublicItemStockById(id) {
+    try {
+      if (isNaN(id) || id <= 0) {
+        return [null, "ID de item inválido."];
+      }
+
+      const repo = AppDataSource.getRepository(ItemStock);
+      const item = await repo.findOne({
+        where: {
+          id: id,
+          isActive: true
+        },
+        relations: ["itemType"], 
+      });
+
+      if (!item) {
+        return [null, "Producto no encontrado o no disponible."];
+      }
+
+      return [item, null]; 
+    } catch (error) {
+      console.error(`Error detallado en getPublicItemStockById (ID: ${id}):`, error);
+      return [null, "Error al obtener los detalles del producto."];
     }
   },
 
@@ -248,8 +274,7 @@ export const itemStockService = {
         const movementData = {
           type: "ajuste",
           quantity:
-            field === "quantity"
-              ? Math.abs(changes.quantity.newValue - changes.quantity.oldValue)
+            field === "quantity" ? Math.abs(changes.quantity.newValue - changes.quantity.oldValue)
               : 0,
           itemStock: item,
           createdBy: { id: userId },
