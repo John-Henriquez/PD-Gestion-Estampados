@@ -126,7 +126,7 @@ export async function removeManualStock(id, quantity) {
 
 export async function getItemStockById(id) {
     try {
-        const response = await axios.get(`/item-stocks/${id}`); 
+        const response = await axios.get(`/item-stocks/public/${id}`); 
 
         if (response.status === 200 && response.data.status === 'Success') {
             console.log(`Detalles de ItemStock ${id} obtenidos:`, response.data.data);

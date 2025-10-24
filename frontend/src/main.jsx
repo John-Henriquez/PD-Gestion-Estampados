@@ -7,6 +7,7 @@ import Inventory from './pages/Inventario.jsx';
 import Register from './pages/Register.jsx';
 import Checkout from './pages/Checkout.jsx';
 import Shop from './pages/Shop.jsx';
+import ProductDetail from './pages/ProductDetail.jsx';
 import Error404 from './pages/Error404.jsx';
 import Root from './pages/Root.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -41,6 +42,10 @@ const router = createBrowserRouter([
       {
         path: '/shop', 
         element: <Shop />
+      },
+      {
+        path: '/product/:itemStockId', 
+        element: <ProductDetail />
       },
     ],
   },
