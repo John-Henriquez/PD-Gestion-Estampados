@@ -4,13 +4,27 @@ import {
 } from '@mui/material';
 import useInventoryMovements from '../hooks/inventoryMovement/useInventoryMovements.jsx';
 import '../styles/components/modal.css';
+import '../styles/components/inventoryMovementHistory.css';
 
 const movementTypeLabels = {
   entrada: 'Entrada',
   salida: 'Salida',
   ajuste: 'Ajuste',
+  modificacion: 'Modificación'
 };
 
+const getMovementClasses = (mov) => {
+    const classes = ['movement-item'];
+    const type = mov.type || 'ajuste'; 
+    const operation = mov.operation || 'unspecified';
+
+
+    classes.push(`movement-type-${type}`);
+
+    classes.push(`movement-op-${operation}`);
+
+    return classes.join(' ');
+};
 
 const InventoryMovementHistory = () => {
   const {
@@ -29,44 +43,12 @@ const InventoryMovementHistory = () => {
   console.log('Totals:', totals);
   console.groupEnd();
 
-const getBorderColorByReason = (mov) => {
-  const reason = mov.reason?.toLowerCase() || '';
-
-  if ((mov.type === 'salida' || mov.type === 'entrada') && 
-      reason.includes('ajuste de cantidad')) {
-    return '#2196F3'; 
-  }
-
-  if (reason.includes('eliminación permanente')) return '#D32F2F';
-  if (reason.includes('desactivación lógica')) return '#FF9800';
-  if (reason.includes('reactivación')) return '#4CAF50';
-  if (reason.includes('ajuste de cantidad') || reason.includes('stock mínimo')) 
-    return '#2196F3';
-  if (reason.includes('actualización de precio')) return '#03A9F4';
-  if (reason.includes('cambio de color')) return '#BA68C8';
-  if (reason.includes('modificación de talla')) return '#9575CD';
-  if (reason.includes('actualización de imágenes')) return '#7986CB';
-  if (reason.includes('ajuste de stock mínimo')) return '#009688';
-  if (reason.includes('cambio de estado activo')) return '#90A4AE';
-  if (reason.includes('eliminación masiva')) return '#B71C1C';
-
-  // Tipos básicos de movimiento
-  if (mov.type === 'entrada') return '#4CAF50';
-  if (mov.type === 'salida') return '#F44336';
-  if (mov.type === 'ajuste') return '#2196F3';
-
-  return '#9E9E9E'; // fallback
-};
-
-
   return (
     <Box className="modal">
-      {/*Titulo */}
       <Typography variant="h5" className="modal-title">
         Historial de Movimientos de Inventario
       </Typography>
 
-      {/* Contenedor de contenido */}
       <Box className="modal-content">
 
         {/* Filtros */}
@@ -107,6 +89,7 @@ const getBorderColorByReason = (mov) => {
                 <MenuItem value="entrada">Entrada</MenuItem>
                 <MenuItem value="salida">Salida</MenuItem>
                 <MenuItem value="ajuste">Ajuste</MenuItem>
+                <MenuItem value="modificacion">Modificación</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -123,11 +106,7 @@ const getBorderColorByReason = (mov) => {
           </Typography>
         ) : (
         <Box>
-          <Typography variant="subtitle1" sx={{ 
-            mb: 1,
-            p: 2,
-            backgroundColor: 'var(--gray-200)',
-            borderRadius: 'var(--border-radius-sm)'
+          <Typography variant="subtitle1" sx={{ mb: 1,p: 2,backgroundColor: 'var(--gray-200)',borderRadius: 'var(--border-radius-sm)'
           }}>
             Totales: Entrada: {totals.entrada || 0}, Salida: {totals.salida || 0}, Ajuste: {totals.ajuste || 0}
           </Typography>
@@ -135,12 +114,7 @@ const getBorderColorByReason = (mov) => {
             <Paper
               key={mov.id}
               elevation={0}
-              sx={{
-                p: 2,
-                mb: 1,
-                backgroundColor: '#f9f9f9',
-                borderLeft: `6px solid ${getBorderColorByReason(mov)}`
-              }}
+              className={getMovementClasses(mov)}
             >
             <Typography variant="subtitle2">
               {new Date(mov.createdAt).toLocaleString()} —{' '}
@@ -150,28 +124,23 @@ const getBorderColorByReason = (mov) => {
             </Typography>
               {mov.snapshotItemName && (
                 <Typography variant="body2">
-                  Producto: <strong>{mov.snapshotItemName}</strong> — {mov.snapshotItemSize || ''}
+                  Producto: <strong>{mov.snapshotItemName}</strong> {mov.snapshotItemSize ? ` — ${mov.snapshotItemSize}` : ''}
                   {mov.snapshotItemColor && (
                     <>
-                      {' '}
-                      — <span style={{
-                        display: 'inline-block',
-                        width: '14px',
-                        height: '14px',
-                        backgroundColor: mov.snapshotItemColor,
-                        border: '1px solid #ccc',
-                        borderRadius: '3px',
-                        marginLeft: '4px',
-                        verticalAlign: 'middle'
-                      }} title={mov.snapshotItemColor} />
-                      <span style={{ marginLeft: '4px', fontSize: '0.85em', color: '#555' }}>
+                      {' '}— <span
+                            className="movement-snapshot-color" 
+                            style={{ backgroundColor: mov.snapshotItemColor }}
+                            title={mov.snapshotItemColor}
+                           />
+
+                      <span className="movement-snapshot-hex"> 
                         {mov.snapshotItemColor}
                       </span>
                     </>
                   )}
                 </Typography>
               )}
-                {mov.reason && (
+                {(mov.reason && !(mov.type === 'ajuste' && mov.quantity === 0 && mov.reason && !mov.reason.includes('Ajuste de inventario'))) && (
                   <Typography variant="body2" color="text.secondary">
                     Motivo: {mov.reason}
                   </Typography>

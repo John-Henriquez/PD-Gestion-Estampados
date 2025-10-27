@@ -1,62 +1,46 @@
 
 import React, { useState, useContext, useEffect } from 'react';
 import { Box, Typography, TextField, Button, CircularProgress, Paper, Alert, Grid, Divider } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
-import ImageUploader from '../components/ImageUploader.jsx';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useCart } from '../context/CartContext.jsx';
 import { createOrder } from '../services/order.service';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
 
+import { XCircle } from 'lucide-react';
+
+const getFullImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    const backendUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:3000';
+    return `${backendUrl.replace('/api', '')}${url}`;
+};
+
 const Checkout = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { cartItems, removeFromCart, clearCart } = useCart();
   const { isAuthenticated, user } = useContext(AuthContext);
 
-  const [itemsToOrder, setItemsToOrder] = useState([]);
   const [customerData, setCustomerData] = useState({ name: '', email: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const itemsFromState = location.state?.items;
-    if (Array.isArray(itemsFromState) && itemsFromState.length > 0) {
-      setItemsToOrder(itemsFromState.map(item => ({
-        ...item,
-        stampImageUrl: null,
-        stampInstructions: '',
-      })));
-    } else {
-      console.warn("Checkout: No se recibieron items válidos. Usando item de prueba.");
+useEffect(() => {
+   if (isAuthenticated && user) {
+       setCustomerData({ name: user.nombreCompleto || '', email: user.email || '' });
+   } else {
+       setCustomerData({ name: '', email: '' });
+   }
+ }, [isAuthenticated, user]);
 
-      setItemsToOrder([
-        {
-          itemStockId: 5, 
-          quantity: 1,
-          stampImageUrl: null,
-          stampInstructions: '',
-          name: 'Producto de Prueba (Ajusta ID)', 
-          price: 1000,
-        }
-      ]);
-    }
-
-    if (isAuthenticated && user) {
-        setCustomerData({ name: user.nombreCompleto || '', email: user.email || '' });
-    } else {
-        setCustomerData({ name: '', email: '' }); 
-    }
-  }, [location.state, isAuthenticated, user]);
+ useEffect(() => {
+   if (!isProcessing && cartItems.length === 0) {
+     navigate('/shop'); 
+   }
+}, [cartItems, isProcessing, navigate]);
 
   const handleGuestDataChange = (event) => {
     setCustomerData(prev => ({ ...prev, [event.target.name]: event.target.value }));
-  };
-
-  const handleInstructionsChange = (index, value) => {
-    setItemsToOrder(prev => prev.map((item, i) => i === index ? { ...item, stampInstructions: value } : item));
-  };
-
-  const handleImageUploadSuccess = (index, imageUrl) => {
-    setItemsToOrder(prev => prev.map((item, i) => i === index ? { ...item, stampImageUrl: imageUrl } : item));
   };
 
   const handleSubmitOrder = async () => {
@@ -66,9 +50,9 @@ const Checkout = () => {
       showErrorAlert('Datos incompletos', 'Ingresa tu correo electrónico para continuar.');
       return;
     }
-    if (itemsToOrder.length === 0) {
-        setError('No hay items en el pedido.');
-        showErrorAlert('Pedido Vacío', 'No hay items para procesar.');
+    if (cartItems.length === 0) {
+        setError('Tu carrito está vacío.');
+        showErrorAlert('Carrito Vacío', 'No hay items para procesar. Añade productos desde la tienda.');
         return;
     }
 
@@ -76,7 +60,7 @@ const Checkout = () => {
     setIsProcessing(true);
 
     const orderPayload = {
-      items: itemsToOrder.map(item => ({
+      items: cartItems.map(item => ({
         ...(item.itemStockId && { itemStockId: item.itemStockId }),
         ...(item.packId && { packId: item.packId }),
         quantity: Number(item.quantity) || 1,
@@ -91,8 +75,8 @@ const Checkout = () => {
       const createdOrder = await createOrder(orderPayload);
       setIsProcessing(false);
       showSuccessAlert('¡Pedido Creado!', `Tu pedido #${createdOrder.id} ha sido registrado.`);
-      setItemsToOrder([]);
-      navigate('/home'); 
+      clearCart();
+      navigate(`/order-confirmation/${createdOrder.id}`); 
     } catch (err) {
       setIsProcessing(false);
        let displayError = err.message || err.details || 'No se pudo crear el pedido.';
@@ -107,63 +91,67 @@ const Checkout = () => {
   };
 
   const calculateTotal = () => {
-    return itemsToOrder.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+    return cartItems.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
   };
-
-
-  if (itemsToOrder.length === 0 && location.state?.items) {
-      return ( <Box sx={{ display: 'flex', justifyContent: 'center', p: 'var(--spacing-xl)' }}> <CircularProgress /> </Box> );
-  }
-
 
   return (
     <Box sx={{ maxWidth: '900px', margin: 'var(--spacing-xl) auto', padding: 'var(--spacing-md)' }}>
       <Typography variant="h4" gutterBottom sx={{ color: 'var(--primary-dark)', textAlign: 'center', mb: 'var(--spacing-lg)' }}>
-        Finalizar Compra
+        Revisión del Pedido
       </Typography>
 
       {/* Resumen */}
       <Paper elevation={2} sx={{ padding: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', backgroundColor: 'var(--gray-100)' }}>
         <Typography variant="h6" sx={{ color: 'var(--primary)', pb: 1, mb: 2, borderBottom: '1px solid var(--gray-300)' }}>
-          Tu Pedido ({itemsToOrder.length} {itemsToOrder.length === 1 ? 'item' : 'items'})
+          Tu Pedido ({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})
         </Typography>
 
-        {itemsToOrder.map((item, index) => (
-          <React.Fragment key={item.itemStockId || `pack-${item.packId}-${index}`}>
+        {cartItems.map((item, index) => (
+          <React.Fragment key={item.cartItemId}>
             <Grid container spacing={3} sx={{ marginBottom: 'var(--spacing-md)' }}>
-              {/* Columna Izquierda: Detalles + Instrucciones */}
-              <Grid item xs={12} md={7}>
-                 <Typography variant="subtitle1" fontWeight="bold">{item.name || `ID: ${item.itemStockId || item.packId}`}</Typography>
-                 <Typography variant="body2" color="var(--gray-700)">Cantidad: {item.quantity}</Typography>
-                 <Typography variant="body2" color="var(--gray-700)" sx={{ mb: 2 }}>
-                   Precio Unitario: ${item.price?.toLocaleString() || 'N/A'}
-                 </Typography>
-
-                 <TextField
-                    label="Instrucciones de Estampado"
-                    value={item.stampInstructions}
-                    onChange={(e) => handleInstructionsChange(index, e.target.value)}
-                    multiline
-                    rows={4}
-                    fullWidth
-                    margin="dense"
-                    variant="outlined"
-                    placeholder="Describe cómo quieres tu estampado (posición, tamaño, colores, etc.)"
-                    InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              {/* Columna Derecha: Uploader */}
-              <Grid item xs={12} md={5}>
-                 <Typography variant="subtitle2" gutterBottom sx={{ color: 'var(--gray-900)' }}>
-                   Imagen para Estampado:
-                 </Typography>
-                 <ImageUploader
-                    key={`uploader-${item.itemStockId || item.packId}-${index}`}
-                    onUploadSuccess={(imageUrl) => handleImageUploadSuccess(index, imageUrl)}
-                 />
-              </Grid>
+              <Button
+                    size="small"
+                    onClick={() => removeFromCart(item.cartItemId)} // Llama a removeFromCart
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        minWidth: 'auto',
+                        padding: '2px',
+                        color: 'var(--error)',
+                        zIndex: 1 // Asegura que esté encima
+                    }}
+                    title="Eliminar este item del carrito"
+                >
+                    <XCircle size={18} />
+                </Button>
+              {/* Columna Imagen Estampado */}
+              {item.stampImageUrl && (
+                 <Grid item xs={12} sm={3} md={2} sx={{ textAlign: 'center' }}>
+                    <Typography variant="caption" display="block" gutterBottom>Tu Diseño:</Typography>
+                    <img
+                        src={getFullImageUrl(item.stampImageUrl)}
+                        alt="Estampado"
+                        style={{ maxWidth: '100%', maxHeight: '100px', borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--gray-300)' }}
+                        loading="lazy"
+                    />
+                 </Grid>
+               )}
+              {/* Columna Detalles */}
+              <Grid item xs={12} sm={item.stampImageUrl ? 9 : 12} md={item.stampImageUrl ? 10 : 12}>
+                  <Typography variant="subtitle1" fontWeight="bold">{item.name || `ID: ${item.itemStockId || item.packId}`}</Typography>
+                  <Typography variant="body2" color="var(--gray-700)">Cantidad: {item.quantity}</Typography>
+                  <Typography variant="body2" color="var(--gray-700)">
+                    Precio Unitario: ${item.price?.toLocaleString() || 'N/A'}
+                  </Typography>
+                   {item.stampInstructions && (
+                     <Typography variant="body2" color="var(--gray-700)" sx={{ mt: 1, fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>
+                        Instrucciones: {item.stampInstructions}
+                     </Typography>
+                   )}
+               </Grid>
             </Grid>
-            {index < itemsToOrder.length - 1 && <Divider sx={{ my: 'var(--spacing-md)' }} />} {/* Separador */}
+            {index < cartItems.length - 1 && <Divider sx={{ my: 'var(--spacing-md)' }} />} 
           </React.Fragment>
         ))}
 
@@ -213,28 +201,41 @@ const Checkout = () => {
         <Alert severity="error" sx={{ mb: 2 }}> {error} </Alert>
       )}
 
-      {/* Botón Confirmar */}
-      <Button
-        variant="contained"
-        onClick={handleSubmitOrder}
-        disabled={isProcessing || itemsToOrder.length === 0}
-        fullWidth
-        size="large"
-        className="animate--pulse" // Ejemplo de uso de animación
-        sx={{
-            padding: 'var(--spacing-sm) 0',
-            backgroundColor: 'var(--success)',
-            color: 'white',
-            fontWeight: 600,
-            fontSize: '1.1rem',
-            borderRadius: 'var(--border-radius-md)',
-            '&:hover': { backgroundColor: 'var(--success-dark)' },
-            '&:disabled': { backgroundColor: 'var(--gray-300)', cursor: 'not-allowed' }
-        }}
-        startIcon={isProcessing ? <CircularProgress size={24} color="inherit" /> : null}
-      >
-        {isProcessing ? 'Procesando Pedido...' : 'Confirmar y Realizar Pedido'}
-      </Button>
+      {/* Botones */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'var(--spacing-lg)', gap: 'var(--spacing-md)' }}>
+          {/* Botón Seguir Comprando */}
+          <Button
+            variant="outlined"
+            component={RouterLink} // Usar Link de react-router
+            to="/shop" // Enlace a la tienda
+            sx={{ flexGrow: 1 }} // Ocupa espacio disponible
+          >
+            Seguir Comprando
+          </Button>
+
+          {/* Botón Confirmar Pedido */}
+          <Button
+            variant="contained"
+            onClick={handleSubmitOrder}
+            disabled={isProcessing || cartItems.length === 0}
+            size="large"
+            className="animate--pulse"
+            sx={{
+                flexGrow: 2, // Más grande que el otro botón
+                padding: 'var(--spacing-sm) 0',
+                backgroundColor: 'var(--success)',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                borderRadius: 'var(--border-radius-md)',
+                '&:hover': { backgroundColor: 'var(--success-dark)' },
+                '&:disabled': { backgroundColor: 'var(--gray-300)', cursor: 'not-allowed' }
+            }}
+            startIcon={isProcessing ? <CircularProgress size={24} color="inherit" /> : null}
+          >
+            {isProcessing ? 'Procesando...' : 'Confirmar y Realizar Pedido'}
+          </Button>
+      </Box>
     </Box>
   );
 };

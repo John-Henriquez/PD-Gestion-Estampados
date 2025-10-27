@@ -1,0 +1,65 @@
+/* src/styles/components/orderItemDisplay.css */
+
+.order-item-paper {
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  background-color: var(--gray-100) !important;
+  border-left: 5px solid var(--gray-300); /* Borde por defecto */
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-normal) ease;
+}
+
+.order-item-details {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.order-item-summary {
+  margin-top: var(--spacing-sm);
+  padding-left: var(--spacing-md);
+}
+
+.order-item-summary ul {
+  padding-left: 20px;
+  font-size: 0.9rem;
+  color: var(--gray-700);
+  margin-top: var(--spacing-xs);
+  margin-bottom: 0;
+  list-style-type: disc;
+}
+
+.order-item-status-chip {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: white; /* Color de texto por defecto */
+  text-align: center;
+  min-width: 90px;
+  text-transform: capitalize;
+}
+
+/* --- Colores de Borde Izquierdo --- */
+.status-pendiente  { border-color: var(--warning); }
+.status-pagado     { border-color: var(--info); }
+.status-procesando { border-color: var(--primary); }
+.status-enviado    { border-color: var(--secondary); }
+.status-entregado  { border-color: var(--success); }
+.status-cancelado  { border-color: var(--error); }
+.status-fallido    { border-color: var(--error-dark); }
+.status-default    { border-color: var(--gray-700); }
+
+/* --- Colores de Fondo para el Chip --- */
+.chip-pendiente  { background-color: var(--warning); color: var(--gray-900); }
+.chip-pagado     { background-color: var(--info); }
+.chip-procesando { background-color: var(--primary-light); color: var(--primary-dark); }
+.chip-enviado    { background-color: var(--secondary); }
+.chip-entregado  { background-color: var(--success); }
+.chip-cancelado  { background-color: var(--error); }
+.chip-fallido    { background-color: var(--error-dark); }
+.chip-default    { background-color: var(--gray-700); }

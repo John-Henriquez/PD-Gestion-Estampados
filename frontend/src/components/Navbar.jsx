@@ -5,7 +5,8 @@ import { useState, useEffect, useRef } from "react";
 import { Typography } from '@mui/material';
 import {
     IconMenu2, IconX, IconUser, IconLogout, IconLogin, IconUserPlus, 
-    IconHome, IconUsers, IconSettings, IconPackage, IconShoppingCart, IconClipboardList 
+    IconHome, IconUsers, IconSettings, IconPackage, IconShoppingCart, IconClipboardList,
+    IconReceipt
 } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -58,6 +59,7 @@ const Navbar = () => {
   const adminItems = [
     { to: "/users", text: "Usuarios", icon: <IconUsers size={20} /> },
     { to: '/inventario', text: 'Inventario', icon: <IconPackage size={20} /> },
+    { to: '/admin/orders', text: 'Gestionar Pedidos', icon: <IconReceipt size={20} /> },
   ];
 
   const guestItems = [
@@ -185,7 +187,7 @@ const Navbar = () => {
              </>
           )}
           
-          {/* Items Invitado (si aplica) */}
+          {/* Items Invitado */}
            {!isAuthenticated && (
                <>
                  <li className="navbar__mobile-separator"><Typography variant="caption" color="textSecondary">Acceso</Typography></li>

@@ -7,6 +7,9 @@ import Inventory from './pages/Inventario.jsx';
 import Register from './pages/Register.jsx';
 import Checkout from './pages/Checkout.jsx';
 import Shop from './pages/Shop.jsx';
+import MyOrders from './pages/MyOrders.jsx';
+import AdminOrders from './pages/AdminOrders.jsx';
+import OrderConfirmation from './pages/OrderConfirmation.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import Error404 from './pages/Error404.jsx';
 import Root from './pages/Root.jsx';
@@ -46,6 +49,26 @@ const router = createBrowserRouter([
       {
         path: '/product/:itemStockId', 
         element: <ProductDetail />
+      },
+      {
+        path: '/order-confirmation/:orderId', 
+        element: <OrderConfirmation />
+      },
+      {
+        path: '/my-orders',
+        element: (
+          <ProtectedRoute> 
+            <MyOrders />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: '/admin/orders', 
+        element: (
+          <ProtectedRoute allowedRoles={['administrador']}>
+            <AdminOrders />
+          </ProtectedRoute>
+        )
       },
     ],
   },

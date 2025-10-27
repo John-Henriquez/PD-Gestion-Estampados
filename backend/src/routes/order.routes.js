@@ -15,7 +15,8 @@ router.use(authenticateJwt);
 
 router.get("/", orderController.getMyOrders);
 
-// router.get("/all", isAdmin, orderController.getAllOrders);
-// router.get("/:id", isAdmin, orderController.getOrderById);
+router.get("/all", isAdmin, orderController.getAllOrders);
+router.get("/:id", orderController.getOrderById);
 
+router.patch("/:id", isAdmin, orderController.updateOrderStatus);
 export default router;

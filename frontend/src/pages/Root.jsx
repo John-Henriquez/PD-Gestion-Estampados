@@ -1,11 +1,14 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import { AuthProvider } from '../context/AuthContext.jsx';
+import { CartProvider } from '../context/CartContext.jsx';
 
 function Root()  {
 return (
     <AuthProvider>
-        <PageRoot/>
+      <CartProvider> 
+        <PageRoot />
+      </CartProvider>
     </AuthProvider>
 );
 }
