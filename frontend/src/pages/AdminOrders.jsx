@@ -83,7 +83,12 @@ const AdminOrders = () => {
       {!loading && !error && filteredOrders.length > 0 && (
         <Box>
           {filteredOrders.map(order => (
-            <OrderItemDisplay key={order.id} order={order} onStatusChange={fetchAllOrders} />
+            <OrderItemDisplay 
+            key={order.id} 
+            order={order} 
+            isAdminView={true}
+            onStatusChange={fetchAllOrders} 
+            />
           ))}
         </Box>
       )}
