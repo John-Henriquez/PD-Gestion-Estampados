@@ -1,4 +1,3 @@
-// src/components/Inventory/PacksSection.jsx
 import { useState, useContext } from 'react';
 import { Box, Button, Paper, Typography, Grid, Chip, CircularProgress, Alert } from '@mui/material';
 import {
@@ -8,8 +7,8 @@ import {
   DeleteOutline as DeleteIcon,
 } from '@mui/icons-material';
 
-import PackModal from '../PackModal.jsx';
-import PackTrashModal from '../PackTrashModal.jsx';
+import PackModal from './PackModal.jsx';
+import PackTrashModal from './PackTrashModal.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
 

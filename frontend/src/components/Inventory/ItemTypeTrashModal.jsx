@@ -15,10 +15,10 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import CloseIcon from '@mui/icons-material/Close';
-import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
-import { useEmptyTrash } from '../hooks/itemType/useEmptyTrash.jsx';
-import { useForceDeleteItemType } from '../hooks/itemType/useForceDeleteItemType.jsx';
-import './../styles/components/trashModal.css';
+import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
+import { useEmptyTrash } from '../../hooks/itemType/useEmptyTrash.jsx';
+import { useForceDeleteItemType } from '../../hooks/itemType/useForceDeleteItemType.jsx';
+import '../../styles/components/trashModal.css';
 
 const ItemTypeTrashModal = ({ open, onClose, trashedTypes, onRestore, onRefresh }) => {
   const { empty, loading: emptyingTrash } = useEmptyTrash();

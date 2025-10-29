@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Grid, CircularProgress, Alert } from '@mui/material';
 import { getPublicItemStock } from '../services/itemStock.service';
-import ProductCard from '../components/ProductCard.jsx';
+import ProductCard from '../components/Shop/ProductCard.jsx';
 import '../styles/pages/shop.css';
 
 const Shop = () => {

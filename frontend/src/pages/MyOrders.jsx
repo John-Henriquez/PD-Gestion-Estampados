@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { getMyOrders } from '../services/order.service';
-import OrderItemDisplay from '../components/OrderItemDisplay.jsx';
+import OrderItemDisplay from '../components/Order/OrderItemDisplay.jsx';
 import './../styles/pages/myOrders.css';
 
 const MyOrders = () => {

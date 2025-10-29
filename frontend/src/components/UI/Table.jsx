@@ -1,4 +1,4 @@
-import useTable from '../hooks/table/useTable.jsx';
+import useTable from '../../hooks/table/useTable.jsx';
 
 export default function Table({
   data,

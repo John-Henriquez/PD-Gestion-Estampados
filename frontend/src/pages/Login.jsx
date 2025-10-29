@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth.service';
-import Form from '../components/Form.jsx';
+import Form from '../components/UI/Form.jsx';
 import useLogin from '../hooks/auth/useLogin.jsx';
 import './../styles/pages/login.css';
 import './../styles/components/form.css';

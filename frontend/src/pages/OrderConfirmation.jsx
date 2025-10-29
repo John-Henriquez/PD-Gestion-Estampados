@@ -51,12 +51,11 @@ const OrderConfirmation = () => {
             flexWrap: 'wrap',
           }}
         >
-          {/* Botón "Mis Pedidos" (solo si está logueado) */}
           {isAuthenticated && (
             <Button
               variant="contained"
               component={RouterLink}
-              to="/my-orders" // Enlace a la página de historial (Sprint 5)
+              to="/my-orders"
               sx={{
                 backgroundColor: 'var(--primary)',
                 '&:hover': { backgroundColor: 'var(--primary-dark)' },
@@ -69,7 +68,7 @@ const OrderConfirmation = () => {
           <Button
             variant="outlined"
             component={RouterLink}
-            to="/shop" // Enlace a la tienda
+            to="/shop"
             sx={{
               borderColor: 'var(--primary)',
               color: 'var(--primary)',

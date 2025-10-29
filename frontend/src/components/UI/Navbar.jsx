@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { logout } from '../services/auth.service';
-import './../styles/components/navbar.css';
+import { logout } from '../../services/auth.service';
+import '../../styles/components/navbar.css';
 import { useState, useEffect, useRef } from 'react';
 import { Typography } from '@mui/material';
 import {
@@ -18,7 +18,7 @@ import {
   IconClipboardList,
   IconReceipt,
 } from '@tabler/icons-react';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const Navbar = () => {
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { register } from '../services/auth.service';
-import Form from '../components/Form.jsx';
+import Form from '../components/UI/Form.jsx';
 import useRegister from '../hooks/auth/useRegister.jsx';
 import { showErrorAlert, showSuccessAlert } from '../helpers/sweetAlert';
 import './../styles/components/form.css';

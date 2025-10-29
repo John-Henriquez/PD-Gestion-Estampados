@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useCreateItemType } from '../hooks/itemType/useCreateItemType.jsx';
-import { useUpdateItemType } from '../hooks/itemType/useUpdateItemType.jsx';
+import { useCreateItemType } from '../../hooks/itemType/useCreateItemType.jsx';
+import { useUpdateItemType } from '../../hooks/itemType/useUpdateItemType.jsx';
 import {
   Shirt,
   Coffee,
@@ -33,9 +33,9 @@ import {
   ListSubheader,
 } from '@mui/material';
 import { Autocomplete } from '@mui/material';
-import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
-import ITEM_TYPE_SUGGESTIONS from '../data/itemTypeSuggestions';
-import '../styles/components/modal.css';
+import { showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
+import ITEM_TYPE_SUGGESTIONS from '../../data/itemTypeSuggestions';
+import '../../styles/components/modal.css';
 
 const PRINTING_OPTIONS = ['sublimación', 'DTF', 'vinilo'];
 const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL'];

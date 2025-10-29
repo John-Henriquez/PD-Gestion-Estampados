@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
-import './../styles/components/form.css';
+import '../../styles/components/form.css';
 import { Eye, EyeOff } from 'lucide-react';
 
 const Form = ({ title, fields, buttonText, onSubmit, footerContent, backgroundColor }) => {

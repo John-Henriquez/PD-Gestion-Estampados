@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Button, Typography, CircularProgress, Alert } from '@mui/material';
 import { UploadCloud as UploadIcon, CheckCircle, XCircle } from 'lucide-react';
-import { uploadStampImage } from '../services/upload.service';
-import { showErrorAlert } from '../helpers/sweetAlert';
+import { uploadStampImage } from '../../services/upload.service';
+import { showErrorAlert } from '../../helpers/sweetAlert';
 
 const uploaderStyles = {
   border: '2px dashed var(--gray-300)',

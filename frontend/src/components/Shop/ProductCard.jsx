@@ -1,9 +1,9 @@
 import { Card, CardContent, CardMedia, Typography, Button, Box, Chip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { iconMap } from '../data/iconCategories';
-import { COLOR_DICTIONARY } from '../data/colorDictionary';
+import { iconMap } from '../../data/iconCategories';
+import { COLOR_DICTIONARY } from '../../data/colorDictionary';
 
-import '../styles/components/productCard.css';
+import '../../styles/components/productCard.css';
 
 const getColorName = (hex) => {
   const color = COLOR_DICTIONARY.find((c) => c.hex?.toUpperCase() === hex?.toUpperCase());

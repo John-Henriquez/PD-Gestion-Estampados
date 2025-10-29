@@ -1,9 +1,9 @@
-import { useAuth } from '../context/AuthContext.jsx'; // Use useAuth instead of AuthContext
+import { useAuth } from '../context/AuthContext.jsx';
 import { Typography, Button, Box } from '@mui/material';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
-  const { isAuthenticated, user } = useAuth(); // Access context via useAuth
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <Box

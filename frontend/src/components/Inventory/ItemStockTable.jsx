@@ -1,13 +1,12 @@
-// src/components/Inventory/ItemStockTable.jsx
 import React from 'react';
 import { Box, Chip, Typography } from '@mui/material';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import { esES } from '@mui/x-data-grid/locales';
 import { Edit as EditIcon, DeleteOutline as DeleteIcon } from '@mui/icons-material';
-import { iconMap } from '../../data/iconCategories'; // Ajusta ruta
-import { COLOR_DICTIONARY } from '../../data/colorDictionary'; // Ajusta ruta
+import { iconMap } from '../../data/iconCategories';
+import { COLOR_DICTIONARY } from '../../data/colorDictionary';
 
-// import '../../styles/components/itemStockTable.css'; // Ajusta ruta
+//import '../../styles/components/itemStockTable.css'; // Ajusta ruta
 
 const getColorName = (hex) => {
   const color = COLOR_DICTIONARY.find((c) => c.hex?.toUpperCase() === hex?.toUpperCase());

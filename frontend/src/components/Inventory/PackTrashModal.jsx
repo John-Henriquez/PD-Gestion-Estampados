@@ -16,10 +16,10 @@ import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import CloseIcon from '@mui/icons-material/Close';
 
-import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
-import useEmptyDeletedPacks from '../hooks/pack/useEmptyDeletedPacks.jsx';
-import useForceDeletePack from '../hooks/pack/useForceDeletePack.jsx';
-import './../styles/components/trashModal.css';
+import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
+import useEmptyDeletedPacks from '../../hooks/pack/useEmptyDeletedPacks.jsx';
+import useForceDeletePack from '../../hooks/pack/useForceDeletePack.jsx';
+import '../../styles/components/trashModal.css';
 
 const PackTrashModal = ({ open, onClose, deletedPacks, onRestore, onRefresh }) => {
   const { emptyTrash, loading: emptyingTrash } = useEmptyDeletedPacks();

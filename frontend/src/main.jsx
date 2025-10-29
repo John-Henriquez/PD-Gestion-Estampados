@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider.jsx';
+import { CartProvider } from './context/CartProvider.jsx';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
 import Users from './pages/Users.jsx';
@@ -60,7 +61,9 @@ const router = createBrowserRouter([
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <AuthProvider>
-    <RouterProvider router={router} />
-  </AuthProvider>
+  <RouterProvider router={router}>
+    <AuthProvider>
+      <CartProvider> </CartProvider>
+    </AuthProvider>
+  </RouterProvider>
 );

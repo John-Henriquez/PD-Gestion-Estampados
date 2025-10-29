@@ -9,9 +9,9 @@ import ItemStockTable from '../components/Inventory/ItemStockTable.jsx';
 
 import { useItemTypes } from '../hooks/itemType/useItemType.jsx';
 
-import AddItemStockModal from '../components/AddItemStockModal.jsx';
-import ItemStockTrash from '../components/ItemStockTrashModal.jsx';
-import InventoryMovementHistory from '../components/InventoryMovementHistory.jsx';
+import AddItemStockModal from '../components/Inventory/AddItemStockModal.jsx';
+import ItemStockTrash from '../components/Inventory/ItemStockTrashModal.jsx';
+import InventoryMovementHistory from '../components/Inventory/InventoryMovementHistory.jsx';
 
 import useItemStock from '../hooks/itemStock/useItemStock.jsx';
 import useDeleteItemStock from '../hooks/itemStock/useDeleteItemStock.jsx';

@@ -12,9 +12,9 @@ import {
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 
-import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
-import useCreatePack from '../hooks/pack/useCreatePack.jsx';
-import useEditPack from '../hooks/pack/useEditPack.jsx';
+import { showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
+import useCreatePack from '../../hooks/pack/useCreatePack.jsx';
+import useEditPack from '../../hooks/pack/useEditPack.jsx';
 
 const DEFAULT_FORM = {
   name: '',

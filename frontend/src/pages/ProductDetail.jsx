@@ -18,10 +18,10 @@ import {
 } from '@mui/material';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getItemStockById } from '../services/itemStock.service';
-import ImageUploader from '../components/ImageUploader.jsx';
+import ImageUploader from '../components/UI/ImageUploader.jsx';
 import { iconMap } from '../data/iconCategories';
 import { COLOR_DICTIONARY } from '../data/colorDictionary';
-import { useCart } from '../context/CartContext.jsx';
+import { useCart } from '../hooks/cart/useCart.jsx';
 import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
 
 import '../styles/pages/productDetail.css';

@@ -11,7 +11,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { useCart } from '../context/CartContext.jsx';
+import { useCart } from '../hooks/cart/useCart.jsx';
 import { createOrder } from '../services/order.service';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';

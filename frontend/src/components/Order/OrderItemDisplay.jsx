@@ -12,10 +12,10 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { format as formatTempo } from '@formkit/tempo';
-import { updateOrderStatus } from '../services/order.service';
-import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
+import { updateOrderStatus } from '../../services/order.service';
+import { showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
 
-import './../styles/components/orderItemDisplay.css';
+import '../../styles/components/orderItemDisplay.css';
 
 const OrderItemDisplay = ({ order, isAdminView = false, onStatusChange }) => {
   const statusClassName = `status-${order.status || 'default'}`;

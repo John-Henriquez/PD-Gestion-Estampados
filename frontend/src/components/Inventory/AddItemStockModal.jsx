@@ -19,14 +19,14 @@ import {
 } from '@mui/material';
 import { Autocomplete } from '@mui/material';
 import { UploadCloud as UploadIcon, X as XIcon } from 'lucide-react';
-import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
-import { useCreateItemStock } from '../hooks/itemStock/useCreateItemStock.jsx';
-import useEditItemStock from '../hooks/itemStock/useEditItemStock.jsx';
-import { uploadMultipleProductImages } from '../services/upload.service';
-import { COLOR_DICTIONARY } from '../data/colorDictionary';
+import { showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
+import { useCreateItemStock } from '../../hooks/itemStock/useCreateItemStock.jsx';
+import useEditItemStock from '../../hooks/itemStock/useEditItemStock.jsx';
+import { uploadMultipleProductImages } from '../../services/upload.service';
+import { COLOR_DICTIONARY } from '../../data/colorDictionary';
 
-import '../styles/components/modal.css';
-import '../styles/components/addItemStockModal.css';
+import '../../styles/components/modal.css';
+import '../../styles/components/addItemStockModal.css';
 
 const DEFAULT_FORM = {
   itemTypeId: '',

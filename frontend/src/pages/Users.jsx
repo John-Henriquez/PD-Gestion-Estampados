@@ -1,7 +1,7 @@
-import Table from '../components/Table.jsx';
+import Table from '../components/UI/Table.jsx';
 import useUsers from '../hooks/users/useGetUsers.jsx';
-import Search from '../components/Search.jsx';
-import Popup from '../components/Popup.jsx';
+import Search from '../components/UI/Search.jsx';
+import Popup from '../components/UI/Popup.jsx';
 import { Trash2, Pencil } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import './../styles/pages/users.css';

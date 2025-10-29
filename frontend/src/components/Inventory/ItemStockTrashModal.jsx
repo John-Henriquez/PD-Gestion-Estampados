@@ -16,12 +16,12 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import CloseIcon from '@mui/icons-material/Close';
-import { showSuccessAlert, showErrorAlert, deleteDataAlert } from '../helpers/sweetAlert';
-import { useEmptyDeletedItemStock } from '../hooks/itemStock/useEmptyDeletedItemStock.jsx';
-import { useRestoreItemStock } from '../hooks/itemStock/useRestoreItemStock.jsx';
-import { useForceDeleteItemStock } from '../hooks/itemStock/useForceDeleteItemStock.jsx';
-import { COLOR_DICTIONARY } from '../data/colorDictionary';
-import './../styles/components/trashModal.css';
+import { showSuccessAlert, showErrorAlert, deleteDataAlert } from '../../helpers/sweetAlert';
+import { useEmptyDeletedItemStock } from '../../hooks/itemStock/useEmptyDeletedItemStock.jsx';
+import { useRestoreItemStock } from '../../hooks/itemStock/useRestoreItemStock.jsx';
+import { useForceDeleteItemStock } from '../../hooks/itemStock/useForceDeleteItemStock.jsx';
+import { COLOR_DICTIONARY } from '../../data/colorDictionary';
+import '../../styles/components/trashModal.css';
 
 const ItemStockTrashModal = ({ open, onClose, trashedItems, onRefresh }) => {
   const { emptyTrash, loading: emptyingTrash } = useEmptyDeletedItemStock();

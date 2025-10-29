@@ -10,9 +10,9 @@ import {
   CircularProgress,
   Paper,
 } from '@mui/material';
-import useInventoryMovements from '../hooks/inventoryMovement/useInventoryMovements.jsx';
-import '../styles/components/modal.css';
-import '../styles/components/inventoryMovementHistory.css';
+import useInventoryMovements from '../../hooks/inventoryMovement/useInventoryMovements.jsx';
+import '../../styles/components/modal.css';
+import '../../styles/components/inventoryMovementHistory.css';
 
 const movementTypeLabels = {
   entrada: 'Entrada',

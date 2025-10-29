@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
-import Navbar from '../components/Navbar.jsx';
-import { AuthProvider } from '../context/AuthContext.jsx';
-import { CartProvider } from '../context/CartContext.jsx';
+import Navbar from '../components/UI/Navbar.jsx';
+import { AuthProvider } from '../context/AuthProvider.jsx';
+import { CartProvider } from '../context/CartProvider.jsx';
 
 function Root() {
   return (

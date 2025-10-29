@@ -6,8 +6,8 @@ import {
   DeleteSweep as DeleteSweepIcon,
 } from '@mui/icons-material';
 
-import AddItemTypeModal from '../AddItemTypeModal.jsx';
-import ItemTypeTrashModal from '../ItemTypeTrashModal.jsx';
+import AddItemTypeModal from './AddItemTypeModal.jsx';
+import ItemTypeTrashModal from './ItemTypeTrashModal.jsx';
 import { iconMap } from '../../data/iconCategories';
 import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
 

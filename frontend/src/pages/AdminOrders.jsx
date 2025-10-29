@@ -11,7 +11,7 @@ import {
   InputLabel,
 } from '@mui/material';
 import { getAllOrders } from '../services/order.service';
-import OrderItemDisplay from '../components/OrderItemDisplay.jsx';
+import OrderItemDisplay from '../components/Order/OrderItemDisplay.jsx';
 
 import './../styles/pages/myOrders.css';
 
