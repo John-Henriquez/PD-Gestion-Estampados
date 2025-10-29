@@ -43,6 +43,12 @@ const ItemTypeSchema = new EntitySchema({
       length: 100,
       nullable: true,
     },
+    stampOptions: {
+        type: "json", 
+        nullable: true,
+        comment: "Define las opciones de estampado posibles para este tipo, ej: " + 
+          "{ locations: ['front', 'back'], types: ['dtf', 'vinyl'] }"
+    },
     isActive: {
       type: "boolean",
       default: true,

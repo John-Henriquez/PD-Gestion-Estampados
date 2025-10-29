@@ -14,15 +14,32 @@ export const itemTypeService = {
         where: { name: itemTypeData.name },
       });
 
-      if (existingType) {
-        return [
-          null,
-          {
-            type: "DUPLICATE_NAME",
-            message: "Ya existe un tipo de ítem con este nombre",
-            field: "name",
-          },
-        ];
+      let parsedStampOptions = null;
+      if (itemTypeData.stampOptions) {
+        try {
+          parsedStampOptions = typeof itemTypeData.stampOptions === "string" ?
+           JSON.parse(itemTypeData.stampOptions)
+          : itemTypeData.stampOptions;
+
+          if (typeof parsedStampOptions !== "object" || parsedStampOptions === null) {
+              throw new Error("stampOptions debe ser un objeto JSON.");
+          }
+          if (parsedStampOptions.locations && !Array.isArray(parsedStampOptions.locations)) {
+              throw new Error("stampOptions.locations debe ser un array de strings (ej: ['front', 'back']).");
+          }
+           if (parsedStampOptions.types && !Array.isArray(parsedStampOptions.types)) {
+              throw new Error("stampOptions.types debe ser un array de strings (ej: ['dtf', 'vinyl']).");
+          }
+        } catch (e) {
+           return [
+             null,
+             {
+               type: "VALIDATION_ERROR",
+               message: e.message || "Error procesando stamp options.",
+               field: "stampOptions",
+             },
+           ];
+        }
       }
 
       const newItemType = repo.create({
@@ -31,10 +48,10 @@ export const itemTypeService = {
         category: itemTypeData.category,
         hasSizes: itemTypeData.hasSizes,
         printingMethods: itemTypeData.printingMethods || [],
-        sizesAvailable: itemTypeData.hasSizes
-          ? itemTypeData.sizesAvailable
-          : [],
+        sizesAvailable: itemTypeData.hasSizes ? (Array.isArray(itemTypeData.sizesAvailable) ? 
+          itemTypeData.sizesAvailable : []) : [],
         iconName: itemTypeData.iconName || null,
+        stampOptions: parsedStampOptions,
         createdBy: { id: userId },
       });
 
@@ -114,10 +131,7 @@ export const itemTypeService = {
     try {
       const repo = AppDataSource.getRepository(ItemType);
       const itemType = await repo.findOne({
-        where: {
-          id: parseInt(id),
-          isActive: true,
-        },
+        where: { id: parseInt(id) },
       });
 
       if (!itemType) {
@@ -131,38 +145,55 @@ export const itemTypeService = {
         ];
       }
 
-      const existingType = await repo.findOne({
-        where: {
-          name: itemTypeData.name,
-          id: Not(parseInt(id)),
-        },
-      });
+      let parsedStampOptions = itemType.stampOptions; 
+      if (itemTypeData.stampOptions !== undefined) { 
+        if (itemTypeData.stampOptions === null) {
+            parsedStampOptions = null;
+        } else {
+            try {
+              parsedStampOptions = typeof itemTypeData.stampOptions === "string" ?
+                JSON.parse(itemTypeData.stampOptions)
+                : itemTypeData.stampOptions;
 
-      if (existingType) {
-        return [
-          null,
-          {
-            type: "DUPLICATE_NAME",
-            message: "Ya existe un tipo de ítem con este nombre",
-            field: "name",
-          },
-        ];
+              if (typeof parsedStampOptions !== "object" || parsedStampOptions === null) {
+                throw new Error("stampOptions debe ser un objeto JSON.");
+              }
+              if (parsedStampOptions.locations && !Array.isArray(parsedStampOptions.locations)) {
+                 throw new Error("stampOptions.locations debe ser un array de strings.");
+              }
+              if (parsedStampOptions.types && !Array.isArray(parsedStampOptions.types)) {
+                 throw new Error("stampOptions.types debe ser un array de strings.");
+              }
+            } catch (e) {
+                return [
+                  null,
+                  {
+                    type: "VALIDATION_ERROR",
+                    message: e.message || "Error procesando stampOptions.",
+                    field: "stampOptions",
+                  },
+                ];
+            }
+        }
       }
+      let sizes = itemType.sizesAvailable;
+       const newHasSizes = itemTypeData.hasSizes !== undefined ? 
+       itemTypeData.hasSizes : itemType.hasSizes; 
+
+       if (newHasSizes === true && itemTypeData.sizesAvailable !== undefined) {
+           sizes = Array.isArray(itemTypeData.sizesAvailable) ? itemTypeData.sizesAvailable : [];
+       } else if (newHasSizes === false) {
+           sizes = [];
+       }
 
       repo.merge(itemType, {
-        name: itemTypeData.name || itemType.name,
-        description: itemTypeData.description || itemType.description,
-        category: itemTypeData.category || itemType.category,
-        hasSizes:
-          itemTypeData.hasSizes !== undefined
-            ? itemTypeData.hasSizes
-            : itemType.hasSizes,
-        printingMethods:
-          itemTypeData.printingMethods || itemType.printingMethods,
-        sizesAvailable: itemTypeData.hasSizes
-          ? itemTypeData.sizesAvailable || itemType.sizesAvailable
-          : [],
-        iconName: itemTypeData.iconName || itemType.iconName,
+        name: itemTypeData.name,
+        description: itemTypeData.description,
+        hasSizes: newHasSizes,
+        printingMethods: itemTypeData.printingMethods,
+        sizesAvailable: sizes,
+        iconName: itemTypeData.iconName,
+        stampOptions: parsedStampOptions,
         updatedBy: { id: userId },
       });
 

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, CircularProgress, Alert, Chip, TextField, IconButton, Divider, Grid } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, Alert, Chip, TextField, IconButton, Divider, Grid, FormControl, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getItemStockById } from '../services/itemStock.service';
 import ImageUploader from '../components/ImageUploader.jsx';
@@ -23,6 +23,74 @@ const getFullImageUrl = (url) => {
     return `${backendUrl.replace('/api', '')}${url}`;
 };
 
+const StampOptionsSelector = ({ itemTypeOptions, stockPricing, selectedOptions, onChange }) => {
+    if (!itemTypeOptions || (!itemTypeOptions.locations && !itemTypeOptions.types)) {
+        return null; 
+    }
+
+    const handleLocationChange = (event) => {
+        onChange({ ...selectedOptions, location: event.target.value || null });
+    };
+
+    const handleTypeChange = (event) => {
+         onChange({ ...selectedOptions, type: event.target.value || null });
+    };
+
+    const getLocationCost = (location) => stockPricing?.locations?.[location] || 0;
+    const getTypeCost = (type) => stockPricing?.types?.[type] || 0;
+
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1, mb: 2, p: 2, border: '1px solid var(--gray-300)', borderRadius: 'var(--border-radius-sm)', backgroundColor: 'var(--gray-100)' }}>
+            {itemTypeOptions.locations && itemTypeOptions.locations.length > 0 && (
+                <FormControl component="fieldset">
+                    <Typography variant="subtitle2" gutterBottom component="legend">Ubicación del Estampado:</Typography>
+                    <RadioGroup
+                        row
+                        aria-label="stamp-location"
+                        name="stamp-location"
+                        value={selectedOptions.location || ''}
+                        onChange={handleLocationChange}
+                    >
+                        {itemTypeOptions.locations.map(loc => (
+                            <FormControlLabel
+                                key={loc}
+                                value={loc}
+                                control={<Radio />}
+                                label={`${loc.charAt(0).toUpperCase() + loc.slice(1)} (+${(getLocationCost(loc) || 0).toLocaleString()})`}
+                            />
+                        ))}
+                         {/* Opción para "Ninguno" o deseleccionar */}
+                         <FormControlLabel value="" control={<Radio />} label="Ninguno" />
+                    </RadioGroup>
+                </FormControl>
+            )}
+
+            {itemTypeOptions.types && itemTypeOptions.types.length > 0 && (
+                 <FormControl component="fieldset">
+                    <Typography variant="subtitle2" gutterBottom component="legend">Tipo de Estampado:</Typography>
+                     <RadioGroup
+                         row
+                         aria-label="stamp-type"
+                         name="stamp-type"
+                         value={selectedOptions.type || ''}
+                         onChange={handleTypeChange}
+                     >
+                         {itemTypeOptions.types.map(type => (
+                             <FormControlLabel
+                                 key={type}
+                                 value={type}
+                                 control={<Radio />}
+                                 label={`${type.toUpperCase()} (+${(getTypeCost(type) || 0).toLocaleString()})`}
+                             />
+                         ))}
+                          <FormControlLabel value="" control={<Radio />} label="Ninguno" />
+                     </RadioGroup>
+                 </FormControl>
+            )}
+        </Box>
+    );
+};
+
 const ProductDetail = () => {
     const { itemStockId } = useParams(); 
     const navigate = useNavigate();
@@ -37,6 +105,8 @@ const ProductDetail = () => {
     const [stampImageUrl, setStampImageUrl] = useState(null); 
     const [stampInstructions, setStampInstructions] = useState('');
 
+    const [selectedStampOptions, setSelectedStampOptions] = useState({ location: null, type: null });
+
     useEffect(() => {
         const fetchProduct = async () => {
             try {
@@ -47,6 +117,7 @@ const ProductDetail = () => {
                 setCurrentImageIndex(0);
                 setStampImageUrl(null);
                 setStampInstructions('');
+                setSelectedStampOptions({ location: null, type: null });
             } catch (err) {
                 console.error("Error al cargar detalle del producto:", err);
                 setError(err.message || 'No se pudo cargar el producto.');
@@ -59,6 +130,28 @@ const ProductDetail = () => {
             fetchProduct();
         }
     }, [itemStockId]); 
+
+    const calculateDynamicPrice = useCallback(() => {
+        if (!product) return 0;
+        let currentPrice = product.price || 0; // Precio base
+
+        if (product.stampOptionsPricing && selectedStampOptions) {
+            // Sumar costo de ubicación
+            if (selectedStampOptions.location && product.stampOptionsPricing.locations) {
+                currentPrice += product.stampOptionsPricing.locations[selectedStampOptions.location] || 0;
+            }
+            // Sumar costo de tipo
+             if (selectedStampOptions.type && product.stampOptionsPricing.types) {
+                currentPrice += product.stampOptionsPricing.types[selectedStampOptions.type] || 0;
+            }
+        }
+        return currentPrice;
+    }, [product, selectedStampOptions]);
+
+    // --- useMemo para el precio total del item (precio dinámico * cantidad) ---
+    const totalItemPrice = useMemo(() => {
+        return calculateDynamicPrice() * quantity;
+    }, [calculateDynamicPrice, quantity]);
 
     const handleQuantityChange = (amount) => {
         setQuantity(prev => {
@@ -78,11 +171,19 @@ const ProductDetail = () => {
             return;
         }
 
+        if (isStampable && product.itemType?.stampOptions && (!selectedStampOptions.location && !selectedStampOptions.type)) {
+            console.log("No se seleccionaron opciones de estampado, se usará precio base.");
+            showErrorAlert("Faltan Opciones", "Por favor, selecciona las opciones de estampado."); return;
+         }
+
+         const calculatedPrice = calculateDynamicPrice();
+
         const itemToAdd = {
             itemStockId: product.id,
             quantity: quantity,
             name: product.itemType?.name || 'Producto',
-            price: product.price,
+            price: calculatedPrice,
+            selectedStampOptions: isStampable ? selectedStampOptions : null,
             ...(isStampable && {
                 stampImageUrl: stampImageUrl,
                 stampInstructions: stampInstructions,
@@ -93,9 +194,7 @@ const ProductDetail = () => {
         };
 
         addToCart(itemToAdd); 
-
         showSuccessAlert('¡Añadido!', `${itemToAdd.name} fue añadido al carrito.`);
-
         navigate('/checkout');
     };
 
@@ -123,7 +222,8 @@ const ProductDetail = () => {
         return <Typography className="shop-empty-message">Producto no encontrado.</Typography>;
     }
 
-    const { price, size, hexColor, itemType, productImageUrls = [] } = product;
+    const { size, hexColor, itemType, productImageUrls = [] } = product;
+    const basePrice = product.price;
     const name = itemType?.name || 'Producto Desconocido';
     const description = itemType?.description || 'Sin descripción.'; 
     const iconName = itemType?.iconName;
@@ -132,6 +232,7 @@ const ProductDetail = () => {
     const hasMultipleImages = productImageUrls.length > 1;
 
     const isStampable = itemType?.category === 'clothing' || itemType?.category === 'object';
+    const hasStampOptionsConfigured = isStampable && itemType?.stampOptions && (itemType.stampOptions.locations?.length > 0 || itemType.stampOptions.types?.length > 0);
 
     return (
         <div className="product-detail-container">
@@ -159,7 +260,15 @@ const ProductDetail = () => {
                 <section className="product-info-section">
                     <Typography component="h1" className="product-info__name">{name}</Typography>
                     <Typography className="product-info__description">{description}</Typography>
-                    <Typography className="product-info__price">${price?.toLocaleString() || 'N/A'}</Typography>
+
+                    <Typography className="product-info__price">
+                         ${(calculateDynamicPrice() || 0).toLocaleString()} {/* Mostrar precio unitario calculado */}
+                         {basePrice !== calculateDynamicPrice() && (
+                             <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary', textDecoration: 'line-through' }}>
+                                 Base: ${basePrice?.toLocaleString()}
+                             </Typography>
+                         )}
+                    </Typography>
 
                     <div className="product-info__details">
                         <div className="product-info__detail-item">
@@ -183,6 +292,14 @@ const ProductDetail = () => {
                         <Box className="product-customization-section" sx={{ my: 'var(--spacing-lg)' }}>
                             <Divider sx={{ mb: 'var(--spacing-md)' }} />
                             <Typography variant="h6" gutterBottom sx={{ color: 'var(--secondary-dark)'}}>Personaliza tu Estampado</Typography>
+                            {hasStampOptionsConfigured && (
+                                 <StampOptionsSelector
+                                     itemTypeOptions={itemType.stampOptions}
+                                     stockPricing={product.stampOptionsPricing}
+                                     selectedOptions={selectedStampOptions}
+                                     onChange={setSelectedStampOptions}
+                                 />
+                             )}
                             <Grid container spacing={2}>
                                 {/* Uploader Imagen Estampado */}
                                 <Grid item xs={12} sm={6}>
@@ -195,7 +312,7 @@ const ProductDetail = () => {
                                     <TextField
                                         label="Detalles del estampado"
                                         multiline
-                                        rows={4}
+                                        rows={hasStampOptionsConfigured ? 2 : 4}
                                         fullWidth
                                         value={stampInstructions}
                                         onChange={(e) => setStampInstructions(e.target.value)}
@@ -235,6 +352,11 @@ const ProductDetail = () => {
                                +
                              </Button>
                         </Box>
+
+                        <Typography variant="h6" sx={{ textAlign: 'right', my: 1 }}>
+                            Total Item: ${(totalItemPrice || 0).toLocaleString()}
+                         </Typography>
+
                         <Button
                             variant="contained"
                             size="large"
@@ -242,7 +364,7 @@ const ProductDetail = () => {
                             disabled={product.quantity === 0}
                             className="add-to-cart-button animate--pulse"
                         >
-                            Personalizar y Comprar
+                            {isStampable ? 'Añadir Personalización y Comprar' : 'Añadir al Carrito y Comprar'}
                         </Button>
                     </div>
                 </section>

@@ -1,4 +1,3 @@
-// backend/src/services/order.service.js
 import { AppDataSource } from "../config/configDb.js";
 import Order from "../entity/order.entity.js";
 import OrderItem from "../entity/orderItem.entity.js";
@@ -9,7 +8,6 @@ import {
   generateInventoryReason,
 } from "../helpers/inventory.helpers.js";
 import Pack from "../entity/pack.entity.js";
-import User from "../entity/user.entity.js";
 
 export const orderService = {
   async createOrder(orderData, userId) {
@@ -30,13 +28,15 @@ export const orderService = {
           return [null, "El pedido debe contener al menos un artículo."];
         }
 
-        let subtotal = 0;
+        let calculatedSubtotal = 0;
         const itemsToUpdateStock = new Map();
         const orderItemsData = [];
 
         for (const itemInput of items) {
-          let priceAtTime = 0;
+          let calculatedPriceForItem = 0; 
+          let basePrice = 0; 
           let itemNameSnapshot = "Artículo Desconocido";
+          let selectedOptionsSnapshot = itemInput.selectedStampOptions || null;
 
           if (itemInput.itemStockId) {
             const stockItem = await itemStockRepo.findOne({
@@ -54,14 +54,59 @@ export const orderService = {
                 }`,
               );
             }
-            priceAtTime = stockItem.price;
+
+            basePrice = stockItem.price; 
+            calculatedPriceForItem = basePrice; 
             itemNameSnapshot =
-              stockItem.itemType?.name || `Stock ID ${stockItem.id}`; // Usa el nombre del tipo
-            subtotal += priceAtTime * itemInput.quantity;
-            itemsToUpdateStock.set(
-              stockItem.id,
-              (itemsToUpdateStock.get(stockItem.id) || 0) + itemInput.quantity,
-            );
+              stockItem.itemType?.name || `Stock ID ${stockItem.id}`;
+
+
+            if (
+                stockItem.stampOptionsPricing &&
+                selectedOptionsSnapshot &&
+                typeof selectedOptionsSnapshot === "object"
+              ) {
+
+                console.log("Calculando costo de estampado para ${itemNameSnapshot}", selectedOptionsSnapshot);
+                console.log("Precios disponibles:", stockItem.stampOptionsPricing);
+
+                // Costo por ubicación (ej: 'front', 'back')
+                if (selectedOptionsSnapshot.location && stockItem.stampOptionsPricing.locations) {
+                    const locationCost = stockItem.stampOptionsPricing.locations[selectedOptionsSnapshot.location];
+                    if (typeof locationCost === "number" && locationCost > 0) {
+                        calculatedPriceForItem += locationCost;
+                        console.log(`+ Costo por ubicación (${selectedOptionsSnapshot.location}): ${locationCost}`);
+                    } else {
+                        console.warn(
+                          `Opción de ubicación '${selectedOptionsSnapshot.location}' ` +
+                          "seleccionada pero sin costo definido o inválido."
+                        );
+                        throw new Error(
+                          `Costo no definido para la ubicación de estampado '${selectedOptionsSnapshot.location}'`
+                        );
+                    }
+                }
+
+                 if (selectedOptionsSnapshot.type && stockItem.stampOptionsPricing.types) {
+                    const typeCost = stockItem.stampOptionsPricing.types[selectedOptionsSnapshot.type];
+                    if (typeof typeCost === "number" && typeCost > 0) {
+                        calculatedPriceForItem += typeCost;
+                         console.log(`+ Costo por tipo (${selectedOptionsSnapshot.type}): ${typeCost}`);
+                    } else {
+                         console.warn(
+                          `Opción de tipo '${selectedOptionsSnapshot.type}' ` +
+                          "seleccionada pero sin costo definido o inválido."
+                        );
+
+                         // Opcional: lanzar error
+                         throw new Error(
+                          `Costo no definido para el tipo de estampado '${selectedOptionsSnapshot.type}'`
+                        );
+
+                    }
+                }
+                 console.log(`Precio recalculado para ${itemNameSnapshot}: ${calculatedPriceForItem}`);
+            }
 
             orderItemsData.push({
               itemStock: { id: stockItem.id },
@@ -285,36 +330,145 @@ export const orderService = {
     }
   },
 
-  async updateOrderStatus(orderId, newStatus, adminUserId) {
-    try {
-      const orderRepo = AppDataSource.getRepository(Order);
-      const order = await orderRepo.findOneBy({ id: orderId });
+  async updateOrderStatus(orderId, updateData, adminUserId) {
+    return await AppDataSource.transaction(
+        async (transactionalEntityManager) => {
+            const orderRepo = transactionalEntityManager.getRepository(Order);
+            const movementRepo = transactionalEntityManager.getRepository(InventoryMovement); 
 
-      if (!order) {
-        return [null, "Pedido no encontrado."];
-      }
+            const order = await orderRepo.findOneBy({ id: orderId });
 
-      const allowedStatus = [
-        "pendiente",
-        "pagado",
-        "procesando",
-        "enviado",
-        "entregado",
-        "cancelado",
-        "fallido",
-      ];
-      if (!allowedStatus.includes(newStatus)) {
-        return [null, `Estado inválido: ${newStatus}`];
-      }
+            if (!order) {
+                throw new Error("Pedido no encontrado.");
+            }
 
-      order.status = newStatus;
+            const changes = {}; 
+            let requiresAuditLog = false; 
 
-      const updatedOrder = await orderRepo.save(order);
+            if (updateData.status && updateData.status !== order.status) {
+                const allowedGeneralStatus = [
+                    "pendiente", "confirmado", "procesando", "listo_para_retiro", 
+                    "enviado", "entregado", "cancelado", "fallido"
+                ];
+                if (!allowedGeneralStatus.includes(updateData.status)) {
+                    throw new Error(`Estado general inválido: ${updateData.status}`);
+                }
+                changes.status = { oldValue: order.status, newValue: updateData.status };
+                order.status = updateData.status;
+                requiresAuditLog = true; 
+            }
 
-      return [updatedOrder, null];
-    } catch (error) {
-      console.error("Error en updateOrderStatus service:", error);
-      return [null, "Error al actualizar el estado del pedido."];
-    }
+            if (updateData.paymentStatus && updateData.paymentStatus !== order.paymentStatus) {
+                 const allowedPaymentStatus = [
+                     "pendiente_anticipo", "anticipo_pagado", "pagado_completo", "reembolsado", "pago_fallido"
+                 ];
+                 if (!allowedPaymentStatus.includes(updateData.paymentStatus)) {
+                     throw new Error(`Estado de pago inválido: ${updateData.paymentStatus}`);
+                 }
+                 changes.paymentStatus = { oldValue: order.paymentStatus, newValue: updateData.paymentStatus };
+                 order.paymentStatus = updateData.paymentStatus;
+                 requiresAuditLog = true; 
+
+                 if (updateData.paymentStatus === "anticipo_pagado") {
+                     if (updateData.amountPaid === undefined && order.amountPaid < order.advancePaymentRequired) {
+                         changes.amountPaid = { oldValue: order.amountPaid, newValue: order.advancePaymentRequired };
+                         order.amountPaid = order.advancePaymentRequired;
+                     }
+                     if (!changes.status && order.status === "pendiente") {
+                        changes.status = { oldValue: order.status, newValue: "procesando" }; 
+                        order.status = "procesando"; 
+                     }
+                 } else if (updateData.paymentStatus === "pagado_completo") {
+                     if (updateData.amountPaid === undefined && order.amountPaid < order.total) {
+                         changes.amountPaid = { oldValue: order.amountPaid, newValue: order.total };
+                         order.amountPaid = order.total;
+                     }
+                 }
+            }
+
+            if (updateData.amountPaid !== undefined && updateData.amountPaid !== order.amountPaid) {
+                const newAmountPaid = Number(updateData.amountPaid);
+                if (isNaN(newAmountPaid) || newAmountPaid < 0 || newAmountPaid > order.total) {
+                    throw new Error(
+                    `Monto pagado inválido: ${updateData.amountPaid}. ` +
+                    `Debe ser un número entre 0 y ${order.total}.`
+                  );
+                }
+                 if(newAmountPaid !== order.amountPaid){
+                    changes.amountPaid = { oldValue: order.amountPaid, newValue: newAmountPaid };
+                    order.amountPaid = newAmountPaid;
+                    requiresAuditLog = true; 
+                 }
+
+                if (!changes.paymentStatus) { 
+                    if (newAmountPaid >= order.total && order.paymentStatus !== "pagado_completo") {
+                      changes.paymentStatus = { oldValue: order.paymentStatus, newValue: "pagado_completo" };
+                      order.paymentStatus = "pagado_completo";
+                    } else if (
+                      newAmountPaid >= order.advancePaymentRequired &&
+                      order.paymentStatus === "pendiente_anticipo"
+                    ) {
+                         changes.paymentStatus = { oldValue: order.paymentStatus, newValue: "anticipo_pagado" };
+                         order.paymentStatus = "anticipo_pagado";
+                         if (!changes.status && order.status === "pendiente") {
+                            changes.status = { oldValue: order.status, newValue: "procesando" }; 
+                            order.status = "procesando"; 
+                         }
+                    } else if (
+                      newAmountPaid < order.advancePaymentRequired && 
+                      order.paymentStatus !== "pendiente_anticipo"
+                    ) {
+                        changes.paymentStatus = { oldValue: order.paymentStatus, newValue: "pendiente_anticipo" };
+                        order.paymentStatus = "pendiente_anticipo";
+                    }
+                }
+            }
+
+             if (updateData.paymentMethod && updateData.paymentMethod !== order.paymentMethod) {
+                 changes.paymentMethod = { oldValue: order.paymentMethod, newValue: updateData.paymentMethod };
+                 order.paymentMethod = updateData.paymentMethod;
+                 order.paymentDate = new Date(); 
+                 changes.paymentDate = { oldValue: order.paymentDate, newValue: order.paymentDate };
+                 requiresAuditLog = true; 
+             } else if (changes.amountPaid || changes.paymentStatus) {
+
+                 const newPaymentDate = new Date();
+                 if (!order.paymentDate || order.paymentDate.getTime() !== newPaymentDate.getTime()) {
+                    changes.paymentDate = { oldValue: order.paymentDate, newValue: newPaymentDate };
+                    order.paymentDate = newPaymentDate;
+
+                 }
+             }
+
+            if (Object.keys(changes).length === 0) {
+                 console.log(`No se realizaron cambios en el pedido ID ${orderId}`);
+                 return [order, null];
+            }
+
+            order.updatedAt = new Date();
+
+            const updatedOrder = await orderRepo.save(order);
+
+            if (requiresAuditLog) {
+                const { operation, reason } = generateInventoryReason("update");
+                await movementRepo.save({
+                    type: "modificacion", 
+                    operation: "update_order", 
+                    reason: `Actualización de estado/pago del pedido #${orderId}`,
+                    quantity: 0, 
+                    order: updatedOrder,
+                    createdBy: { id: adminUserId },
+                    changes: changes, 
+                    snapshotItemName: `Pedido #${orderId}`,
+                });
+            }
+
+            return [updatedOrder, null];
+        }
+    ).catch((error) => {
+        console.error(`Error en la transacción de updateOrderStatus para pedido ${orderId}:`, error);
+        return [null, error.message || "Error interno al actualizar el estado/pago del pedido."];
+    });
   },
+
 };

@@ -21,6 +21,7 @@ export const itemStockService = {
           size,
           quantity,
           price,
+          stampOptionsPricing,
           productImageUrls,
           minStock,
         } = itemData;
@@ -37,6 +38,9 @@ export const itemStockService = {
         if (quantity < 0 || price < 0) {
           return [null, "La cantidad y el precio deben ser no negativos"];
         }
+        if (stampOptionsPricing && typeof stampOptionsPricing !== "object") {
+            return [null, "stampOptionsPricing debe ser un objeto JSON válido"];
+        }
 
         const itemType = await itemTypeRepo.findOne({
           where: { id: itemTypeId, isActive: true },
@@ -44,6 +48,15 @@ export const itemStockService = {
 
         if (!itemType) {
           return [null, "Tipo de artículo no encontrado o inactivo"];
+        }
+        if (itemType.category !== "clothing" && stampOptionsPricing) {
+            console.warn(
+              "Se intentó asignar stampOptionsPricing a un ItemStock de categoría '" +
+              itemType.category +
+              "', se ignorará."
+            );
+            return [null, `No se permite stampOptionsPricing para la categoría '${itemType.category}'`];
+            itemData.stampOptionsPricing = null; 
         }
 
         if (itemType.hasSizes && !size) {
@@ -168,22 +181,23 @@ export const itemStockService = {
   },
 
   async updateItemStock(id, updateData, userId) {
-    try {
-      const repo = AppDataSource.getRepository(ItemStock);
-      const movementRepo = AppDataSource.getRepository(InventoryMovement);
+    return await AppDataSource.transaction(
+      async (transactionalEntityManager) => {
+        const repo = AppDataSource.getRepository(ItemStock);
+        const movementRepo = AppDataSource.getRepository(InventoryMovement);
 
-      const item = await repo.findOne({
-        where: { id },
-        relations: ["itemType"],
-      });
+        const item = await repo.findOne({
+          where: { id },
+          relations: ["itemType"],
+        });
 
-      if (!item) {
-        return [null, "Item no encontrado"];
-      }
+        if (!item) {
+          return [null, "Item no encontrado"];
+        }
 
-      const { updatedById } = updateData;
+        const { updatedById } = updateData;
 
-      if (updateData.quantity !== undefined && !updatedById) {
+        if (updateData.quantity !== undefined && !userId) {
         return [
           null,
           "El ID del usuario que actualiza es obligatorio para cambios de cantidad",
@@ -196,6 +210,13 @@ export const itemStockService = {
         return [null, "El precio no puede ser negativo"];
       }
       if (
+          updateData.stampOptionsPricing !== undefined &&
+          typeof updateData.stampOptionsPricing !== "object" &&
+          updateData.stampOptionsPricing !== null 
+        ) {
+          throw new Error("stampOptionsPricing debe ser un objeto JSON válido o null");
+        }
+      if (
         updateData.size !== undefined &&
         item.itemType.hasSizes &&
         !updateData.size
@@ -207,18 +228,24 @@ export const itemStockService = {
         (updateData.hexColor && updateData.hexColor !== item.hexColor) ||
         (updateData.itemTypeId && updateData.itemTypeId !== item.itemType.id)
       ) {
+        const duplicateCheckConditions = {
+              id: Not(id),
+              itemType: { id: updateData.itemTypeId || item.itemType.id }, 
+              hexColor: updateData.hexColor || item.hexColor,
+              size: item.itemType.hasSizes ? (updateData.size !== undefined ? updateData.size : item.size) : null,
+        };
+
         const duplicate = await repo.findOne({
-          where: {
-            id: Not(id),
-            itemType: { id: updateData.itemTypeId || item.itemType.id },
-            hexColor: updateData.hexColor || item.hexColor,
-            size: updateData.size || item.size,
-          },
-          relations: ["itemType"],
-        });
+              where: duplicateCheckConditions,
+              relations: ["itemType"],
+            });
 
         if (duplicate) {
-          return [null, "Ya existe otro stock con ese nombre y color"];
+          throw new Error(
+            "Ya existe otro stock con tipo " + duplicate.itemType.name +
+            ", color " + duplicateCheckConditions.hexColor +
+            " y talla " + (duplicateCheckConditions.size ?? "N/A")
+          );
         }
       }
 
@@ -229,6 +256,7 @@ export const itemStockService = {
         "size",
         "quantity",
         "price",
+        "stampOptionsPricing",
         "productImageUrls",
         "minStock",
         "isActive",
@@ -236,10 +264,20 @@ export const itemStockService = {
 
       trackableFields.forEach((field) => {
         let updateValue = updateData[field];
+
         if (field === "productImageUrls" && updateValue !== undefined && !Array.isArray(updateValue)) {
             console.warn("productImageUrls recibido no era un array, se convertirá a array vacío.");
             updateValue = []; 
         }
+
+        if (field === "stampOptionsPricing" && item.itemType.category !== "clothing" && updateValue) {
+              console.warn(
+                "Se intentó asignar stampOptionsPricing a un ItemStock de categoría '" +
+                item.itemType.category +
+                "', se ignorará la actualización de este campo."
+              );
+              updateValue = undefined; 
+          }
 
         if ( updateValue !== undefined && !deepEqual(updateValue, item[field]) ) {
           changes[field] = {
@@ -250,12 +288,13 @@ export const itemStockService = {
       });
 
       if (Object.keys(changes).length === 0) {
+        console.log(`No se detectaron cambios para el item ID ${id}`);
         return [item, "No se detectaron cambios"];
       }
 
       // 2. Aplicar cambios
       trackableFields.forEach((field) => {
-        if (updateData[field] !== undefined) {
+        if (changes[field]) {
           // Asegurar que productImageUrls se guarde como array
            if (field === "productImageUrls" && !Array.isArray(updateData[field])) {
                item[field] = [];
@@ -264,6 +303,8 @@ export const itemStockService = {
            }
         }
       });
+
+      item.updatedAt = new Date();
 
       const updatedItem = await repo.save(item);
 
@@ -298,10 +339,10 @@ export const itemStockService = {
       await Promise.all(movementPromises);
 
       return [updatedItem, null];
-    } catch (error) {
-      console.error("Error en updateItemStock:", error);
-      return [null, `Error al actualizar: ${error.message}`];
-    }
+    }).catch((error) => {
+      console.error("Error en transacción updateItemStock:", error);
+      return [null, error.message || "Error interno al actualizar el stock"];
+    });
   },
 
   async deleteItemStock(id, userId) {

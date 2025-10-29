@@ -1,0 +1,27 @@
+.inventory-filters-accordion {
+  background-color: white !important;
+  box-shadow: var(--shadow-sm) !important; 
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-md) !important; 
+}
+
+.inventory-filters-header .MuiAccordionSummary-content {
+  margin: var(--spacing-sm) 0 !important;
+}
+.inventory-filters-header .MuiTypography-root {
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+
+.inventory-filters-details {
+  padding-top: var(--spacing-sm) !important; 
+  padding-bottom: var(--spacing-lg) !important; 
+  border-top: 1px solid var(--gray-200); 
+}
+
+.inventory-filters-details .MuiFormControl-root,
+.inventory-filters-details .MuiTextField-root {
+    margin-top: var(--spacing-xs); 
+    margin-bottom: var(--spacing-xs);
+}
