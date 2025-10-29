@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { emptyTrash  } from '../../services/itemType.service';
+import { emptyTrash } from '../../services/itemType.service';
 
 export const useEmptyTrash = () => {
   const [loading, setLoading] = useState(false);

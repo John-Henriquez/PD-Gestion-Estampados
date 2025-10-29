@@ -12,7 +12,7 @@ export function useAddManualStock() {
       const updatedItem = await addManualStock(id, quantity);
       return updatedItem;
     } catch (err) {
-      setError(err?.message || "Error al añadir stock");
+      setError(err?.message || 'Error al añadir stock');
       return null;
     } finally {
       setLoading(false);

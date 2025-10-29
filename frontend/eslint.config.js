@@ -1,9 +1,11 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import react from 'eslint-plugin-react'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
+import js from '@eslint/js';
+import globals from 'globals';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
 import eslintPluginImport from 'eslint-plugin-import';
+import configPrettier from 'eslint-config-prettier';
+import pluginPrettier from 'eslint-plugin-prettier';
 
 export default [
   { ignores: ['dist'] },
@@ -18,29 +20,52 @@ export default [
         sourceType: 'module',
       },
     },
-    settings: { react: { version: '18.3' } },
+    settings: {
+      react: { version: 'detect' },
+    },
     plugins: {
       react,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       import: eslintPluginImport,
+      prettier: pluginPrettier,
     },
     rules: {
       ...js.configs.recommended.rules,
       ...react.configs.recommended.rules,
       ...react.configs['jsx-runtime'].rules,
       ...reactHooks.configs.recommended.rules,
+
       'react/jsx-no-target-blank': 'off',
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'react/prop-types': 'off',
-      'import/no-unresolved': 'error',
-      'import/extensions': ['error', 'ignorePackages', {
-        js: 'never',
-        jsx: 'never'
-      }],
+      'react/react-in-jsx-scope': 'off',
+
+      'react-hooks/exhaustive-deps': 'warn',
+
+      'import/no-unresolved': 'warn',
+      'import/extensions': [
+        'error',
+        'ignorePackages',
+        {
+          js: 'never',
+          jsx: 'never',
+        },
+      ],
+
+      'prettier/prettier': [
+        'warn',
+        {
+          semi: true,
+          singleQuote: true,
+          tabWidth: 2,
+          trailingComma: 'es5',
+          printWidth: 100,
+          bracketSpacing: true,
+          arrowParens: 'always',
+        },
+      ],
     },
   },
-]
+  configPrettier,
+];

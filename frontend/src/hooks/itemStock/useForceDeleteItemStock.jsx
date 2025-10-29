@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { forceDeleteItemStock } from "../../services/itemStock.service";
+import { useState } from 'react';
+import { forceDeleteItemStock } from '../../services/itemStock.service';
 
 export function useForceDeleteItemStock() {
   const [loading, setLoading] = useState(false);

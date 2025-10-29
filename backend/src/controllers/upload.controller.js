@@ -1,4 +1,7 @@
-import { handleErrorClient, handleSuccess } from "../handlers/responseHandlers.js";
+import {
+  handleErrorClient,
+  handleSuccess,
+} from "../handlers/responseHandlers.js";
 
 const uploadStampImage = (req, res) => {
   if (!req.file) {
@@ -6,7 +9,9 @@ const uploadStampImage = (req, res) => {
   }
   const imageUrl = `/uploads/${req.file.filename}`;
 
-  return handleSuccess(res, 200, "Imagen de estampado subida correctamente", { imageUrl: imageUrl });
+  return handleSuccess(res, 200, "Imagen de estampado subida correctamente", {
+    imageUrl: imageUrl,
+  });
 };
 
 const uploadMultipleProductImages = (req, res) => {
@@ -14,12 +19,14 @@ const uploadMultipleProductImages = (req, res) => {
     return handleErrorClient(res, 400, "No se enviaron archivos de imagen.");
   }
 
-  const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+  const imageUrls = req.files.map((file) => `/uploads/${file.filename}`);
 
-  return handleSuccess(res, 200, "Imágenes de producto subidas correctamente", { imageUrls: imageUrls }); 
+  return handleSuccess(res, 200, "Imágenes de producto subidas correctamente", {
+    imageUrls: imageUrls,
+  });
 };
 
 export const uploadController = {
   uploadStampImage,
-  uploadMultipleProductImages, 
+  uploadMultipleProductImages,
 };

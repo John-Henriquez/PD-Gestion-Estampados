@@ -1,5 +1,6 @@
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { AuthProvider } from './context/AuthProvider.jsx';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
 import Users from './pages/Users.jsx';
@@ -22,66 +23,44 @@ const router = createBrowserRouter([
     element: <Root />,
     errorElement: <Error404 />,
     children: [
-      {
-        path: '/home',
-        element: <Home />
-      },
+      { path: '/home', element: <Home /> },
       {
         path: '/users',
         element: (
           <ProtectedRoute allowedRoles={['administrador']}>
             <Users />
           </ProtectedRoute>
-        )
+        ),
       },
-      {
-        path: '/inventario',
-        element: <Inventory />
-      },
-      {
-        path: '/checkout', 
-        element: <Checkout />
-      },
-      {
-        path: '/shop', 
-        element: <Shop />
-      },
-      {
-        path: '/product/:itemStockId', 
-        element: <ProductDetail />
-      },
-      {
-        path: '/order-confirmation/:orderId', 
-        element: <OrderConfirmation />
-      },
+      { path: '/inventario', element: <Inventory /> },
+      { path: '/checkout', element: <Checkout /> },
+      { path: '/shop', element: <Shop /> },
+      { path: '/product/:itemStockId', element: <ProductDetail /> },
+      { path: '/order-confirmation/:orderId', element: <OrderConfirmation /> },
       {
         path: '/my-orders',
         element: (
-          <ProtectedRoute> 
+          <ProtectedRoute>
             <MyOrders />
           </ProtectedRoute>
-        )
+        ),
       },
       {
-        path: '/admin/orders', 
+        path: '/admin/orders',
         element: (
           <ProtectedRoute allowedRoles={['administrador']}>
             <AdminOrders />
           </ProtectedRoute>
-        )
+        ),
       },
     ],
   },
-  {
-    path: '/auth',
-    element: <Login />
-  },
-  {
-    path: '/register',
-    element: <Register />
-  }
+  { path: '/auth', element: <Login /> },
+  { path: '/register', element: <Register /> },
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <RouterProvider router={router} />
+  <AuthProvider>
+    <RouterProvider router={router} />
+  </AuthProvider>
 );

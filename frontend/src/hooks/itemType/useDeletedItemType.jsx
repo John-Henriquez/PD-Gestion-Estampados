@@ -24,6 +24,5 @@ export const useDeletedItemTypes = () => {
     setError(null);
   }, []);
 
-
   return { deletedTypes, loading, error, fetchDeletedTypes, clearError };
 };

@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
       .basename(file.originalname, ext)
       .toLowerCase()
       .replace(/\s+/g, "_")
-      .replace(/[^\w\-.]+/g, ""); 
+      .replace(/[^\w\-.]+/g, "");
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const finalName = `${name}-${uniqueSuffix}${ext}`.substring(0, 250);
     cb(null, finalName);
@@ -30,12 +30,17 @@ const imageFileFilter = (req, file, cb) => {
     "image/png",
     "image/gif",
     "image/webp",
-    "image/svg+xml"
+    "image/svg+xml",
   ];
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Tipo de archivo no permitido. Solo se aceptan imágenes (JPG, PNG, GIF, WEBP, SVG)."), false);
+    cb(
+      new Error(
+        "Tipo de archivo no permitido. Solo se aceptan imágenes (JPG, PNG, GIF, WEBP, SVG).",
+      ),
+      false,
+    );
   }
 };
 
@@ -43,8 +48,8 @@ const multerInstance = multer({
   storage: storage,
   fileFilter: imageFileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024 
-  }
+    fileSize: 10 * 1024 * 1024,
+  },
 });
 
 export const uploadMiddleware = {

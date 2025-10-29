@@ -9,9 +9,7 @@ const orderItemSchema = Joi.object({
     "number.positive": "La cantidad debe ser mayor que cero.",
     "any.required": "La cantidad es requerida.",
   }),
-  stampImageUrl: Joi.string().allow(null, "").optional().messages({
-    
-  }),
+  stampImageUrl: Joi.string().allow(null, "").optional().messages({}),
   stampInstructions: Joi.string().allow(null, "").optional(),
 })
   .xor("itemStockId", "packId")

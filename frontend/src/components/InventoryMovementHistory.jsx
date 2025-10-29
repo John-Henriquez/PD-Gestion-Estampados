@@ -1,6 +1,14 @@
 import {
-  Box, Typography, Select, MenuItem, TextField,
-  InputLabel, FormControl, Grid, CircularProgress, Paper
+  Box,
+  Typography,
+  Select,
+  MenuItem,
+  TextField,
+  InputLabel,
+  FormControl,
+  Grid,
+  CircularProgress,
+  Paper,
 } from '@mui/material';
 import useInventoryMovements from '../hooks/inventoryMovement/useInventoryMovements.jsx';
 import '../styles/components/modal.css';
@@ -10,30 +18,23 @@ const movementTypeLabels = {
   entrada: 'Entrada',
   salida: 'Salida',
   ajuste: 'Ajuste',
-  modificacion: 'Modificación'
+  modificacion: 'Modificación',
 };
 
 const getMovementClasses = (mov) => {
-    const classes = ['movement-item'];
-    const type = mov.type || 'ajuste'; 
-    const operation = mov.operation || 'unspecified';
+  const classes = ['movement-item'];
+  const type = mov.type || 'ajuste';
+  const operation = mov.operation || 'unspecified';
 
+  classes.push(`movement-type-${type}`);
 
-    classes.push(`movement-type-${type}`);
+  classes.push(`movement-op-${operation}`);
 
-    classes.push(`movement-op-${operation}`);
-
-    return classes.join(' ');
+  return classes.join(' ');
 };
 
 const InventoryMovementHistory = () => {
-  const {
-    movements,
-    totals,
-    filters,
-    setFilters,
-    loading,
-  } = useInventoryMovements();
+  const { movements, totals, filters, setFilters, loading } = useInventoryMovements();
 
   const handleChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -50,7 +51,6 @@ const InventoryMovementHistory = () => {
       </Typography>
 
       <Box className="modal-content">
-
         {/* Filtros */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={4} className="modal-field">
@@ -64,7 +64,7 @@ const InventoryMovementHistory = () => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} sm={4} className="modal-field">  
+          <Grid item xs={12} sm={4} className="modal-field">
             <TextField
               type="date"
               name="endDate"
@@ -105,46 +105,56 @@ const InventoryMovementHistory = () => {
             No se encontraron movimientos.
           </Typography>
         ) : (
-        <Box>
-          <Typography variant="subtitle1" sx={{ mb: 1,p: 2,backgroundColor: 'var(--gray-200)',borderRadius: 'var(--border-radius-sm)'
-          }}>
-            Totales: Entrada: {totals.entrada || 0}, Salida: {totals.salida || 0}, Ajuste: {totals.ajuste || 0}
-          </Typography>
-          {movements.map((mov) => (
-            <Paper
-              key={mov.id}
-              elevation={0}
-              className={getMovementClasses(mov)}
+          <Box>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                mb: 1,
+                p: 2,
+                backgroundColor: 'var(--gray-200)',
+                borderRadius: 'var(--border-radius-sm)',
+              }}
             >
-            <Typography variant="subtitle2">
-              {new Date(mov.createdAt).toLocaleString()} —{' '}
-              {(mov.type === 'ajuste' && mov.quantity === 0 && mov.reason)
-                ? mov.reason
-                : `${movementTypeLabels[mov.type]} de ${mov.quantity} unidades`}
+              Totales: Entrada: {totals.entrada || 0}, Salida: {totals.salida || 0}, Ajuste:{' '}
+              {totals.ajuste || 0}
             </Typography>
-              {mov.snapshotItemName && (
-                <Typography variant="body2">
-                  Producto: <strong>{mov.snapshotItemName}</strong> {mov.snapshotItemSize ? ` — ${mov.snapshotItemSize}` : ''}
-                  {mov.snapshotItemColor && (
-                    <>
-                      {' '}— <span
-                            className="movement-snapshot-color" 
-                            style={{ backgroundColor: mov.snapshotItemColor }}
-                            title={mov.snapshotItemColor}
-                           />
-
-                      <span className="movement-snapshot-hex"> 
-                        {mov.snapshotItemColor}
-                      </span>
-                    </>
-                  )}
+            {movements.map((mov) => (
+              <Paper key={mov.id} elevation={0} className={getMovementClasses(mov)}>
+                <Typography variant="subtitle2">
+                  {new Date(mov.createdAt).toLocaleString()} —{' '}
+                  {mov.type === 'ajuste' && mov.quantity === 0 && mov.reason
+                    ? mov.reason
+                    : `${movementTypeLabels[mov.type]} de ${mov.quantity} unidades`}
                 </Typography>
-              )}
-                {(mov.reason && !(mov.type === 'ajuste' && mov.quantity === 0 && mov.reason && !mov.reason.includes('Ajuste de inventario'))) && (
-                  <Typography variant="body2" color="text.secondary">
-                    Motivo: {mov.reason}
+                {mov.snapshotItemName && (
+                  <Typography variant="body2">
+                    Producto: <strong>{mov.snapshotItemName}</strong>{' '}
+                    {mov.snapshotItemSize ? ` — ${mov.snapshotItemSize}` : ''}
+                    {mov.snapshotItemColor && (
+                      <>
+                        {' '}
+                        —{' '}
+                        <span
+                          className="movement-snapshot-color"
+                          style={{ backgroundColor: mov.snapshotItemColor }}
+                          title={mov.snapshotItemColor}
+                        />
+                        <span className="movement-snapshot-hex">{mov.snapshotItemColor}</span>
+                      </>
+                    )}
                   </Typography>
                 )}
+                {mov.reason &&
+                  !(
+                    mov.type === 'ajuste' &&
+                    mov.quantity === 0 &&
+                    mov.reason &&
+                    !mov.reason.includes('Ajuste de inventario')
+                  ) && (
+                    <Typography variant="body2" color="text.secondary">
+                      Motivo: {mov.reason}
+                    </Typography>
+                  )}
                 <Typography variant="caption" color="text.secondary">
                   Por: {mov.createdBy?.nombreCompleto || 'Desconocido'}
                 </Typography>

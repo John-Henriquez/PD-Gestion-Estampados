@@ -102,27 +102,27 @@
   .form {
     padding: var(--spacing-md);
   }
-  
+
   .form__title {
     font-size: 1.5rem;
   }
 }
 
 /* Estilos para inputs con iconos */
-input[type='email'] {
-  background-image: url('../assets/MentionIcon.svg');
+input[type="email"] {
+  background-image: url("../assets/MentionIcon.svg");
 }
 
-input[name='rut'] {
-  background-image: url('../assets/IdentityCardIcon.svg');
+input[name="rut"] {
+  background-image: url("../assets/IdentityCardIcon.svg");
 }
 
-input[name='nombreCompleto'] {
-  background-image: url('../assets/PersonIcon.svg');
+input[name="nombreCompleto"] {
+  background-image: url("../assets/PersonIcon.svg");
 }
 
-input[name='rol'] {
-  background-image: url('../assets/PasskeyIcon.svg');
+input[name="rol"] {
+  background-image: url("../assets/PasskeyIcon.svg");
 }
 
 .container_inputs {

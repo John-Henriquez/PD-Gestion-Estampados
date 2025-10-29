@@ -26,24 +26,12 @@ const Home = () => {
           : 'Por favor, inicia sesión para acceder al sistema.'}
       </Typography>
       {isAuthenticated && user?.rol === 'administrador' && (
-        <Button
-          component={Link}
-          to="/inventario"
-          variant="contained"
-          color="primary"
-          size="large"
-        >
+        <Button component={Link} to="/inventario" variant="contained" color="primary" size="large">
           Ir al Inventario
         </Button>
       )}
       {!isAuthenticated && (
-        <Button
-          component={Link}
-          to="/auth"
-          variant="contained"
-          color="primary"
-          size="large"
-        >
+        <Button component={Link} to="/auth" variant="contained" color="primary" size="large">
           Iniciar Sesión
         </Button>
       )}

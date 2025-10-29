@@ -138,16 +138,18 @@
   width: 75%;
   max-width: 300px;
   background: white;
-  box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
   transform: translateX(100%);
-  transition: right var(--transition-normal) ease, opacity var(--transition-normal) ease;
+  transition:
+    right var(--transition-normal) ease,
+    opacity var(--transition-normal) ease;
   opacity: 0;
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; 
+  justify-content: space-between;
   padding: var(--spacing-xl) var(--spacing-md);
-  box-sizing: border-box; 
+  box-sizing: border-box;
   overflow-x: hidden;
   overflow-y: auto;
   margin-left: var(--spacing-md);
@@ -184,17 +186,18 @@
   justify-content: center;
   gap: var(--spacing-xs);
   font-weight: 600;
-  transition: background var(--transition-normal) ease, box-shadow var(--transition-normal) ease;
+  transition:
+    background var(--transition-normal) ease,
+    box-shadow var(--transition-normal) ease;
   font-size: 1rem;
   margin-top: auto;
 
-  white-space: normal;          
-  text-overflow: unset;        
-  overflow: visible;             
-  word-break: break-word;        
+  white-space: normal;
+  text-overflow: unset;
+  overflow: visible;
+  word-break: break-word;
   text-align: center;
 }
-
 
 .navbar__logout-button svg {
   flex-shrink: 0;
@@ -230,7 +233,7 @@
 
 @media (max-width: 768px) {
   .navbar__mobile-menu {
-    padding: var(--spacing-md) var(--spacing-sm); 
+    padding: var(--spacing-md) var(--spacing-sm);
   }
   .navbar__logout-button svg {
     flex-shrink: 0;
@@ -240,11 +243,11 @@
   .navbar__desktop-menu {
     display: none;
   }
-  
+
   .navbar__user-info span {
     display: none;
   }
-  
+
   .navbar__hamburger {
     display: flex;
   }

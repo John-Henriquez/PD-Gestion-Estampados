@@ -34,9 +34,12 @@ const PackTrashModal = ({ open, onClose, deletedPacks, onRestore, onRefresh }) =
     if (result.isConfirmed) {
       try {
         await emptyTrash();
-        showSuccessAlert('Papelera vaciada', 'Todos los packs han sido eliminados permanentemente.');
+        showSuccessAlert(
+          'Papelera vaciada',
+          'Todos los packs han sido eliminados permanentemente.'
+        );
         if (onRefresh) {
-          await onRefresh(); 
+          await onRefresh();
         }
       } catch (err) {
         console.error('[handleEmptyTrash] Error:', err);

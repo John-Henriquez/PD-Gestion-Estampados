@@ -1,4 +1,4 @@
-import axios from './root.service'; 
+import axios from './root.service';
 
 export async function getItemTypes() {
   try {
@@ -18,7 +18,7 @@ export async function getItemTypeById(id) {
     console.error(`Error al obtener el tipo de ítem ${id}:`, error);
     throw error.response?.data?.message || 'Error al obtener el tipo de ítem';
   }
-} 
+}
 
 export async function createItemType(formData) {
   try {
@@ -26,17 +26,25 @@ export async function createItemType(formData) {
     return response.data.data;
   } catch (error) {
     console.error('Error al crear el tipo de ítem:', error);
-    throw error.response?.data?.message || error.response?.data?.error || 'Error al crear el tipo de ítem';
+    throw (
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      'Error al crear el tipo de ítem'
+    );
   }
 }
 
 export async function updateItemType(id, formData) {
   try {
-    const response = await axios.patch(`/item-types/${id}`, formData); 
+    const response = await axios.patch(`/item-types/${id}`, formData);
     return response.data.data;
   } catch (error) {
     console.error(`Error al actualizar el tipo de ítem ${id}:`, error);
-    throw error.response?.data?.message || error.response?.data?.error || 'Error al actualizar el tipo de ítem';
+    throw (
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      'Error al actualizar el tipo de ítem'
+    );
   }
 }
 
@@ -52,7 +60,7 @@ export async function deleteItemType(id) {
 
 export async function restoreItemType(id) {
   try {
-    const response = await axios.patch(`/item-types/restore/${id}`); 
+    const response = await axios.patch(`/item-types/restore/${id}`);
     return response.data.data;
   } catch (error) {
     console.error(`Error al restaurar el tipo de ítem ${id}:`, error);

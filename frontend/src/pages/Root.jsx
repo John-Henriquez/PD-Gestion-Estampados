@@ -3,23 +3,23 @@ import Navbar from '../components/Navbar.jsx';
 import { AuthProvider } from '../context/AuthContext.jsx';
 import { CartProvider } from '../context/CartContext.jsx';
 
-function Root()  {
-return (
+function Root() {
+  return (
     <AuthProvider>
-      <CartProvider> 
+      <CartProvider>
         <PageRoot />
       </CartProvider>
     </AuthProvider>
-);
+  );
 }
 
 function PageRoot() {
-return (
+  return (
     <>
-        <Navbar />
-        <Outlet />
+      <Navbar />
+      <Outlet />
     </>
-);
+  );
 }
 
 export default Root;

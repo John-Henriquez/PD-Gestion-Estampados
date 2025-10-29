@@ -38,20 +38,23 @@ const ItemStockTrashModal = ({ open, onClose, trashedItems, onRefresh }) => {
 
     try {
       await emptyTrash();
-      showSuccessAlert('Papelera vaciada', 'Todos los elementos han sido eliminados permanentemente.');
+      showSuccessAlert(
+        'Papelera vaciada',
+        'Todos los elementos han sido eliminados permanentemente.'
+      );
       onRefresh();
       onClose();
-  } catch (err) {
-    console.error('[handleEmptyTrash] Error:', err);
+    } catch (err) {
+      console.error('[handleEmptyTrash] Error:', err);
 
-    const errorMessage =
-      typeof err === 'object' && err?.message
-        ? err.message
-        : 'Ocurrió un problema al vaciar la papelera.';
+      const errorMessage =
+        typeof err === 'object' && err?.message
+          ? err.message
+          : 'Ocurrió un problema al vaciar la papelera.';
 
-    showErrorAlert('Error al vaciar', errorMessage);
-  }
-};
+      showErrorAlert('Error al vaciar', errorMessage);
+    }
+  };
 
   const getColorNameFromHex = (hex) => {
     if (!hex) return '';
@@ -63,7 +66,7 @@ const ItemStockTrashModal = ({ open, onClose, trashedItems, onRefresh }) => {
     try {
       await restore(id);
       showSuccessAlert('Restaurado', 'El stock ha sido restaurado.');
-      
+
       onRefresh();
       onClose();
     } catch (err) {
@@ -85,19 +88,19 @@ const ItemStockTrashModal = ({ open, onClose, trashedItems, onRefresh }) => {
       showSuccessAlert('Eliminado', 'El stock ha sido eliminado permanentemente.');
       onRefresh();
     } catch (err) {
-    console.error(`[handleForceDelete] Error eliminando ID ${id}:`, err);
-    if (err?.message?.includes('utilizado en uno o más paquetes')) {
-      showErrorAlert(
-        'No se puede eliminar',
-        'Este stock está siendo utilizado en uno o más paquetes. Elimínalo de esos paquetes antes de continuar.'
-      );
-    } else {
-      showErrorAlert('Error al eliminar', 'Ocurrió un problema al eliminar el stock.');
+      console.error(`[handleForceDelete] Error eliminando ID ${id}:`, err);
+      if (err?.message?.includes('utilizado en uno o más paquetes')) {
+        showErrorAlert(
+          'No se puede eliminar',
+          'Este stock está siendo utilizado en uno o más paquetes. Elimínalo de esos paquetes antes de continuar.'
+        );
+      } else {
+        showErrorAlert('Error al eliminar', 'Ocurrió un problema al eliminar el stock.');
+      }
+    } finally {
+      setForceDeletingId(null);
     }
-  } finally {
-    setForceDeletingId(null);
-  }
-};
+  };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" className="trash-modal">

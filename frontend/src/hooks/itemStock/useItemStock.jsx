@@ -10,22 +10,18 @@ const initialFilters = {
   stockStatus: '',
 };
 
-
 const useItemStock = () => {
-    const [itemTypes, setItemTypes] = useState([]);
-    const [itemStock, setItemStock] = useState([]);
-    const [filters, setFilters] = useState(initialFilters);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [itemTypes, setItemTypes] = useState([]);
+  const [itemStock, setItemStock] = useState([]);
+  const [filters, setFilters] = useState(initialFilters);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchInventoryData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const [types, stock] = await Promise.all([
-        getItemTypes(),
-        getItemStock(filters)
-      ]);
+      const [types, stock] = await Promise.all([getItemTypes(), getItemStock(filters)]);
       setItemTypes(types);
       setItemStock(stock);
     } catch (error) {
@@ -35,19 +31,19 @@ const useItemStock = () => {
     }
   }, [filters]);
 
-    useEffect(() => {
-        fetchInventoryData();
-    }, [fetchInventoryData]);
+  useEffect(() => {
+    fetchInventoryData();
+  }, [fetchInventoryData]);
 
-    return {
-        itemTypes,
-        itemStock,
-        loading,
-        error,
-        filters,
-        setFilters,
-        refetch: fetchInventoryData,
-    };
+  return {
+    itemTypes,
+    itemStock,
+    loading,
+    error,
+    filters,
+    setFilters,
+    refetch: fetchInventoryData,
+  };
 };
 
 export default useItemStock;

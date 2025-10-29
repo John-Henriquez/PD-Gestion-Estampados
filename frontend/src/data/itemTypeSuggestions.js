@@ -45,7 +45,7 @@ const ITEM_TYPE_SUGGESTIONS = [
   'Toalla de playa',
   'Tote bag',
   'Vaso',
-  'Zapatillas'
+  'Zapatillas',
 ];
 
 export default ITEM_TYPE_SUGGESTIONS;

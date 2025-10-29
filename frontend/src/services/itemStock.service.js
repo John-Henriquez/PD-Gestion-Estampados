@@ -1,40 +1,43 @@
-import axios from './root.service'; 
+import axios from './root.service';
 
 export async function getItemStock() {
-    try {
-        const { data } = await axios.get('/item-stocks');
-        return data.data || [];
-    } catch (error) {
-        console.error('Error fetching item stock:', error);
-        return [];
-    }
+  try {
+    const { data } = await axios.get('/item-stocks');
+    return data.data || [];
+  } catch (error) {
+    console.error('Error fetching item stock:', error);
+    return [];
+  }
 }
 
 export async function getPublicItemStock() {
-    try {
-        const response = await axios.get('/item-stocks/public');
+  try {
+    const response = await axios.get('/item-stocks/public');
 
-        if (response.status === 200 && response.data.status === 'Success') {
-            console.log('Stock público obtenido:', response.data.data);
-            return response.data.data || []; 
-        } else {
-            throw new Error(response.data.message || 'Error inesperado al obtener el stock público');
-        }
-    } catch (error) {
-        console.error('Error al obtener stock público:', error.response?.data || error.message);
-        throw error.response?.data || new Error(error.message || 'Error de red o del servidor al obtener stock público');
+    if (response.status === 200 && response.data.status === 'Success') {
+      console.log('Stock público obtenido:', response.data.data);
+      return response.data.data || [];
+    } else {
+      throw new Error(response.data.message || 'Error inesperado al obtener el stock público');
     }
+  } catch (error) {
+    console.error('Error al obtener stock público:', error.response?.data || error.message);
+    throw (
+      error.response?.data ||
+      new Error(error.message || 'Error de red o del servidor al obtener stock público')
+    );
+  }
 }
 
 export async function createItemStock(itemData) {
-    try {
-        console.log('Datos enviados al backend:', itemData);
-        const response = await axios.post('/item-stocks', itemData);
-        return response.data.data;
-    } catch (error) {
-        console.error('Error creating item:', error);
-        throw error.response?.data || error.message;
-    }
+  try {
+    console.log('Datos enviados al backend:', itemData);
+    const response = await axios.post('/item-stocks', itemData);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error creating item:', error);
+    throw error.response?.data || error.message;
+  }
 }
 
 export async function updateItemStock(id, updatedData) {
@@ -49,24 +52,27 @@ export async function updateItemStock(id, updatedData) {
   }
 }
 
-
 export async function deleteItemStock(id) {
   try {
     const response = await axios.delete(`/item-stocks/${id}`);
     return [response.data, null];
   } catch (error) {
     console.error('Error deleting item stock:', error);
-    return [null, {
-      status: error.response?.status,
-      message: error.response?.data?.message || error.message || 'Error desconocido',
-    }]
+    return [
+      null,
+      {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message || 'Error desconocido',
+      },
+    ];
   }
 }
 
-
 export async function getDeletedItemStock() {
   try {
-    const { data } = await axios.get('/item-stocks', { params: { isActive: false } });
+    const { data } = await axios.get('/item-stocks', {
+      params: { isActive: false },
+    });
     return data.data || [];
   } catch (error) {
     console.error('Error fetching deleted item stock:', error);
@@ -106,39 +112,47 @@ export async function forceDeleteItemStock(id) {
 
 export async function addManualStock(id, quantity) {
   try {
-    const response = await axios.patch(`/item-stocks/adjust/${id}/add`, { quantity });
+    const response = await axios.patch(`/item-stocks/adjust/${id}/add`, {
+      quantity,
+    });
     return response.data.data;
   } catch (error) {
-    console.error("Error adding manual stock:", error);
+    console.error('Error adding manual stock:', error);
     throw error.response?.data || error.message;
   }
 }
 
 export async function removeManualStock(id, quantity) {
   try {
-    const response = await axios.patch(`/item-stocks/adjust/${id}/remove`, { quantity });
+    const response = await axios.patch(`/item-stocks/adjust/${id}/remove`, {
+      quantity,
+    });
     return response.data.data;
   } catch (error) {
-    console.error("Error removing manual stock:", error);
+    console.error('Error removing manual stock:', error);
     throw error.response?.data || error.message;
   }
 }
 
 export async function getItemStockById(id) {
-    try {
-        const response = await axios.get(`/item-stocks/public/${id}`); 
+  try {
+    const response = await axios.get(`/item-stocks/public/${id}`);
 
-        if (response.status === 200 && response.data.status === 'Success') {
-            console.log(`Detalles de ItemStock ${id} obtenidos:`, response.data.data);
-            const itemData = Array.isArray(response.data.data) ? response.data.data[0] : response.data.data;
-            if (!itemData) throw new Error('Item no encontrado');
-            return itemData;
-        } else {
-            throw new Error(response.data.message || `Error inesperado al obtener ItemStock ${id}`);
-        }
-    } catch (error) {
-        console.error(`Error al obtener ItemStock ${id}:`, error.response?.data || error.message);
-        throw error.response?.data || new Error(error.message || `Error de red o servidor al obtener ItemStock ${id}`);
+    if (response.status === 200 && response.data.status === 'Success') {
+      console.log(`Detalles de ItemStock ${id} obtenidos:`, response.data.data);
+      const itemData = Array.isArray(response.data.data)
+        ? response.data.data[0]
+        : response.data.data;
+      if (!itemData) throw new Error('Item no encontrado');
+      return itemData;
+    } else {
+      throw new Error(response.data.message || `Error inesperado al obtener ItemStock ${id}`);
     }
+  } catch (error) {
+    console.error(`Error al obtener ItemStock ${id}:`, error.response?.data || error.message);
+    throw (
+      error.response?.data ||
+      new Error(error.message || `Error de red o servidor al obtener ItemStock ${id}`)
+    );
+  }
 }
-

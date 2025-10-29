@@ -45,7 +45,6 @@ export async function deletePack(id) {
   }
 }
 
-
 export async function getDeletedPacks() {
   try {
     const { data } = await axios.get('/packs', { params: { isActive: false } });

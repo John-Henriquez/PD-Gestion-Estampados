@@ -12,7 +12,7 @@ export function useRemoveManualStock() {
       const updatedItem = await removeManualStock(id, quantity);
       return updatedItem;
     } catch (err) {
-      setError(err?.message || "Error al reducir stock");
+      setError(err?.message || 'Error al reducir stock');
       return null;
     } finally {
       setLoading(false);

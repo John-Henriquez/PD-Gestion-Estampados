@@ -18,8 +18,8 @@ const usePack = () => {
       setError(null);
       const data = await getPacks(filters);
       if (data) {
-      setPacks(data);
-    }
+        setPacks(data);
+      }
       setPacks(data);
     } catch (err) {
       console.error('Error fetching packs:', err);

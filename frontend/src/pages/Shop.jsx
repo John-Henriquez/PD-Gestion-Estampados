@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Grid, CircularProgress, Alert } from '@mui/material';
-import { getPublicItemStock } from '../services/itemStock.service'; 
-import ProductCard from '../components/ProductCard.jsx'; 
+import { getPublicItemStock } from '../services/itemStock.service';
+import ProductCard from '../components/ProductCard.jsx';
 import '../styles/pages/shop.css';
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -14,18 +14,18 @@ const Shop = () => {
       try {
         setLoading(true);
         setError(null);
-        const publicStock = await getPublicItemStock(); 
-        setProducts(publicStock || []); 
+        const publicStock = await getPublicItemStock();
+        setProducts(publicStock || []);
       } catch (err) {
-        console.error("Error al cargar productos:", err);
+        console.error('Error al cargar productos:', err);
         setError(err.message || 'No se pudieron cargar los productos.');
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
     };
 
     fetchProducts();
-  }, []); 
+  }, []);
 
   let content;
 
@@ -61,17 +61,11 @@ const Shop = () => {
 
   return (
     <Box className="shop-container">
-      <Typography
-        variant="h4"
-        component="h1"
-        gutterBottom
-        className="shop-title"
-      >
+      <Typography variant="h4" component="h1" gutterBottom className="shop-title">
         Nuestros Productos
       </Typography>
 
       {content}
-
     </Box>
   );
 };

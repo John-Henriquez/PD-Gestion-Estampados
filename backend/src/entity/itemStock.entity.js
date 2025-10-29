@@ -30,14 +30,15 @@ const ItemStockSchema = new EntitySchema({
       nullable: false,
     },
     stampOptionsPricing: {
-        type: "jsonb", // jsonb es generalmente preferido en PostgreSQL
-        nullable: true, // Permitir nulo si no aplica o no se configura
-        comment: "Almacena costos adicionales para opciones de estampado " + 
-        "{ locations: { front: 2000, back: 2500 }, types: { dtf: 500 } }"
+      type: "jsonb", // jsonb es generalmente preferido en PostgreSQL
+      nullable: true, // Permitir nulo si no aplica o no se configura
+      comment:
+        "Almacena costos adicionales para opciones de estampado " +
+        "{ locations: { front: 2000, back: 2500 }, types: { dtf: 500 } }",
     },
     productImageUrls: {
       type: "simple-array",
-      nullable: true, 
+      nullable: true,
     },
     minStock: {
       type: "int",

@@ -12,14 +12,8 @@ const Users = () => {
   const { users, fetchUsers, setUsers } = useUsers();
   const [filterRut, setFilterRut] = useState('');
 
-  const {
-    handleClickUpdate,
-    handleUpdate,
-    isPopupOpen,
-    setIsPopupOpen,
-    dataUser,
-    setDataUser
-  } = useEditUser(setUsers);
+  const { handleClickUpdate, handleUpdate, isPopupOpen, setIsPopupOpen, dataUser, setDataUser } =
+    useEditUser(setUsers);
 
   const { handleDelete } = useDeleteUser(fetchUsers, setDataUser);
 
@@ -27,48 +21,54 @@ const Users = () => {
     setFilterRut(e.target.value);
   };
 
-  const handleSelectionChange = useCallback((selectedUsers) => {
-    setDataUser(selectedUsers);
-  }, [setDataUser]);
+  const handleSelectionChange = useCallback(
+    (selectedUsers) => {
+      setDataUser(selectedUsers);
+    },
+    [setDataUser]
+  );
 
   const columns = [
-    { title: "Nombre", field: "nombreCompleto", width: 350, responsive: 0 },
-    { title: "Correo electrónico", field: "email", width: 300, responsive: 3 },
-    { title: "Rut", field: "rut", width: 150, responsive: 2 },
-    { title: "Rol", field: "rol", width: 200, responsive: 2 },
-    { title: "Creado", field: "createdAt", width: 200, responsive: 2 }
+    { title: 'Nombre', field: 'nombreCompleto', width: 350, responsive: 0 },
+    { title: 'Correo electrónico', field: 'email', width: 300, responsive: 3 },
+    { title: 'Rut', field: 'rut', width: 150, responsive: 2 },
+    { title: 'Rol', field: 'rol', width: 200, responsive: 2 },
+    { title: 'Creado', field: 'createdAt', width: 200, responsive: 2 },
   ];
 
   return (
-    <div className='main-container'>
-      <div className='table-container'>
-        <div className='top-table'>
-          <h1 className='title-table'>Usuarios</h1>
-          <div className='filter-actions'>
-            <Search value={filterRut} onChange={handleRutFilterChange} placeholder={'Filtrar por rut'} />
+    <div className="main-container">
+      <div className="table-container">
+        <div className="top-table">
+          <h1 className="title-table">Usuarios</h1>
+          <div className="filter-actions">
+            <Search
+              value={filterRut}
+              onChange={handleRutFilterChange}
+              placeholder={'Filtrar por rut'}
+            />
 
-            <button 
-              onClick={handleClickUpdate} 
+            <button
+              onClick={handleClickUpdate}
               disabled={dataUser.length === 0}
-              className="icon-button"  // Clase para estilos comunes
+              className="icon-button" // Clase para estilos comunes
             >
-              <Pencil 
-                size={20}  // Tamaño estándar
-                className={dataUser.length === 0 ? "icon-disabled" : "icon-active"} 
+              <Pencil
+                size={20} // Tamaño estándar
+                className={dataUser.length === 0 ? 'icon-disabled' : 'icon-active'}
               />
             </button>
 
-            <button 
-              className='delete-user-button icon-button' 
-              disabled={dataUser.length === 0} 
+            <button
+              className="delete-user-button icon-button"
+              disabled={dataUser.length === 0}
               onClick={() => handleDelete(dataUser)}
             >
-              <Trash2 
+              <Trash2
                 size={20}
-                className={dataUser.length === 0 ? "icon-disabled" : "icon-active"} 
+                className={dataUser.length === 0 ? 'icon-disabled' : 'icon-active'}
               />
             </button>
-
           </div>
         </div>
         <Table

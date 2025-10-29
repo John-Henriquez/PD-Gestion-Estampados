@@ -1,6 +1,16 @@
 import {
-  Shirt, Coffee, GlassWater, Key, Table, Notebook, Gift,
-  GraduationCap, Baby, Backpack, Smartphone, FlaskConical
+  Shirt,
+  Coffee,
+  GlassWater,
+  Key,
+  Table,
+  Notebook,
+  Gift,
+  GraduationCap,
+  Baby,
+  Backpack,
+  Smartphone,
+  FlaskConical,
 } from 'lucide-react';
 
 const ICON_CATEGORIES = [
@@ -38,7 +48,7 @@ const ICON_CATEGORIES = [
   },
 ];
 
-export const iconMap = ICON_CATEGORIES.flatMap(c => c.icons).reduce((map, { value, Icon }) => {
+export const iconMap = ICON_CATEGORIES.flatMap((c) => c.icons).reduce((map, { value, Icon }) => {
   map[value] = Icon;
   return map;
 }, {});

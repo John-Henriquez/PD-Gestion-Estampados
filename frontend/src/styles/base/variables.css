@@ -1,25 +1,24 @@
 :root {
   /* Colores principales */
-  --primary: #7B2CBF;
-  --primary-dark: #5A189A;
-  --primary-light: #E0AAFF;
-  --secondary: #FF7900;
-  --secondary-dark: #E65C00;
-  --secondary-light: #FFD6B0;
+  --primary: #7b2cbf;
+  --primary-dark: #5a189a;
+  --primary-light: #e0aaff;
+  --secondary: #ff7900;
+  --secondary-dark: #e65c00;
+  --secondary-light: #ffd6b0;
 
   /* Escala de grises */
-  --gray-100: #F8F9FA;
-  --gray-200: #E9ECEF;
-  --gray-300: #DEE2E6;
+  --gray-100: #f8f9fa;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
   --gray-700: #495057;
   --gray-900: #212529;
-  
 
   /* Estados */
-  --success: #2ECC71;
-  --error: #E74C3C;
-  --warning: #F39C12;
-  --info: #3498DB;
+  --success: #2ecc71;
+  --error: #e74c3c;
+  --warning: #f39c12;
+  --info: #3498db;
   --success-dark: #27ae60;
   --error-dark: #c0392b;
   --error-light: #fadbd8;
@@ -38,15 +37,16 @@
   --border-radius-xl: 16px;
 
   /* Sombras */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 
   /* Transiciones */
   --transition-fast: 0.15s;
   --transition-normal: 0.3s;
   --transition-slow: 0.5s;
-  
-    /* Fuentes */
-  --font-family: 'Montserrat', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  /* Fuentes */
+  --font-family:
+    "Montserrat", Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }

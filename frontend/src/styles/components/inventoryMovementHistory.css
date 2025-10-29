@@ -10,23 +10,50 @@
 
 /* Colores de Borde basados en tipo/operación semántica */
 /* Tipos generales */
-.movement-type-entrada    { border-color: var(--success); }
-.movement-type-salida     { border-color: var(--error); }
-.movement-type-ajuste     { border-color: var(--info); }
-.movement-type-modificacion { border-color: var(--primary-light); } /* Color para modificaciones */
+.movement-type-entrada {
+  border-color: var(--success);
+}
+.movement-type-salida {
+  border-color: var(--error);
+}
+.movement-type-ajuste {
+  border-color: var(--info);
+}
+.movement-type-modificacion {
+  border-color: var(--primary-light);
+} /* Color para modificaciones */
 
 /* Operaciones específicas (pueden sobrescribir el tipo si es necesario) */
-.movement-op-create     { border-color: var(--success); }
-.movement-op-sale       { border-color: var(--error); } /* Salida por venta */
-.movement-op-return     { border-color: var(--success-dark); } /* Devolución */
-.movement-op-adjust_in  { border-color: var(--info); }
-.movement-op-adjust_out { border-color: var(--warning); } /* Naranja para ajuste manual salida */
-.movement-op-update     { border-color: var(--primary-light); } /* Actualizaciones */
-.movement-op-deactivate { border-color: var(--warning); }
-.movement-op-reactivate { border-color: var(--success); }
-.movement-op-delete     { border-color: var(--error-dark); } 
-.movement-op-purge      { border-color: var(--error-dark); } 
-
+.movement-op-create {
+  border-color: var(--success);
+}
+.movement-op-sale {
+  border-color: var(--error);
+} /* Salida por venta */
+.movement-op-return {
+  border-color: var(--success-dark);
+} /* Devolución */
+.movement-op-adjust_in {
+  border-color: var(--info);
+}
+.movement-op-adjust_out {
+  border-color: var(--warning);
+} /* Naranja para ajuste manual salida */
+.movement-op-update {
+  border-color: var(--primary-light);
+} /* Actualizaciones */
+.movement-op-deactivate {
+  border-color: var(--warning);
+}
+.movement-op-reactivate {
+  border-color: var(--success);
+}
+.movement-op-delete {
+  border-color: var(--error-dark);
+}
+.movement-op-purge {
+  border-color: var(--error-dark);
+}
 
 .movement-snapshot-color {
   display: inline-block;
@@ -39,7 +66,7 @@
 }
 
 .movement-snapshot-hex {
-    margin-left: var(--spacing-xs);
-    font-size: 0.85em;
-    color: var(--gray-700);
+  margin-left: var(--spacing-xs);
+  font-size: 0.85em;
+  color: var(--gray-700);
 }

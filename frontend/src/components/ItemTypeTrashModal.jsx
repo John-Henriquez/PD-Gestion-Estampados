@@ -33,7 +33,10 @@ const ItemTypeTrashModal = ({ open, onClose, trashedTypes, onRestore, onRefresh 
     if (result.isConfirmed) {
       try {
         await empty();
-        showSuccessAlert('Papelera vaciada', 'Todos los elementos han sido eliminados permanentemente.');
+        showSuccessAlert(
+          'Papelera vaciada',
+          'Todos los elementos han sido eliminados permanentemente.'
+        );
         onRefresh();
       } catch (err) {
         console.error('[handleEmptyTrash] Error:', err);
@@ -42,24 +45,23 @@ const ItemTypeTrashModal = ({ open, onClose, trashedTypes, onRestore, onRefresh 
     }
   };
 
-const handleForceDelete = async (id) => {
-  const result = await deleteDataAlert(
-    '¿Eliminar permanentemente este tipo?',
-    'Esta acción no se puede deshacer.'
-  );
+  const handleForceDelete = async (id) => {
+    const result = await deleteDataAlert(
+      '¿Eliminar permanentemente este tipo?',
+      'Esta acción no se puede deshacer.'
+    );
 
-  if (result.isConfirmed) {
-    try {
-      await forceDelete(id);
-      showSuccessAlert('Eliminado', 'El tipo ha sido eliminado permanentemente.');
-      onRefresh();
-    } catch (err) {
-      console.error(`[handleForceDelete] Error eliminando ID ${id}:`, err);
-      showErrorAlert('Error al eliminar', 'Ocurrió un problema al eliminar el tipo.');
+    if (result.isConfirmed) {
+      try {
+        await forceDelete(id);
+        showSuccessAlert('Eliminado', 'El tipo ha sido eliminado permanentemente.');
+        onRefresh();
+      } catch (err) {
+        console.error(`[handleForceDelete] Error eliminando ID ${id}:`, err);
+        showErrorAlert('Error al eliminar', 'Ocurrió un problema al eliminar el tipo.');
+      }
     }
-  }
-};
-
+  };
 
   const handleRestore = (id) => {
     onRestore(id);
@@ -78,7 +80,7 @@ const handleForceDelete = async (id) => {
           </IconButton>
         </Box>
       </DialogTitle>
-      
+
       <DialogContent className="trash-modal__content">
         {trashedTypes.length === 0 ? (
           <Box className="trash-modal__empty-state">
@@ -89,8 +91,8 @@ const handleForceDelete = async (id) => {
         ) : (
           <List className="trash-modal__list">
             {trashedTypes.map((type) => (
-              <ListItem 
-                key={type.id} 
+              <ListItem
+                key={type.id}
                 className="trash-modal__item"
                 secondaryAction={
                   <Box className="trash-modal__actions">
@@ -127,10 +129,10 @@ const handleForceDelete = async (id) => {
           </List>
         )}
       </DialogContent>
-      
+
       <DialogActions className="trash-modal__footer">
         {trashedTypes.length > 0 && (
-          <Button 
+          <Button
             onClick={handleEmptyTrash}
             disabled={emptyingTrash}
             className="trash-modal__button trash-modal__button--empty"

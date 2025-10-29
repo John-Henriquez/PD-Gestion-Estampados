@@ -11,15 +11,15 @@ export const useCreateItemType = () => {
     try {
       const data = await createItemType(formData);
       setLoading(false);
-      return data;  
+      return data;
     } catch (err) {
       setError(err.message || 'Error al crear el tipo de ítem');
       setLoading(false);
-      throw err; 
+      throw err;
     }
   }, []);
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { addType, loading, error, clearError};
+  return { addType, loading, error, clearError };
 };

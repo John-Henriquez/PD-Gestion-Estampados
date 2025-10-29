@@ -27,8 +27,7 @@ export const itemStockService = {
         } = itemData;
         const itemStockRepo =
           transactionalEntityManager.getRepository(ItemStock);
-        const itemTypeRepo = 
-          transactionalEntityManager.getRepository(ItemType);
+        const itemTypeRepo = transactionalEntityManager.getRepository(ItemType);
         const movementRepo =
           transactionalEntityManager.getRepository(InventoryMovement);
 
@@ -39,7 +38,7 @@ export const itemStockService = {
           return [null, "La cantidad y el precio deben ser no negativos"];
         }
         if (stampOptionsPricing && typeof stampOptionsPricing !== "object") {
-            return [null, "stampOptionsPricing debe ser un objeto JSON válido"];
+          return [null, "stampOptionsPricing debe ser un objeto JSON válido"];
         }
 
         const itemType = await itemTypeRepo.findOne({
@@ -50,13 +49,16 @@ export const itemStockService = {
           return [null, "Tipo de artículo no encontrado o inactivo"];
         }
         if (itemType.category !== "clothing" && stampOptionsPricing) {
-            console.warn(
-              "Se intentó asignar stampOptionsPricing a un ItemStock de categoría '" +
+          console.warn(
+            "Se intentó asignar stampOptionsPricing a un ItemStock de categoría '" +
               itemType.category +
-              "', se ignorará."
-            );
-            return [null, `No se permite stampOptionsPricing para la categoría '${itemType.category}'`];
-            itemData.stampOptionsPricing = null; 
+              "', se ignorará.",
+          );
+          return [
+            null,
+            `No se permite stampOptionsPricing para la categoría '${itemType.category}'`,
+          ];
+          itemData.stampOptionsPricing = null;
         }
 
         if (itemType.hasSizes && !size) {
@@ -90,7 +92,9 @@ export const itemStockService = {
           size: itemType.hasSizes ? size : null,
           quantity,
           price,
-          productImageUrls: Array.isArray(productImageUrls) ? productImageUrls : [],
+          productImageUrls: Array.isArray(productImageUrls)
+            ? productImageUrls
+            : [],
           minStock: minStockValue,
           itemType,
           createdBy: { id: userId },
@@ -124,23 +128,26 @@ export const itemStockService = {
       const parsedFilters = {
         ...filters,
         isActive:
-          filters.isActive === "false" ? false
-            : filters.isActive === "true" ? true
-            : filters.isActive,
+          filters.isActive === "false"
+            ? false
+            : filters.isActive === "true"
+              ? true
+              : filters.isActive,
       };
       if (parsedFilters.id) where.id = parsedFilters.id;
-      if (parsedFilters.itemTypeId) where.itemType = { id: parsedFilters.itemTypeId };
+      if (parsedFilters.itemTypeId)
+        where.itemType = { id: parsedFilters.itemTypeId };
       if (parsedFilters.size !== undefined) {
         where.size = parsedFilters.size === "N/A" ? null : parsedFilters.size;
       }
 
-      if(parsedFilters.publicOnly === true){
+      if (parsedFilters.publicOnly === true) {
         where.isActive = true;
         where.quantity = MoreThan(0);
-      } else if (parsedFilters !== undefined){
+      } else if (parsedFilters !== undefined) {
         where.isActive = parsedFilters.isActive;
       }
-      
+
       const items = await repo.find({
         where,
         relations: ["itemType"],
@@ -164,18 +171,21 @@ export const itemStockService = {
       const item = await repo.findOne({
         where: {
           id: id,
-          isActive: true
+          isActive: true,
         },
-        relations: ["itemType"], 
+        relations: ["itemType"],
       });
 
       if (!item) {
         return [null, "Producto no encontrado o no disponible."];
       }
 
-      return [item, null]; 
+      return [item, null];
     } catch (error) {
-      console.error(`Error detallado en getPublicItemStockById (ID: ${id}):`, error);
+      console.error(
+        `Error detallado en getPublicItemStockById (ID: ${id}):`,
+        error,
+      );
       return [null, "Error al obtener los detalles del producto."];
     }
   },
@@ -198,148 +208,179 @@ export const itemStockService = {
         const { updatedById } = updateData;
 
         if (updateData.quantity !== undefined && !userId) {
-        return [
-          null,
-          "El ID del usuario que actualiza es obligatorio para cambios de cantidad",
-        ];
-      }
-      if (updateData.quantity !== undefined && updateData.quantity < 0) {
-        return [null, "La cantidad no puede ser negativa"];
-      }
-      if (updateData.price !== undefined && updateData.price < 0) {
-        return [null, "El precio no puede ser negativo"];
-      }
-      if (
+          return [
+            null,
+            "El ID del usuario que actualiza es obligatorio para cambios de cantidad",
+          ];
+        }
+        if (updateData.quantity !== undefined && updateData.quantity < 0) {
+          return [null, "La cantidad no puede ser negativa"];
+        }
+        if (updateData.price !== undefined && updateData.price < 0) {
+          return [null, "El precio no puede ser negativo"];
+        }
+        if (
           updateData.stampOptionsPricing !== undefined &&
           typeof updateData.stampOptionsPricing !== "object" &&
-          updateData.stampOptionsPricing !== null 
+          updateData.stampOptionsPricing !== null
         ) {
-          throw new Error("stampOptionsPricing debe ser un objeto JSON válido o null");
-        }
-      if (
-        updateData.size !== undefined &&
-        item.itemType.hasSizes &&
-        !updateData.size
-      ) {
-        return [null, "Este tipo de artículo requiere especificar talla"];
-      }
-
-      if (
-        (updateData.hexColor && updateData.hexColor !== item.hexColor) ||
-        (updateData.itemTypeId && updateData.itemTypeId !== item.itemType.id)
-      ) {
-        const duplicateCheckConditions = {
-              id: Not(id),
-              itemType: { id: updateData.itemTypeId || item.itemType.id }, 
-              hexColor: updateData.hexColor || item.hexColor,
-              size: item.itemType.hasSizes ? (updateData.size !== undefined ? updateData.size : item.size) : null,
-        };
-
-        const duplicate = await repo.findOne({
-              where: duplicateCheckConditions,
-              relations: ["itemType"],
-            });
-
-        if (duplicate) {
           throw new Error(
-            "Ya existe otro stock con tipo " + duplicate.itemType.name +
-            ", color " + duplicateCheckConditions.hexColor +
-            " y talla " + (duplicateCheckConditions.size ?? "N/A")
+            "stampOptionsPricing debe ser un objeto JSON válido o null",
           );
         }
-      }
-
-      // 1. Preparar cambios
-      const changes = {};
-      const trackableFields = [
-        "hexColor",
-        "size",
-        "quantity",
-        "price",
-        "stampOptionsPricing",
-        "productImageUrls",
-        "minStock",
-        "isActive",
-      ];
-
-      trackableFields.forEach((field) => {
-        let updateValue = updateData[field];
-
-        if (field === "productImageUrls" && updateValue !== undefined && !Array.isArray(updateValue)) {
-            console.warn("productImageUrls recibido no era un array, se convertirá a array vacío.");
-            updateValue = []; 
+        if (
+          updateData.size !== undefined &&
+          item.itemType.hasSizes &&
+          !updateData.size
+        ) {
+          return [null, "Este tipo de artículo requiere especificar talla"];
         }
 
-        if (field === "stampOptionsPricing" && item.itemType.category !== "clothing" && updateValue) {
-              console.warn(
-                "Se intentó asignar stampOptionsPricing a un ItemStock de categoría '" +
-                item.itemType.category +
-                "', se ignorará la actualización de este campo."
-              );
-              updateValue = undefined; 
+        if (
+          (updateData.hexColor && updateData.hexColor !== item.hexColor) ||
+          (updateData.itemTypeId && updateData.itemTypeId !== item.itemType.id)
+        ) {
+          const duplicateCheckConditions = {
+            id: Not(id),
+            itemType: { id: updateData.itemTypeId || item.itemType.id },
+            hexColor: updateData.hexColor || item.hexColor,
+            size: item.itemType.hasSizes
+              ? updateData.size !== undefined
+                ? updateData.size
+                : item.size
+              : null,
+          };
+
+          const duplicate = await repo.findOne({
+            where: duplicateCheckConditions,
+            relations: ["itemType"],
+          });
+
+          if (duplicate) {
+            throw new Error(
+              "Ya existe otro stock con tipo " +
+                duplicate.itemType.name +
+                ", color " +
+                duplicateCheckConditions.hexColor +
+                " y talla " +
+                (duplicateCheckConditions.size ?? "N/A"),
+            );
+          }
+        }
+
+        // 1. Preparar cambios
+        const changes = {};
+        const trackableFields = [
+          "hexColor",
+          "size",
+          "quantity",
+          "price",
+          "stampOptionsPricing",
+          "productImageUrls",
+          "minStock",
+          "isActive",
+        ];
+
+        trackableFields.forEach((field) => {
+          let updateValue = updateData[field];
+
+          if (
+            field === "productImageUrls" &&
+            updateValue !== undefined &&
+            !Array.isArray(updateValue)
+          ) {
+            console.warn(
+              "productImageUrls recibido no era un array, se convertirá a array vacío.",
+            );
+            updateValue = [];
           }
 
-        if ( updateValue !== undefined && !deepEqual(updateValue, item[field]) ) {
-          changes[field] = {
-            oldValue: item[field],
-            newValue: updateValue,
-          };
+          if (
+            field === "stampOptionsPricing" &&
+            item.itemType.category !== "clothing" &&
+            updateValue
+          ) {
+            console.warn(
+              "Se intentó asignar stampOptionsPricing a un ItemStock de categoría '" +
+                item.itemType.category +
+                "', se ignorará la actualización de este campo.",
+            );
+            updateValue = undefined;
+          }
+
+          if (
+            updateValue !== undefined &&
+            !deepEqual(updateValue, item[field])
+          ) {
+            changes[field] = {
+              oldValue: item[field],
+              newValue: updateValue,
+            };
+          }
+        });
+
+        if (Object.keys(changes).length === 0) {
+          console.log(`No se detectaron cambios para el item ID ${id}`);
+          return [item, "No se detectaron cambios"];
         }
-      });
 
-      if (Object.keys(changes).length === 0) {
-        console.log(`No se detectaron cambios para el item ID ${id}`);
-        return [item, "No se detectaron cambios"];
-      }
+        // 2. Aplicar cambios
+        trackableFields.forEach((field) => {
+          if (changes[field]) {
+            // Asegurar que productImageUrls se guarde como array
+            if (
+              field === "productImageUrls" &&
+              !Array.isArray(updateData[field])
+            ) {
+              item[field] = [];
+            } else {
+              item[field] = updateData[field];
+            }
+          }
+        });
 
-      // 2. Aplicar cambios
-      trackableFields.forEach((field) => {
-        if (changes[field]) {
-          // Asegurar que productImageUrls se guarde como array
-           if (field === "productImageUrls" && !Array.isArray(updateData[field])) {
-               item[field] = [];
-           } else {
-               item[field] = updateData[field];
-           }
-        }
-      });
+        item.updatedAt = new Date();
 
-      item.updatedAt = new Date();
+        const updatedItem = await repo.save(item);
 
-      const updatedItem = await repo.save(item);
-
-      // 3. Registrar movimientos
-      const movementPromises = Object.keys(changes).map(async (field) => {
-
-        if (field !== "productImageUrls") {
-          const { operation, reason } = generateInventoryReason("update", field);
-          const movementData = {
-            type: "ajuste",
-            quantity:
-              field === "quantity" ? Math.abs(changes.quantity.newValue - changes.quantity.oldValue)
-                : 0,
-            itemStock: item,
-            createdBy: { id: userId },
-            operation,
-            reason,
-            changedField: field,
-            changes: {
-              [field]: {
-                oldValue: changes[field].oldValue,
-                newValue: changes[field].newValue,
+        // 3. Registrar movimientos
+        const movementPromises = Object.keys(changes).map(async (field) => {
+          if (field !== "productImageUrls") {
+            const { operation, reason } = generateInventoryReason(
+              "update",
+              field,
+            );
+            const movementData = {
+              type: "ajuste",
+              quantity:
+                field === "quantity"
+                  ? Math.abs(
+                      changes.quantity.newValue - changes.quantity.oldValue,
+                    )
+                  : 0,
+              itemStock: item,
+              createdBy: { id: userId },
+              operation,
+              reason,
+              changedField: field,
+              changes: {
+                [field]: {
+                  oldValue: changes[field].oldValue,
+                  newValue: changes[field].newValue,
+                },
               },
-            },
-            ...createItemSnapshot(updatedItem),
-          };
-          return movementRepo.save(movementData);
-        }
-        return Promise.resolve();
-      });
+              ...createItemSnapshot(updatedItem),
+            };
+            return movementRepo.save(movementData);
+          }
+          return Promise.resolve();
+        });
 
-      await Promise.all(movementPromises);
+        await Promise.all(movementPromises);
 
-      return [updatedItem, null];
-    }).catch((error) => {
+        return [updatedItem, null];
+      },
+    ).catch((error) => {
       console.error("Error en transacción updateItemStock:", error);
       return [null, error.message || "Error interno al actualizar el stock"];
     });

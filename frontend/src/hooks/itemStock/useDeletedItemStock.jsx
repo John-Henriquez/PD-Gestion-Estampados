@@ -14,7 +14,7 @@ export function useDeletedItemStock() {
       if (response.error) throw new Error(response.error);
       setDeletedStock(response.data || response);
     } catch (error) {
-      console.error("Error al cargar stock eliminado:", error);
+      console.error('Error al cargar stock eliminado:', error);
       setError(error.message || 'Error al cargar stock eliminado');
     } finally {
       setLoadingDeletedStock(false);

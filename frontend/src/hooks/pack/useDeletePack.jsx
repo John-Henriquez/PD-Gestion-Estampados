@@ -10,7 +10,7 @@ const useDeletePack = () => {
     setError(null);
 
     try {
-      const [res, err] = await deletePack(id); 
+      const [res, err] = await deletePack(id);
       if (err) setError(err);
       return [res, err];
     } catch (err) {

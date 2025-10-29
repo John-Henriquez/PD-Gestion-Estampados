@@ -1,14 +1,36 @@
 import { useState, useEffect } from 'react';
 import { useCreateItemType } from '../hooks/itemType/useCreateItemType.jsx';
 import { useUpdateItemType } from '../hooks/itemType/useUpdateItemType.jsx';
-import { 
-  Shirt, Coffee, GlassWater, Key, Table, Notebook, Gift, 
-  GraduationCap, Baby, Backpack, Smartphone, FlaskConical 
+import {
+  Shirt,
+  Coffee,
+  GlassWater,
+  Key,
+  Table,
+  Notebook,
+  Gift,
+  GraduationCap,
+  Baby,
+  Backpack,
+  Smartphone,
+  FlaskConical,
 } from 'lucide-react';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, TextField, Select, MenuItem, InputLabel, FormControl,
-  Checkbox, OutlinedInput, Chip, Box, ListSubheader
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Checkbox,
+  OutlinedInput,
+  Chip,
+  Box,
+  ListSubheader,
 } from '@mui/material';
 import { Autocomplete } from '@mui/material';
 import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
@@ -33,7 +55,7 @@ const ICON_CATEGORIES = [
     icons: [
       { label: 'Taza', value: 'mug', Icon: Coffee },
       { label: 'Vaso', value: 'glass', Icon: GlassWater },
-      { label: 'Llave', value: 'key', Icon: Key } 
+      { label: 'Llave', value: 'key', Icon: Key },
     ],
   },
   {
@@ -60,7 +82,7 @@ const initialFormState = {
   printingMethods: [],
   hasSizes: false,
   sizesAvailable: [],
-  icon: ''
+  icon: '',
 };
 
 const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
@@ -71,7 +93,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
     printingMethods: [],
     hasSizes: false,
     sizesAvailable: [],
-    icon: '' 
+    icon: '',
   });
 
   const { addType, loading: creating } = useCreateItemType();
@@ -80,7 +102,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
 
   useEffect(() => {
     if (open) {
-      if (editingType){
+      if (editingType) {
         setForm({
           name: editingType.name,
           description: editingType.description || '',
@@ -88,7 +110,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
           printingMethods: editingType.printingMethods || [],
           hasSizes: editingType.hasSizes,
           sizesAvailable: editingType.sizesAvailable || [],
-          icon: editingType.iconKey || ''
+          icon: editingType.iconKey || '',
         });
       } else {
         setForm(initialFormState);
@@ -99,21 +121,21 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
   useEffect(() => {
     if (!editingType) {
       if (form.category === 'clothing') {
-        setForm(prev => ({ ...prev, hasSizes: true }));
+        setForm((prev) => ({ ...prev, hasSizes: true }));
       } else if (form.category === 'object') {
-        setForm(prev => ({ ...prev, hasSizes: false, sizesAvailable: [] }));
+        setForm((prev) => ({ ...prev, hasSizes: false, sizesAvailable: [] }));
       }
     }
   }, [form.category, editingType]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleMultiSelectChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
@@ -135,8 +157,8 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
 
       console.log('Datos enviados al backend:');
       for (let pair of formData.entries()) {
-      console.log(`${pair[0]}: ${pair[1]}`);
-    }
+        console.log(`${pair[0]}: ${pair[1]}`);
+      }
 
       if (editingType) {
         await updateType(editingType.id, formData);
@@ -145,7 +167,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
         await addType(formData);
         showSuccessAlert('¡Tipo creado!', 'El tipo de ítem se agregó correctamente.');
       }
-      
+
       onCreated();
       onClose();
     } catch (error) {
@@ -165,7 +187,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
           options={ITEM_TYPE_SUGGESTIONS}
           value={form.name}
           onInputChange={(e, newValue) => {
-            setForm(prev => ({ ...prev, name: newValue }));
+            setForm((prev) => ({ ...prev, name: newValue }));
           }}
           renderInput={(params) => (
             <TextField
@@ -219,7 +241,9 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                   <selectedIcon.Icon size={20} />
                   {selectedIcon.label}
                 </Box>
-              ) : 'Sin ícono';
+              ) : (
+                'Sin ícono'
+              );
             }}
           >
             {ICON_CATEGORIES.map((category) => [
@@ -229,7 +253,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                   <icon.Icon size={24} style={{ marginRight: 8 }} />
                   {icon.label}
                 </MenuItem>
-              ))
+              )),
             ])}
           </Select>
         </FormControl>
@@ -286,12 +310,9 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
           </FormControl>
         )}
       </DialogContent>
-      
+
       <DialogActions className="modal-actions">
-        <Button
-          onClick={onClose}
-          className="modal-button modal-button--cancel"
-        >
+        <Button onClick={onClose} className="modal-button modal-button--cancel">
           Cancelar
         </Button>
 
@@ -301,7 +322,13 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
           disabled={loading || !form.name || !form.category || !form.printingMethods.length}
           className="modal-button modal-button--primary"
         >
-          {loading ? (editingType ? 'Actualizando...' : 'Creando...') : (editingType ? 'Actualizar' : 'Crear')}
+          {loading
+            ? editingType
+              ? 'Actualizando...'
+              : 'Creando...'
+            : editingType
+              ? 'Actualizar'
+              : 'Crear'}
         </Button>
       </DialogActions>
     </Dialog>

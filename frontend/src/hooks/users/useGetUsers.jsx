@@ -1,45 +1,46 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getUsers } from '../../services/user.service';
 
 const useUsers = () => {
-    const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]);
 
-    const fetchUsers = async () => {
-        try {
-            const response = await getUsers();
-            const formattedData = response.map(user => ({
-                nombreCompleto: user.nombreCompleto,
-                rut: user.rut,
-                email: user.email,
-                rol: user.rol,
-                createdAt: user.createdAt
-            }));
-            dataLogged(formattedData);
-            setUsers(formattedData);
-        } catch (error) {
-            console.error("Error: ", error);
-        }
-    };
+  const dataLogged = useCallback((formattedData) => {
+    try {
+      const usuario = JSON.parse(sessionStorage.getItem('usuario'));
+      if (!usuario) return;
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+      const { rut } = usuario;
 
-    const dataLogged = (formattedData) => {
-        try {
-            const { rut } = JSON.parse(sessionStorage.getItem('usuario'));
-            for(let i = 0; i < formattedData.length ; i++) {
-                if(formattedData[i].rut === rut) {
-                    formattedData.splice(i, 1);
-                    break;
-                }
-            }
-        } catch (error) {
-            console.error("Error: ", error)
-        }
-    };
+      return formattedData.filter((user) => user.rut !== rut);
+    } catch (error) {
+      console.error('Error:', error);
+      return formattedData;
+    }
+  }, []);
 
-    return { users, fetchUsers, setUsers };
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await getUsers();
+      const formattedData = response.map((user) => ({
+        nombreCompleto: user.nombreCompleto,
+        rut: user.rut,
+        email: user.email,
+        rol: user.rol,
+        createdAt: user.createdAt,
+      }));
+
+      const filteredData = dataLogged(formattedData);
+      setUsers(filteredData);
+    } catch (error) {
+      console.error('Error: ', error);
+    }
+  }, [dataLogged]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  return { users, fetchUsers, setUsers };
 };
 
 export default useUsers;

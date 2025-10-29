@@ -22,7 +22,6 @@ router.use("/packs", packRoutes);
 router.use("/reports/inventory-movements", inventoryMovementRoutes);
 
 router.use("/orders", orderRoutes);
-router.use("/uploads", uploadRoutes)
-
+router.use("/uploads", uploadRoutes);
 
 export default router;
