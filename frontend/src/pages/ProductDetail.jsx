@@ -55,19 +55,7 @@ const StampOptionsSelector = ({ itemTypeOptions, stockPricing, selectedOptions, 
   const getTypeCost = (type) => stockPricing?.types?.[type] || 0;
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        mt: 1,
-        mb: 2,
-        p: 2,
-        border: '1px solid var(--gray-300)',
-        borderRadius: 'var(--border-radius-sm)',
-        backgroundColor: 'var(--gray-100)',
-      }}
-    >
+    <Box className="stamp-options-box">
       {itemTypeOptions.locations && itemTypeOptions.locations.length > 0 && (
         <FormControl component="fieldset">
           <Typography variant="subtitle2" gutterBottom component="legend">
@@ -293,48 +281,43 @@ const ProductDetail = () => {
   return (
     <div className="product-detail-container">
       <div className="product-detail-grid">
-        <section className="product-image-section">
-          {/* Galería de imagenes*/}
-          {currentImageUrl ? (
-            <img
-              src={currentImageUrl}
-              alt={`${name} - Imagen ${currentImageIndex + 1}`}
-              loading="lazy"
-            />
-          ) : IconComponent ? (
-            <IconComponent size={128} strokeWidth={1} className="product-image-placeholder" />
-          ) : (
-            <Typography className="product-image-placeholder">Sin Imagen</Typography>
-          )}
-          {/* Controles de Navegación (si hay múltiples imágenes) */}
+        <div className="product-image-column">
+          <section className="product-image-section">
+            {currentImageUrl ? (
+              <img
+                src={currentImageUrl}
+                alt={`${name} - Imagen ${currentImageIndex + 1}`}
+                loading="lazy"
+              />
+            ) : IconComponent ? (
+              <IconComponent size={128} strokeWidth={1} className="product-image-placeholder" />
+            ) : (
+              <Typography className="product-image-placeholder">Sin Imagen</Typography>
+            )}
+          </section>
+
           {hasMultipleImages && (
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: 10,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                display: 'flex',
-                gap: 1,
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                borderRadius: '20px',
-                padding: '4px 8px',
-              }}
-            >
-              <IconButton onClick={handlePrevImage} size="small" sx={{ color: 'white' }}>
-                {' '}
-                <ChevronLeft />{' '}
+            <Box className="image-navigation-controls">
+              <IconButton
+                onClick={handlePrevImage}
+                size="small"
+                className="image-navigation-control-button"
+              >
+                <ChevronLeft />
               </IconButton>
-              <Typography sx={{ color: 'white', alignSelf: 'center', fontSize: '0.9rem' }}>
+              <Typography className="image-navigation-text">
                 {currentImageIndex + 1} / {productImageUrls.length}
               </Typography>
-              <IconButton onClick={handleNextImage} size="small" sx={{ color: 'white' }}>
-                {' '}
-                <ChevronRight />{' '}
+              <IconButton
+                onClick={handleNextImage}
+                size="small"
+                className="image-navigation-control-button"
+              >
+                <ChevronRight />
               </IconButton>
             </Box>
           )}
-        </section>
+        </div>
 
         <section className="product-info-section">
           <Typography component="h1" className="product-info__name">

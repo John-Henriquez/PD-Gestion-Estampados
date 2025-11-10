@@ -17,4 +17,15 @@
   box-shadow: var(--shadow-md);
   max-width: 500px;
   width: 100%;
+  display: flex; 
+ flex-direction: column;
+ align-items: center;
+}
+
+.auth-logo {
+  width: 200px;
+  height: 200px;
+  object-fit: contain; 
+  margin-bottom: var(--spacing-sm); 
+  display: block;
 }

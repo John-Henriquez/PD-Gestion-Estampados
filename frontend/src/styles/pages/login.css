@@ -41,3 +41,11 @@
 .login-footer a:hover {
   text-decoration: underline;
 }
+
+.auth-logo {
+  width: 200px;
+  height: 200px;
+  object-fit: contain; 
+  margin-bottom: var(--spacing-1); 
+  display: block;
+}

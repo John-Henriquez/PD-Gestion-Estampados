@@ -3,7 +3,7 @@
   width: 100%;
   top: 0;
   left: 0;
-  background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+  background: var(--primary);
   height: 4.5rem;
   z-index: 1000;
   display: flex;
@@ -251,4 +251,27 @@
   .navbar__hamburger {
     display: flex;
   }
+}
+
+.navbar__logo {
+    height: 60px; 
+    width: auto;
+    object-fit: contain;
+}
+
+.navbar__user-name-desktop {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--white);
+    display: none; 
+}
+
+@media (min-width: 768px) {
+    .navbar__user-name-desktop {
+        display: inline; 
+    }
+}
+
+.navbar__logo {
+    margin-right: 10px;
 }

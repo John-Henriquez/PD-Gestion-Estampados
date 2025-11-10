@@ -69,6 +69,7 @@ export const itemTypeService = {
           : [],
         iconName: itemTypeData.iconName || null,
         stampOptions: parsedStampOptions,
+        baseImageUrl: itemTypeData.baseImageUrl || null,
         createdBy: { id: userId },
       });
 
@@ -221,6 +222,11 @@ export const itemTypeService = {
         sizes = [];
       }
 
+      let newBaseImageUrl = itemType.baseImageUrl; 
+      if (itemTypeData.baseImageUrl !== undefined) {
+         newBaseImageUrl = itemTypeData.baseImageUrl;
+      }
+
       repo.merge(itemType, {
         name: itemTypeData.name,
         description: itemTypeData.description,
@@ -229,6 +235,7 @@ export const itemTypeService = {
         sizesAvailable: sizes,
         iconName: itemTypeData.iconName,
         stampOptions: parsedStampOptions,
+        baseImageUrl: newBaseImageUrl,
         updatedBy: { id: userId },
       });
 

@@ -43,6 +43,12 @@ const ItemTypeSchema = new EntitySchema({
       length: 100,
       nullable: true,
     },
+    baseImageUrl: {
+      type: "varchar",
+      length: 255, 
+      nullable: true,
+      comment: "URL de la imagen representativa principal para este tipo de ítem"
+    },
     stampOptions: {
       type: "json",
       nullable: true,
