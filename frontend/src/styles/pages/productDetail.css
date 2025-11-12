@@ -145,7 +145,7 @@
   justify-content: center;
   align-items: center;
   gap: var(--spacing-sm);
-  margin-top: var(--spacing-sm); 
+  margin-top: var(--spacing-sm);
 }
 
 .image-navigation-controls .MuiIconButton-root {
@@ -184,9 +184,7 @@
   transform: translateX(-50%);
   display: flex;
   gap: var(--spacing-xs);
-  background-color: rgba(0,0,0,0.4);
+  background-color: rgba(0, 0, 0, 0.4);
   border-radius: 20px;
   padding: 4px 8px;
 }
-
-

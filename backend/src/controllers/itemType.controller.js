@@ -12,26 +12,26 @@ import {
 export const itemTypeController = {
   async createItemType(req, res) {
     try {
-      if (req.body.baseImage) delete req.body.baseImage;
-      if (typeof req.body.hasSizes === "string") {
-        req.body.hasSizes = JSON.parse(req.body.hasSizes);
-      }
-
-      if (req.file) {
-        const baseUrl = `${req.protocol}://${req.get("host")}`;
-        req.body.baseImageUrl = `/uploads/${req.file.filename}`;
-
+      if (req.files && req.files.length > 0) {
+        req.body.productImageUrls = req.files.map(
+          (file) => `/uploads/${file.filename}`,
+        );
         console.log(
-          "Imagen subida, baseImageUrl seteado:",
-          req.body.baseImageUrl,
+          `${req.files.length} imágenes subidas, productImageUrls seteado:`,
+          req.body.productImageUrls,
         );
       } else {
-        console.log("No se recibió archivo baseImage");
+        req.body.productImageUrls = req.body.productImageUrls || [];
+        console.log("No se recibieron archivos de imagen.");
       }
 
       if (typeof req.body.printingMethods === "string") {
         req.body.printingMethods = JSON.parse(req.body.printingMethods);
         console.log("printingMethods parseado:", req.body.printingMethods);
+      }
+
+      if (typeof req.body.stampingLevels === "string") {
+        console.log("stampingLevels recibido como string, se procesará en el servicio.");
       }
       if (typeof req.body.sizesAvailable === "string") {
         req.body.sizesAvailable = JSON.parse(req.body.sizesAvailable);
@@ -48,14 +48,14 @@ export const itemTypeController = {
         console.log("sizesAvailable flatten:", req.body.sizesAvailable);
       }
 
-      const { error } = createItemTypeSchema.validate(req.body);
+      const { error, validatedBody } = createItemTypeSchema.validate(req.body);
       if (error) {
         console.error("Error de validación Joi:", error.details);
         return handleErrorClient(
           res,
           400,
           "Error de validación",
-          error.details,
+          error.details.map((d) => d.message),
         );
       }
       console.log("Validación Joi OK");
@@ -123,22 +123,28 @@ export const itemTypeController = {
         return handleErrorClient(res, 400, "ID inválido");
       }
 
-      if (req.body.baseImage) delete req.body.baseImage;
+      const newImageUrls = [];
+      if (req.files && req.files.length > 0) {
+        newImageUrls = req.files.map((file) => `/uploads/${file.filename}`);
+        console.log("Nuevas imágenes subidas:", newImageUrls);
+      }
 
+      let existingImageUrls = [];
+      if (typeof req.body.productImageUrls === "string") {
+        try {
+          existingImageUrls = JSON.parse(req.body.productImageUrls);
+        } catch (e) {
+          existingImageUrls = [];
+        }
+      } else if (Array.isArray(req.body.productImageUrls)) {
+        existingImageUrls = req.body.productImageUrls;
+      }
+
+      req.body.productImageUrls = [...existingImageUrls, ...newImageUrls];
+      
       if (typeof req.body.hasSizes === "string") {
         req.body.hasSizes = JSON.parse(req.body.hasSizes);
         console.log("hasSizes parseado:", req.body.hasSizes);
-      }
-
-      if (req.file) {
-        const baseUrl = `${req.protocol}://${req.get("host")}`;
-        req.body.baseImageUrl = `/uploads/${req.file.filename}`;
-        console.log(
-          "Imagen subida, baseImageUrl seteado:",
-          req.body.baseImageUrl,
-        );
-      } else {
-        console.log("No se recibió archivo baseImage");
       }
 
       if (typeof req.body.printingMethods === "string") {
@@ -149,6 +155,10 @@ export const itemTypeController = {
       if (typeof req.body.sizesAvailable === "string") {
         req.body.sizesAvailable = JSON.parse(req.body.sizesAvailable);
         console.log("sizesAvailable parseado:", req.body.sizesAvailable);
+      }
+
+      if (typeof req.body.stampingLevels === "string") {
+        console.log("stampingLevels recibido como string, se procesará en el servicio.");
       }
 
       if (Array.isArray(req.body.printingMethods)) {
@@ -204,10 +214,8 @@ export const itemTypeController = {
         console.error("Error en itemTypeService.deleteItemType:", error);
 
         const status =
-          error.type === "CONFLICT"
-            ? 409
-            : error.type === "NOT_FOUND"
-              ? 404
+          error.type === "CONFLICT" ? 409
+            : error.type === "NOT_FOUND" ? 404
               : 400;
 
         return handleErrorClient(res, status, error);

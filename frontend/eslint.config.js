@@ -52,7 +52,7 @@ export default [
           jsx: 'never',
         },
       ],
-
+      quotes: ['error', 'single'],
       'prettier/prettier': [
         'warn',
         {

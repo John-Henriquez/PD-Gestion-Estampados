@@ -3,7 +3,34 @@ import ItemType from "../entity/itemType.entity.js";
 import ItemStock from "../entity/itemStock.entity.js";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
 import { generateInventoryReason } from "../helpers/inventory.helpers.js";
-import { Not } from "typeorm";
+
+const validateStampingLevels = (stampingLevels) => {
+  if (!stampingLevels) {
+    return;
+  }
+
+  if (!Array.isArray(stampingLevels)) {
+    throw new Error("stampingLevels debe ser un array.");
+  }
+  
+  if (stampingLevels.length > 0) {
+    for (const level of stampingLevels) {
+      if (!level.level || typeof level.level !== "string" || level.level.trim() === "") {
+        throw new Error("Cada nivel de estampado debe tener un nombre válido.");
+      }
+      if (
+        level.price == null || 
+        isNaN(level.price) ||
+        Number(level.price) < 0
+      ) {
+        throw new Error(`El 'price' para el nivel '${level.level}' debe ser un número positivo.`);
+      }
+      if (level.description && typeof level.description !== "string") {
+         throw new Error(`La 'description' para el nivel '${level.level}' debe ser un string.`);
+      }
+    }
+  }
+};
 
 export const itemTypeService = {
   async createItemType(itemTypeData, userId) {
@@ -13,44 +40,35 @@ export const itemTypeService = {
       const existingType = await repo.findOne({
         where: { name: itemTypeData.name },
       });
+      
+      if (existingType) {
+         return [
+            null,
+            {
+              type: "CONFLICT_ERROR",
+              message: `El tipo de ítem con nombre '${itemTypeData.name}' ya existe.`,
+              field: "name",
+            },
+          ];
+      }
 
-      let parsedStampOptions = null;
-      if (itemTypeData.stampOptions) {
+      let parsedStampingLevels = null; 
+
+      if (itemTypeData.stampingLevels !== undefined && itemTypeData.stampingLevels !== null) {
         try {
-          parsedStampOptions =
-            typeof itemTypeData.stampOptions === "string"
-              ? JSON.parse(itemTypeData.stampOptions)
-              : itemTypeData.stampOptions;
+          parsedStampingLevels =
+            typeof itemTypeData.stampingLevels === "string" ? JSON.parse(itemTypeData.stampingLevels)
+              : itemTypeData.stampingLevels;
 
-          if (
-            typeof parsedStampOptions !== "object" ||
-            parsedStampOptions === null
-          ) {
-            throw new Error("stampOptions debe ser un objeto JSON.");
-          }
-          if (
-            parsedStampOptions.locations &&
-            !Array.isArray(parsedStampOptions.locations)
-          ) {
-            throw new Error(
-              "stampOptions.locations debe ser un array de strings (ej: ['front', 'back']).",
-            );
-          }
-          if (
-            parsedStampOptions.types &&
-            !Array.isArray(parsedStampOptions.types)
-          ) {
-            throw new Error(
-              "stampOptions.types debe ser un array de strings (ej: ['dtf', 'vinyl']).",
-            );
-          }
+          validateStampingLevels(parsedStampingLevels);
+
         } catch (e) {
           return [
             null,
             {
               type: "VALIDATION_ERROR",
-              message: e.message || "Error procesando stamp options.",
-              field: "stampOptions",
+              message: e.message || "Error procesando stamping levels.",
+              field: "stampingLevels",
             },
           ];
         }
@@ -62,21 +80,20 @@ export const itemTypeService = {
         category: itemTypeData.category,
         hasSizes: itemTypeData.hasSizes,
         printingMethods: itemTypeData.printingMethods || [],
-        sizesAvailable: itemTypeData.hasSizes
-          ? Array.isArray(itemTypeData.sizesAvailable)
-            ? itemTypeData.sizesAvailable
+        sizesAvailable: itemTypeData.hasSizes ? 
+          Array.isArray(itemTypeData.sizesAvailable) ? 
+            itemTypeData.sizesAvailable
             : []
           : [],
-        iconName: itemTypeData.iconName || null,
-        stampOptions: parsedStampOptions,
-        baseImageUrl: itemTypeData.baseImageUrl || null,
+        productImageUrls: Array.isArray(itemTypeData.productImageUrls) ? itemTypeData.productImageUrls
+          : [],
+        stampingLevels: parsedStampingLevels,
         createdBy: { id: userId },
       });
 
       const savedItemType = await repo.save(newItemType);
       return [savedItemType, null];
     } catch (error) {
-      console.error("Error en createItemType [itemTypeService]:", error);
       return [
         null,
         {
@@ -163,68 +180,49 @@ export const itemTypeService = {
         ];
       }
 
-      let parsedStampOptions = itemType.stampOptions;
-      if (itemTypeData.stampOptions !== undefined) {
-        if (itemTypeData.stampOptions === null) {
-          parsedStampOptions = null;
+      const newCategory = itemType.category;
+
+      let parsedStampingLevels = itemType.stampingLevels; 
+      if (itemTypeData.stampingLevels !== undefined) {
+        if (itemTypeData.stampingLevels === null) {
+          parsedStampingLevels = null;
         } else {
           try {
-            parsedStampOptions =
-              typeof itemTypeData.stampOptions === "string"
-                ? JSON.parse(itemTypeData.stampOptions)
-                : itemTypeData.stampOptions;
+            parsedStampingLevels =
+              typeof itemTypeData.stampingLevels === "string" ? JSON.parse(itemTypeData.stampingLevels)
+                : itemTypeData.stampingLevels;
+            
+            validateStampingLevels(parsedStampingLevels); 
 
-            if (
-              typeof parsedStampOptions !== "object" ||
-              parsedStampOptions === null
-            ) {
-              throw new Error("stampOptions debe ser un objeto JSON.");
-            }
-            if (
-              parsedStampOptions.locations &&
-              !Array.isArray(parsedStampOptions.locations)
-            ) {
-              throw new Error(
-                "stampOptions.locations debe ser un array de strings.",
-              );
-            }
-            if (
-              parsedStampOptions.types &&
-              !Array.isArray(parsedStampOptions.types)
-            ) {
-              throw new Error(
-                "stampOptions.types debe ser un array de strings.",
-              );
-            }
           } catch (e) {
             return [
               null,
               {
                 type: "VALIDATION_ERROR",
-                message: e.message || "Error procesando stampOptions.",
-                field: "stampOptions",
+                message: e.message || "Error procesando stamping levels.",
+                field: "stampingLevels",
               },
             ];
           }
         }
       }
+
       let sizes = itemType.sizesAvailable;
       const newHasSizes =
-        itemTypeData.hasSizes !== undefined
-          ? itemTypeData.hasSizes
+        itemTypeData.hasSizes !== undefined ? itemTypeData.hasSizes
           : itemType.hasSizes;
 
       if (newHasSizes === true && itemTypeData.sizesAvailable !== undefined) {
-        sizes = Array.isArray(itemTypeData.sizesAvailable)
-          ? itemTypeData.sizesAvailable
+        sizes = Array.isArray(itemTypeData.sizesAvailable) ? itemTypeData.sizesAvailable
           : [];
       } else if (newHasSizes === false) {
         sizes = [];
       }
 
-      let newBaseImageUrl = itemType.baseImageUrl; 
-      if (itemTypeData.baseImageUrl !== undefined) {
-         newBaseImageUrl = itemTypeData.baseImageUrl;
+      let newProductImageUrls = itemType.productImageUrls; 
+      if (itemTypeData.productImageUrls !== undefined) {
+         newProductImageUrls = Array.isArray(itemTypeData.productImageUrls) ? itemTypeData.productImageUrls
+           : [];
       }
 
       repo.merge(itemType, {
@@ -233,9 +231,8 @@ export const itemTypeService = {
         hasSizes: newHasSizes,
         printingMethods: itemTypeData.printingMethods,
         sizesAvailable: sizes,
-        iconName: itemTypeData.iconName,
-        stampOptions: parsedStampOptions,
-        baseImageUrl: newBaseImageUrl,
+        stampingLevels: parsedStampingLevels,
+        productImageUrls: newProductImageUrls,
         updatedBy: { id: userId },
       });
 
@@ -257,7 +254,6 @@ export const itemTypeService = {
   async deleteItemType(id, userId) {
     try {
       const itemTypeRepo = AppDataSource.getRepository(ItemType);
-      const itemStockRepo = AppDataSource.getRepository(ItemStock);
 
       const itemType = await itemTypeRepo.findOne({
         where: { id: parseInt(id), isActive: true },
@@ -386,7 +382,6 @@ export const itemTypeService = {
 
   async forceDeleteItemType(id, userId) {
     try {
-      const parsedId = parseInt(id);
       const itemTypeRepo = AppDataSource.getRepository(ItemType);
       const itemStockRepo = AppDataSource.getRepository(ItemStock);
       const movementRepo = AppDataSource.getRepository(InventoryMovement);
@@ -407,21 +402,22 @@ export const itemTypeService = {
         ];
       }
 
-      await Promise.all(
-        itemType.stocks.map((stock) =>
-          movementRepo.save({
-            type: "ajuste",
-            quantity: 0,
-            itemStock: stock,
-            createdBy: { id: userId },
-            reason: generateInventoryReason("purge"),
-            itemName: itemType.name,
-            itemColor: stock.hexColor,
-            itemSize: stock.size,
-            itemTypeName: itemType.name,
-          }),
-        ),
+      const { reason, operation } = generateInventoryReason("purge");
+      const movementPromises = itemType.stocks.map((stock) =>
+        movementRepo.save({
+          type: "ajuste",
+          quantity: 0, 
+          itemStock: stock,
+          createdBy: { id: userId },
+          reason: reason, 
+          operation: operation, 
+          itemName: itemType.name,
+          itemColor: stock.hexColor,
+          itemSize: stock.size,
+          itemTypeName: itemType.name,
+        })
       );
+      await Promise.all(movementPromises);
 
       if (itemType.stocks.length > 0) {
         await itemStockRepo.remove(itemType.stocks);
@@ -461,6 +457,8 @@ export const itemTypeService = {
         return [[], null];
       }
 
+      const { reason, operation } = generateInventoryReason("purge");
+
       for (const itemType of deletedItems) {
         await Promise.all(
           itemType.stocks.map((stock) =>
@@ -469,7 +467,8 @@ export const itemTypeService = {
               quantity: 0,
               itemStock: stock,
               createdBy: { id: userId },
-              reason: generateInventoryReason("purge"),
+              reason: reason,
+              operation: operation,
               itemName: itemType.name,
               itemColor: stock.hexColor,
               itemSize: stock.size,

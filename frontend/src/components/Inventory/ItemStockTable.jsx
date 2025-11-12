@@ -19,7 +19,7 @@ const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) 
       field: 'itemTypeName',
       headerName: 'Tipo',
       minWidth: 180,
-      flex: 1.5,
+      flex: 2,
       renderCell: (params) => (
         <Box
           sx={{
@@ -44,7 +44,7 @@ const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) 
       field: 'hexColor',
       headerName: 'Color',
       minWidth: 120,
-      flex: 1,
+      flex: 1.5,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {params.value && (
@@ -96,15 +96,6 @@ const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) 
       ),
     },
     {
-      field: 'price',
-      headerName: 'Precio Base',
-      type: 'number',
-      width: 120,
-      align: 'right',
-      headerAlign: 'right',
-      valueFormatter: (value) => (value != null ? `$${value.toLocaleString('es-CL')}` : '-'),
-    },
-    {
       field: 'actions',
       type: 'actions',
       headerName: 'Acciones',
@@ -139,7 +130,6 @@ const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) 
     size: item.size,
     quantity: item.quantity,
     minStock: item.minStock,
-    price: item.price,
     _original: item,
   }));
 

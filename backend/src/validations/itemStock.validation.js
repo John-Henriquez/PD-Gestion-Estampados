@@ -17,15 +17,10 @@ const itemStockSchema = Joi.object({
 
   quantity: Joi.number().integer().min(0).required(),
 
-  price: Joi.number().integer().min(0).required(),
-
-  images: Joi.array().items(Joi.string().uri()).optional().default([]),
-
   minStock: Joi.number().integer().min(0).optional(),
 
-  // Campo auxiliar para validar tamaño, no se enviaría al backend
   requiresSize: Joi.boolean().optional(),
-}).unknown(true); // para permitir que se envíen otros campos como requiresSize
+}).unknown(true); 
 
 const itemStockUpdateSchema = Joi.object({
   hexColor: Joi.string()
@@ -35,10 +30,6 @@ const itemStockUpdateSchema = Joi.object({
   size: Joi.string().optional().allow(null),
 
   quantity: Joi.number().integer().min(0).optional(),
-
-  price: Joi.number().integer().min(0).optional(),
-
-  images: Joi.array().items(Joi.string().uri()).optional(),
 
   minStock: Joi.number().integer().min(0).optional(),
 

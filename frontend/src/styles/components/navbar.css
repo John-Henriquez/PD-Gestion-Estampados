@@ -254,24 +254,24 @@
 }
 
 .navbar__logo {
-    height: 60px; 
-    width: auto;
-    object-fit: contain;
+  height: 60px;
+  width: auto;
+  object-fit: contain;
 }
 
 .navbar__user-name-desktop {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--white);
-    display: none; 
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--white);
+  display: none;
 }
 
 @media (min-width: 768px) {
-    .navbar__user-name-desktop {
-        display: inline; 
-    }
+  .navbar__user-name-desktop {
+    display: inline;
+  }
 }
 
 .navbar__logo {
-    margin-right: 10px;
+  margin-right: 10px;
 }

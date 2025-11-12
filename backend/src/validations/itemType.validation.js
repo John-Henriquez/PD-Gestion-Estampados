@@ -1,5 +1,27 @@
 import Joi from "joi";
 
+// nivel de estampado individual
+const stampingLevelSchema = Joi.object({
+  level: Joi.string().trim().required().messages({
+    "string.empty": "El 'level' (nombre del nivel) no puede estar vacío.",
+    "any.required": "El 'level' (nombre del nivel) es requerido.",
+  }),
+  price: Joi.number().integer().positive().required().messages({
+    "number.base": "El 'price' debe ser un número.",
+    "number.positive": "El 'price' debe ser un número positivo.",
+    "any.required": "El 'price' es requerido.",
+  }),
+  description: Joi.string().trim().allow("", null).optional(),
+});
+//niveles de estampado
+const stampingLevelsSchema = Joi.array()
+  .items(stampingLevelSchema)
+  .min(0) 
+  .optional()
+  .messages({
+    "array.base": "stampingLevels debe ser un array.",
+  });
+// ItemType
 const itemTypeSchema = Joi.object({
   name: Joi.string().min(3).max(100).trim().messages({
     "string.empty": "El nombre no puede estar vacío",
@@ -28,8 +50,10 @@ const itemTypeSchema = Joi.object({
     .messages({
       "array.min": "Debe especificar al menos un método de impresión",
     }),
-  baseImageUrl: Joi.string()
-    .pattern(/^\/uploads\/[a-zA-Z0-9_-]+\.[a-zA-Z]{2,4}$/)
+  productImageUrls: Joi.array()
+    .items(
+       Joi.string().pattern(/^\/uploads\/[a-zA-Z0-9_.-]+\.[a-zA-Z0-9]{2,5}$/)
+    )
     .allow(null)
     .optional()
     .messages({
@@ -54,15 +78,35 @@ const itemTypeSchema = Joi.object({
           "No se permite el campo sizesAvailable cuando hasSizes es false",
       }),
     }),
+
+stampingLevels: Joi.alternatives()
+    .try(
+      Joi.string().custom((value, helpers) => {
+        try {
+          const parsed = JSON.parse(value);
+          const { error } = stampingLevelsSchema.validate(parsed); 
+          if (error) {
+            return helpers.error("any.invalid", { message: error.details[0].message });
+          }
+          return parsed; 
+        } catch (e) {
+          return helpers.error("any.invalid", { message: "Formato JSON inválido para stampingLevels" });
+        }
+      }, "Validación JSON de StampingLevels"),
+
+      stampingLevelsSchema,
+      
+      Joi.allow(null)
+    )
+    .optional(),
+
 }).options({ stripUnknown: true });
 
-// Esquema para creación (POST)
 const createItemTypeSchema = itemTypeSchema.fork(
   ["name", "category", "hasSizes", "printingMethods"],
   (schema) => schema.required(),
 );
 
-// Esquema para actualización (PATCH)
 const updateItemTypeSchema = itemTypeSchema;
 
 export { createItemTypeSchema, updateItemTypeSchema };

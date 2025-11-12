@@ -9,7 +9,7 @@ import {
   createItemSnapshot,
   generateInventoryReason,
 } from "../helpers/inventory.helpers.js";
-import { MoreThan, Not } from "typeorm";
+import { IsNull, MoreThan, Not  } from "typeorm";
 
 export const itemStockService = {
   async createItemStock(itemData, userId) {
@@ -20,9 +20,6 @@ export const itemStockService = {
           hexColor,
           size,
           quantity,
-          price,
-          stampOptionsPricing,
-          productImageUrls,
           minStock,
         } = itemData;
         const itemStockRepo =
@@ -31,14 +28,11 @@ export const itemStockService = {
         const movementRepo =
           transactionalEntityManager.getRepository(InventoryMovement);
 
-        if (!itemTypeId || !hexColor || quantity == null || price == null) {
+        if (!itemTypeId || !hexColor || quantity == null ) {
           return [null, "Faltan campos obligatorios"];
         }
-        if (quantity < 0 || price < 0) {
-          return [null, "La cantidad y el precio deben ser no negativos"];
-        }
-        if (stampOptionsPricing && typeof stampOptionsPricing !== "object") {
-          return [null, "stampOptionsPricing debe ser un objeto JSON válido"];
+        if (quantity < 0 ) {
+          return [null, "La cantidad no debe ser negativa"];
         }
 
         const itemType = await itemTypeRepo.findOne({
@@ -47,18 +41,6 @@ export const itemStockService = {
 
         if (!itemType) {
           return [null, "Tipo de artículo no encontrado o inactivo"];
-        }
-        if (itemType.category !== "clothing" && stampOptionsPricing) {
-          console.warn(
-            "Se intentó asignar stampOptionsPricing a un ItemStock de categoría '" +
-              itemType.category +
-              "', se ignorará.",
-          );
-          return [
-            null,
-            `No se permite stampOptionsPricing para la categoría '${itemType.category}'`,
-          ];
-          itemData.stampOptionsPricing = null;
         }
 
         if (itemType.hasSizes && !size) {
@@ -91,10 +73,6 @@ export const itemStockService = {
           hexColor,
           size: itemType.hasSizes ? size : null,
           quantity,
-          price,
-          productImageUrls: Array.isArray(productImageUrls)
-            ? productImageUrls
-            : [],
           minStock: minStockValue,
           itemType,
           createdBy: { id: userId },
@@ -123,36 +101,52 @@ export const itemStockService = {
 
   async getItemStock(filters = {}) {
     try {
-      const repo = AppDataSource.getRepository(ItemStock);
-      const where = {};
+      const qb = AppDataSource.getRepository(ItemStock).createQueryBuilder(
+        "itemStock",
+      );
+      qb.leftJoinAndSelect("itemStock.itemType", "itemType");
       const parsedFilters = {
         ...filters,
         isActive:
-          filters.isActive === "false"
-            ? false
-            : filters.isActive === "true"
-              ? true
+          filters.isActive === "false" ? false
+            : filters.isActive === "true" ? true
               : filters.isActive,
       };
-      if (parsedFilters.id) where.id = parsedFilters.id;
-      if (parsedFilters.itemTypeId)
-        where.itemType = { id: parsedFilters.itemTypeId };
+
+      if (parsedFilters.id) {
+        qb.andWhere("itemStock.id = :id", { id: parsedFilters.id });
+      }
+
+      if (parsedFilters.itemTypeId) {
+        qb.andWhere("itemType.id = :itemTypeId", {
+          itemTypeId: parsedFilters.itemTypeId,
+        });
+      }
       if (parsedFilters.size !== undefined) {
-        where.size = parsedFilters.size === "N/A" ? null : parsedFilters.size;
+        if (parsedFilters.size === "N/A") {
+          qb.andWhere("itemStock.size IS NULL");
+        } else {
+          qb.andWhere("itemStock.size = :size", { size: parsedFilters.size });
+        }
       }
 
       if (parsedFilters.publicOnly === true) {
-        where.isActive = true;
-        where.quantity = MoreThan(0);
-      } else if (parsedFilters !== undefined) {
-        where.isActive = parsedFilters.isActive;
+        qb.andWhere("itemStock.isActive = :isActive", { isActive: true });
+        qb.andWhere("itemStock.quantity > 0");
+
+        qb.andWhere("itemType.stampingLevels IS NOT NULL");
+
+        qb.andWhere("jsonb_array_length(itemType.stampingLevels) > 0");
+        
+      } else if (parsedFilters.isActive !== undefined) {
+        qb.andWhere("itemStock.isActive = :isActive", {
+          isActive: parsedFilters.isActive,
+        });
       }
 
-      const items = await repo.find({
-        where,
-        relations: ["itemType"],
-        order: { itemType: { name: "ASC" } },
-      });
+      const items = await qb
+        .orderBy({ "itemType.name": "ASC", "itemStock.hexColor": "ASC" })
+        .getMany();
 
       return [items, null];
     } catch (error) {
@@ -167,14 +161,17 @@ export const itemStockService = {
         return [null, "ID de item inválido."];
       }
 
-      const repo = AppDataSource.getRepository(ItemStock);
-      const item = await repo.findOne({
-        where: {
-          id: id,
-          isActive: true,
-        },
-        relations: ["itemType"],
-      });
+      const qb = AppDataSource.getRepository(ItemStock).createQueryBuilder(
+        "itemStock",
+      );
+      
+      qb.leftJoinAndSelect("itemStock.itemType", "itemType")
+        .where("itemStock.id = :id", { id })
+        .andWhere("itemStock.isActive = true")
+        .andWhere("itemType.stampingLevels IS NOT NULL")
+        .andWhere("jsonb_array_length(itemType.stampingLevels) > 0");
+
+      const item = await qb.getOne();
 
       if (!item) {
         return [null, "Producto no encontrado o no disponible."];
@@ -193,8 +190,8 @@ export const itemStockService = {
   async updateItemStock(id, updateData, userId) {
     return await AppDataSource.transaction(
       async (transactionalEntityManager) => {
-        const repo = AppDataSource.getRepository(ItemStock);
-        const movementRepo = AppDataSource.getRepository(InventoryMovement);
+      const repo = transactionalEntityManager.getRepository(ItemStock);
+      const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
 
         const item = await repo.findOne({
           where: { id },
@@ -204,7 +201,7 @@ export const itemStockService = {
         if (!item) {
           return [null, "Item no encontrado"];
         }
-
+        
         const { updatedById } = updateData;
 
         if (updateData.quantity !== undefined && !userId) {
@@ -215,18 +212,6 @@ export const itemStockService = {
         }
         if (updateData.quantity !== undefined && updateData.quantity < 0) {
           return [null, "La cantidad no puede ser negativa"];
-        }
-        if (updateData.price !== undefined && updateData.price < 0) {
-          return [null, "El precio no puede ser negativo"];
-        }
-        if (
-          updateData.stampOptionsPricing !== undefined &&
-          typeof updateData.stampOptionsPricing !== "object" &&
-          updateData.stampOptionsPricing !== null
-        ) {
-          throw new Error(
-            "stampOptionsPricing debe ser un objeto JSON válido o null",
-          );
         }
         if (
           updateData.size !== undefined &&
@@ -244,9 +229,7 @@ export const itemStockService = {
             id: Not(id),
             itemType: { id: updateData.itemTypeId || item.itemType.id },
             hexColor: updateData.hexColor || item.hexColor,
-            size: item.itemType.hasSizes
-              ? updateData.size !== undefined
-                ? updateData.size
+            size: item.itemType.hasSizes ? updateData.size !== undefined ? updateData.size
                 : item.size
               : null,
           };
@@ -274,39 +257,12 @@ export const itemStockService = {
           "hexColor",
           "size",
           "quantity",
-          "price",
-          "stampOptionsPricing",
-          "productImageUrls",
           "minStock",
           "isActive",
         ];
 
         trackableFields.forEach((field) => {
           let updateValue = updateData[field];
-
-          if (
-            field === "productImageUrls" &&
-            updateValue !== undefined &&
-            !Array.isArray(updateValue)
-          ) {
-            console.warn(
-              "productImageUrls recibido no era un array, se convertirá a array vacío.",
-            );
-            updateValue = [];
-          }
-
-          if (
-            field === "stampOptionsPricing" &&
-            item.itemType.category !== "clothing" &&
-            updateValue
-          ) {
-            console.warn(
-              "Se intentó asignar stampOptionsPricing a un ItemStock de categoría '" +
-                item.itemType.category +
-                "', se ignorará la actualización de este campo.",
-            );
-            updateValue = undefined;
-          }
 
           if (
             updateValue !== undefined &&
@@ -327,15 +283,7 @@ export const itemStockService = {
         // 2. Aplicar cambios
         trackableFields.forEach((field) => {
           if (changes[field]) {
-            // Asegurar que productImageUrls se guarde como array
-            if (
-              field === "productImageUrls" &&
-              !Array.isArray(updateData[field])
-            ) {
-              item[field] = [];
-            } else {
-              item[field] = updateData[field];
-            }
+             item[field] = updateData[field];
           }
         });
 
@@ -345,16 +293,14 @@ export const itemStockService = {
 
         // 3. Registrar movimientos
         const movementPromises = Object.keys(changes).map(async (field) => {
-          if (field !== "productImageUrls") {
-            const { operation, reason } = generateInventoryReason(
-              "update",
-              field,
-            );
+          const { operation, reason } = generateInventoryReason(
+            "update",
+            field,
+          );
             const movementData = {
               type: "ajuste",
               quantity:
-                field === "quantity"
-                  ? Math.abs(
+                field === "quantity" ? Math.abs(
                       changes.quantity.newValue - changes.quantity.oldValue,
                     )
                   : 0,
@@ -372,8 +318,6 @@ export const itemStockService = {
               ...createItemSnapshot(updatedItem),
             };
             return movementRepo.save(movementData);
-          }
-          return Promise.resolve();
         });
 
         await Promise.all(movementPromises);

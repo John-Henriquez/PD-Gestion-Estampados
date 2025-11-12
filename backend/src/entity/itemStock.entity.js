@@ -25,21 +25,6 @@ const ItemStockSchema = new EntitySchema({
       default: 0,
       nullable: false,
     },
-    price: {
-      type: "int",
-      nullable: false,
-    },
-    stampOptionsPricing: {
-      type: "jsonb", 
-      nullable: true, 
-      comment:
-        "Almacena costos adicionales para opciones de estampado " +
-        "{ locations: { front: 2000, back: 2500 }, types: { dtf: 500 } }",
-    },
-    productImageUrls: {
-      type: "simple-array",
-      nullable: true,
-    },
     minStock: {
       type: "int",
       default: 5,
@@ -71,7 +56,7 @@ const ItemStockSchema = new EntitySchema({
       target: "ItemType",
       joinColumn: { name: "itemTypeId" },
       nullable: false,
-      onDelete: "RESTRICT", // !!
+      onDelete: "RESTRICT", 
     },
     createdBy: {
       type: "many-to-one",

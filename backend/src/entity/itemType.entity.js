@@ -38,23 +38,13 @@ const ItemTypeSchema = new EntitySchema({
       default: false,
       nullable: false,
     },
-    iconName: {
-      type: "varchar",
-      length: 100,
+    productImageUrls: {
+      type: "simple-array",
       nullable: true,
     },
-    baseImageUrl: {
-      type: "varchar",
-      length: 255, 
-      nullable: true,
-      comment: "URL de la imagen representativa principal para este tipo de ítem"
-    },
-    stampOptions: {
+    stampingLevels: {
       type: "json",
       nullable: true,
-      comment:
-        "Define las opciones de estampado posibles para este tipo, ej: " +
-        "{ locations: ['front', 'back'], types: ['dtf', 'vinyl'] }",
     },
     isActive: {
       type: "boolean",

@@ -19,13 +19,13 @@ router.patch("/restore/:id", isAdmin, itemTypeController.restoreItemType);
 router.post(
   "/",
   isAdmin,
-  uploadMiddleware.singleBaseImage,
+  uploadMiddleware.arrayProductImages,
   itemTypeController.createItemType,
 );
 router.patch(
   "/:id",
   isAdmin,
-  uploadMiddleware.singleBaseImage,
+  uploadMiddleware.arrayProductImages,
   itemTypeController.updateItemType,
 );
 
