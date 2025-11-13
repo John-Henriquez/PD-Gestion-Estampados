@@ -21,6 +21,25 @@ const OrderItemSchema = new EntitySchema({
       type: "varchar",
       nullable: false,
     },
+    sizeSnapshot: {
+      type: "varchar",
+      length: 10,
+      nullable: true, 
+    },
+    colorHexSnapshot: {
+      type: "varchar",
+      length: 7,
+      nullable: true, 
+    },
+    colorNameSnapshot: {
+      type: "varchar",
+      length: 100,
+      nullable: true,
+    },
+    stampOptionsSnapshot: {
+      type: "json",
+      nullable: true,
+    },
     stampImageUrl: {
       type: "varchar",
       length: 512,

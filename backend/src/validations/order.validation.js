@@ -11,6 +11,11 @@ const orderItemSchema = Joi.object({
   }),
   stampImageUrl: Joi.string().allow(null, "").optional().messages({}),
   stampInstructions: Joi.string().allow(null, "").optional(),
+  stampOptionsSnapshot: Joi.object({
+    description: Joi.string().optional(),
+    level: Joi.string().optional(),
+    price: Joi.number().optional(),
+  }).optional(),
 })
   .xor("itemStockId", "packId")
   .messages({

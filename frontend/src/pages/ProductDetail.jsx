@@ -15,9 +15,15 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
+  ToggleButtonGroup,
+  ToggleButton,
+  Paper,
 } from '@mui/material';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getItemStockById } from '../services/itemStock.service';
+
+import { getItemTypeById } from '../services/itemType.service';
+import { getPublicItemStock } from '../services/itemStock.service';
+
 import ImageUploader from '../components/UI/ImageUploader.jsx';
 import { iconMap } from '../data/iconCategories';
 import { COLOR_DICTIONARY } from '../data/colorDictionary';
@@ -38,108 +44,54 @@ const getFullImageUrl = (url) => {
   return `${backendUrl.replace('/api', '')}${url}`;
 };
 
-const StampOptionsSelector = ({ itemTypeOptions, stockPricing, selectedOptions, onChange }) => {
-  if (!itemTypeOptions || (!itemTypeOptions.locations && !itemTypeOptions.types)) {
-    return null;
-  }
-
-  const handleLocationChange = (event) => {
-    onChange({ ...selectedOptions, location: event.target.value || null });
-  };
-
-  const handleTypeChange = (event) => {
-    onChange({ ...selectedOptions, type: event.target.value || null });
-  };
-
-  const getLocationCost = (location) => stockPricing?.locations?.[location] || 0;
-  const getTypeCost = (type) => stockPricing?.types?.[type] || 0;
-
-  return (
-    <Box className="stamp-options-box">
-      {itemTypeOptions.locations && itemTypeOptions.locations.length > 0 && (
-        <FormControl component="fieldset">
-          <Typography variant="subtitle2" gutterBottom component="legend">
-            Ubicación del Estampado:
-          </Typography>
-          <RadioGroup
-            row
-            aria-label="stamp-location"
-            name="stamp-location"
-            value={selectedOptions.location || ''}
-            onChange={handleLocationChange}
-          >
-            {itemTypeOptions.locations.map((loc) => (
-              <FormControlLabel
-                key={loc}
-                value={loc}
-                control={<Radio />}
-                label={`${loc.charAt(0).toUpperCase() + loc.slice(1)} (+${(getLocationCost(loc) || 0).toLocaleString()})`}
-              />
-            ))}
-            {/* Opción para "Ninguno" o deseleccionar */}
-            <FormControlLabel value="" control={<Radio />} label="Ninguno" />
-          </RadioGroup>
-        </FormControl>
-      )}
-
-      {itemTypeOptions.types && itemTypeOptions.types.length > 0 && (
-        <FormControl component="fieldset">
-          <Typography variant="subtitle2" gutterBottom component="legend">
-            Tipo de Estampado:
-          </Typography>
-          <RadioGroup
-            row
-            aria-label="stamp-type"
-            name="stamp-type"
-            value={selectedOptions.type || ''}
-            onChange={handleTypeChange}
-          >
-            {itemTypeOptions.types.map((type) => (
-              <FormControlLabel
-                key={type}
-                value={type}
-                control={<Radio />}
-                label={`${type.toUpperCase()} (+${(getTypeCost(type) || 0).toLocaleString()})`}
-              />
-            ))}
-            <FormControlLabel value="" control={<Radio />} label="Ninguno" />
-          </RadioGroup>
-        </FormControl>
-      )}
-    </Box>
-  );
-};
-
 const ProductDetail = () => {
-  const { itemStockId } = useParams();
+  const { itemTypeId } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  const [product, setProduct] = useState(null);
+  const [itemType, setItemType] = useState(null);
+  const [allStockVariations, setAllStockVariations] = useState([]);
+  const [selectedStock, setSelectedStock] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [availableColors, setAvailableColors] = useState([]);
+
+  const [selectedLevelName, setSelectedLevelName] = useState(null);
+
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
   const [stampImageUrl, setStampImageUrl] = useState(null);
   const [stampInstructions, setStampInstructions] = useState('');
 
-  const [selectedStampOptions, setSelectedStampOptions] = useState({
-    location: null,
-    type: null,
-  });
-
+  //  EFECTO 1: Cargar datos iniciales del TIPO y todas sus variaciones
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await getItemStockById(itemStockId);
-        setProduct(data);
+
+        const typeInfo = await getItemTypeById(itemTypeId);
+        if (!typeInfo) {
+          throw new Error('Producto no encontrado.');
+        }
+        setItemType(typeInfo);
+
+        const stockVariations = await getPublicItemStock({ itemTypeId });
+        setAllStockVariations(stockVariations || []);
+
+        if (typeInfo.hasSizes && typeInfo.sizesAvailable?.length > 0) {
+          setSelectedSize(typeInfo.sizesAvailable[0]);
+        } else {
+          setSelectedSize(null);
+        }
         setCurrentImageIndex(0);
         setStampImageUrl(null);
         setStampInstructions('');
-        setSelectedStampOptions({ location: null, type: null });
+        setQuantity(1);
       } catch (err) {
         console.error('Error al cargar detalle del producto:', err);
         setError(err.message || 'No se pudo cargar el producto.');
@@ -147,48 +99,84 @@ const ProductDetail = () => {
         setLoading(false);
       }
     };
+    fetchProductData();
+  }, [itemTypeId]);
 
-    if (itemStockId) {
-      fetchProduct();
+  // EFECTO 2: Actualizar colores disponibles cuando cambia la talla seleccionada
+  useEffect(() => {
+    if (allStockVariations.length === 0) return;
+    const stocksForSize = allStockVariations.filter((stock) => stock.size === selectedSize);
+
+    const colors = [...new Set(stocksForSize.map((stock) => stock.hexColor))];
+    setAvailableColors(colors);
+
+    if (colors.length > 0) {
+      setSelectedColor(colors[0]);
+    } else {
+      setSelectedColor('');
     }
-  }, [itemStockId]);
+  }, [selectedSize, allStockVariations]);
+
+  // EFECTO 3: Encontrar el stock exacto cuando cambia la talla O el color
+  useEffect(() => {
+    if (!selectedColor && availableColors.length === 0) {
+      setSelectedStock(null);
+      return;
+    }
+    const matchingStock = allStockVariations.find(
+      (stock) => stock.size === selectedSize && stock.hexColor === selectedColor
+    );
+
+    setSelectedStock(matchingStock || null);
+    setQuantity(1);
+  }, [selectedColor, selectedSize, allStockVariations, availableColors]);
+
+  const selectedLevelObject = useMemo(() => {
+    return itemType?.stampingLevels?.find((l) => l.level === selectedLevelName);
+  }, [itemType, selectedLevelName]);
 
   const calculateDynamicPrice = useCallback(() => {
-    if (!product) return 0;
-    let currentPrice = product.price || 0; // Precio base
+    return selectedLevelObject?.price || 0;
+  }, [selectedLevelObject]);
 
-    if (product.stampOptionsPricing && selectedStampOptions) {
-      // Sumar costo de ubicación
-      if (selectedStampOptions.location && product.stampOptionsPricing.locations) {
-        currentPrice += product.stampOptionsPricing.locations[selectedStampOptions.location] || 0;
-      }
-      // Sumar costo de tipo
-      if (selectedStampOptions.type && product.stampOptionsPricing.types) {
-        currentPrice += product.stampOptionsPricing.types[selectedStampOptions.type] || 0;
-      }
-    }
-    return currentPrice;
-  }, [product, selectedStampOptions]);
-
-  // --- useMemo para el precio total del item (precio dinámico * cantidad) ---
   const totalItemPrice = useMemo(() => {
     return calculateDynamicPrice() * quantity;
   }, [calculateDynamicPrice, quantity]);
+
+  const handleSizeChange = (event, newSize) => {
+    if (newSize !== null) {
+      setSelectedSize(newSize);
+    }
+  };
+
+  const handleColorChange = (event) => {
+    setSelectedColor(event.target.value);
+  };
 
   const handleQuantityChange = (amount) => {
     setQuantity((prev) => {
       const newQuantity = prev + amount;
       if (newQuantity < 1) return 1;
-      if (product && newQuantity > product.quantity) return product.quantity;
+      if (selectedStock && newQuantity > selectedStock.quantity) return selectedStock.quantity;
       return newQuantity;
     });
   };
 
   const handleAddToCartAndCheckout = () => {
-    if (!product) return;
+    if (!selectedStock) {
+      showErrorAlert(
+        'Selección Incompleta',
+        'Por favor, selecciona una talla y color disponibles.'
+      );
+      return;
+    }
+    if (selectedStock.quantity === 0 || quantity > selectedStock.quantity) {
+      showErrorAlert('Sin Stock', 'No hay suficiente stock para la cantidad seleccionada.');
+      return;
+    }
 
-    const isStampable =
-      product.itemType?.category === 'clothing' || product.itemType?.category === 'object';
+    const isStampable = itemType?.category === 'clothing' || itemType?.category === 'object';
+
     if (isStampable && !stampImageUrl) {
       showErrorAlert(
         'Falta Imagen',
@@ -197,45 +185,50 @@ const ProductDetail = () => {
       return;
     }
 
-    if (
-      isStampable &&
-      product.itemType?.stampOptions &&
-      !selectedStampOptions.location &&
-      !selectedStampOptions.type
-    ) {
-      console.log('No se seleccionaron opciones de estampado, se usará precio base.');
-      showErrorAlert('Faltan Opciones', 'Por favor, selecciona las opciones de estampado.');
+    if (isStampable && !selectedLevelObject) {
+      showErrorAlert('Selección Incompleta', 'Por favor, selecciona un nivel de estampado.');
       return;
     }
 
     const calculatedPrice = calculateDynamicPrice();
 
     const itemToAdd = {
-      itemStockId: product.id,
+      itemStockId: selectedStock.id,
       quantity: quantity,
-      name: product.itemType?.name || 'Producto',
+      name: itemType?.name || 'Producto',
       price: calculatedPrice,
-      selectedStampOptions: isStampable ? selectedStampOptions : null,
-      ...(isStampable && {
-        stampImageUrl: stampImageUrl,
-        stampInstructions: stampInstructions,
-      }),
-      hexColor: product.hexColor,
-      size: product.size,
-      productImageUrls: product.productImageUrls,
+
+      stampOptionsSnapshot: selectedLevelObject,
+
+      stampImageUrl: stampImageUrl,
+      stampInstructions: stampInstructions,
+
+      hexColor: selectedStock.hexColor,
+      size: selectedStock.size,
+      productImageUrls: itemType.productImageUrls,
     };
+    console.log('🧾 Item que se enviará al carrito / backend:', {
+      isStampable,
+      selectedLevelObject,
+      itemToAdd,
+    });
 
     addToCart(itemToAdd);
-    showSuccessAlert('¡Añadido!', `${itemToAdd.name} fue añadido al carrito.`);
+    showSuccessAlert(
+      '¡Añadido!',
+      `${itemToAdd.name} (${itemToAdd.size}, ${getColorName(itemToAdd.hexColor)}) fue añadido al carrito.`
+    );
     navigate('/checkout');
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev === 0 ? product.productImageUrls.length - 1 : prev - 1));
+    if (!itemType || !itemType.productImageUrls) return;
+    setCurrentImageIndex((prev) => (prev === 0 ? itemType.productImageUrls.length - 1 : prev - 1));
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev === product.productImageUrls.length - 1 ? 0 : prev + 1));
+    if (!itemType || !itemType.productImageUrls) return;
+    setCurrentImageIndex((prev) => (prev === itemType.productImageUrls.length - 1 ? 0 : prev + 1));
   };
 
   const handleStampImageUploadSuccess = (uploadedUrl) => {
@@ -258,25 +251,26 @@ const ProductDetail = () => {
     );
   }
 
-  if (!product) {
+  if (!itemType) {
     return <Typography className="shop-empty-message">Producto no encontrado.</Typography>;
   }
 
-  const { size, hexColor, itemType, productImageUrls = [] } = product;
-  const basePrice = product.price;
-  const name = itemType?.name || 'Producto Desconocido';
-  const description = itemType?.description || 'Sin descripción.';
-  const iconName = itemType?.iconName;
+  // Info del ItemType
+  const {
+    name,
+    description,
+    iconName,
+    productImageUrls = [],
+    sizesAvailable = [],
+    stampingLevels = [],
+  } = itemType;
   const IconComponent = iconName ? iconMap[iconName] : null;
   const currentImageUrl =
     productImageUrls.length > 0 ? getFullImageUrl(productImageUrls[currentImageIndex]) : null;
   const hasMultipleImages = productImageUrls.length > 1;
-
   const isStampable = itemType?.category === 'clothing' || itemType?.category === 'object';
-  const hasStampOptionsConfigured =
-    isStampable &&
-    itemType?.stampOptions &&
-    (itemType.stampOptions.locations?.length > 0 || itemType.stampOptions.types?.length > 0);
+
+  const currentStockQuantity = selectedStock?.quantity || 0;
 
   return (
     <div className="product-detail-container">
@@ -326,47 +320,135 @@ const ProductDetail = () => {
           <Typography className="product-info__description">{description}</Typography>
 
           <Typography className="product-info__price">
-            ${(calculateDynamicPrice() || 0).toLocaleString()}{' '}
-            {/* Mostrar precio unitario calculado */}
-            {basePrice !== calculateDynamicPrice() && (
-              <Typography
-                variant="caption"
-                sx={{
-                  ml: 1,
-                  color: 'text.secondary',
-                  textDecoration: 'line-through',
-                }}
-              >
-                Base: ${basePrice?.toLocaleString()}
-              </Typography>
-            )}
+            ${(calculateDynamicPrice() || 0).toLocaleString()}
           </Typography>
 
+          {/* --- INICIO SELECCIÓN TALLA Y COLOR --- */}
+
           <div className="product-info__details">
-            <div className="product-info__detail-item">
-              <Typography component="span" fontWeight="bold">
-                Color:
-              </Typography>
-              <Typography component="span">{getColorName(hexColor)}</Typography>
-              {hexColor && (
-                <Box className="product-info__color-swatch" sx={{ backgroundColor: hexColor }} />
-              )}
-            </div>
-            {size && (
+            {/* Selector de Talla */}
+            {itemType.hasSizes && sizesAvailable.length > 0 && (
               <div className="product-info__detail-item">
-                <Typography component="span" fontWeight="bold">
+                <Typography
+                  component="span"
+                  fontWeight="bold"
+                  sx={{
+                    alignSelf: 'flex-start',
+                    pt: 1,
+                  }}
+                >
                   Talla:
                 </Typography>
-                <Chip label={size} size="small" />
+                <ToggleButtonGroup
+                  value={selectedSize}
+                  exclusive
+                  onChange={handleSizeChange}
+                  aria-label="Seleccionar talla"
+                  size="small"
+                  sx={{ flexWrap: 'wrap' }}
+                >
+                  {sizesAvailable.map((size) => (
+                    <ToggleButton
+                      key={size}
+                      value={size}
+                      aria-label={size}
+                      sx={{
+                        fontWeight: 600,
+                      }}
+                    >
+                      {size}
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
               </div>
             )}
+            {/* Selector de Color */}
+            <div className="product-info__detail-item">
+              <Typography
+                component="span"
+                fontWeight="bold"
+                sx={{
+                  alignSelf: 'flex-start',
+                  pt: 1,
+                }}
+              >
+                Color:
+              </Typography>
+              {availableColors.length > 0 ? (
+                <FormControl component="fieldset">
+                  <RadioGroup
+                    row
+                    aria-label="color-selector"
+                    name="color-selector"
+                    value={selectedColor}
+                    onChange={handleColorChange}
+                  >
+                    {availableColors.map((hex) => (
+                      <FormControlLabel
+                        key={hex}
+                        value={hex}
+                        control={<Radio sx={{ display: 'none' }} />}
+                        label={
+                          <Chip
+                            icon={
+                              <Box
+                                component="span"
+                                sx={{
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: '50%',
+                                  backgroundColor: hex,
+                                  border: '1px solid #ccc',
+                                  cursor: 'pointer',
+                                  ml: 1,
+                                }}
+                              />
+                            }
+                            label={getColorName(hex)}
+                            variant={selectedColor === hex ? 'filled' : 'outlined'}
+                            onClick={() => setSelectedColor(hex)}
+                            sx={{
+                              cursor: 'pointer',
+                              borderColor:
+                                selectedColor === hex ? 'var(--primary)' : 'var(--gray-300)',
+                              backgroundColor:
+                                selectedColor === hex ? 'var(--primary-light)' : 'default',
+                              marginRight: 1,
+                            }}
+                          />
+                        }
+                      />
+                    ))}
+                  </RadioGroup>
+                </FormControl>
+              ) : (
+                <Typography component="span" color="text.secondary">
+                  (Selecciona una talla)
+                </Typography>
+              )}
+            </div>
+
+            {/* Disponibilidad */}
+
             <div className="product-info__detail-item">
               <Typography component="span" fontWeight="bold">
                 Disponibilidad:
               </Typography>
-              <Typography component="span">
-                {product.quantity > 0 ? `${product.quantity} en stock` : 'Agotado'}
-              </Typography>
+              {selectedStock ? (
+                <Typography
+                  component="span"
+                  sx={{
+                    color: currentStockQuantity > 0 ? 'var(--success-dark)' : 'var(--error-dark)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {currentStockQuantity > 0 ? `${currentStockQuantity} en stock` : 'Agotado'}
+                </Typography>
+              ) : (
+                <Typography component="span" color="text.secondary">
+                  (Selecciona talla y color)
+                </Typography>
+              )}
             </div>
           </div>
 
@@ -376,35 +458,92 @@ const ProductDetail = () => {
               <Typography variant="h6" gutterBottom sx={{ color: 'var(--secondary-dark)' }}>
                 Personaliza tu Estampado
               </Typography>
-              {hasStampOptionsConfigured && (
-                <StampOptionsSelector
-                  itemTypeOptions={itemType.stampOptions}
-                  stockPricing={product.stampOptionsPricing}
-                  selectedOptions={selectedStampOptions}
-                  onChange={setSelectedStampOptions}
-                />
-              )}
+              <FormControl component="fieldset" sx={{ mb: 2, width: '100%' }}>
+                <Typography variant="subtitle2" gutterBottom component="legend">
+                  Nivel de Estampado:
+                </Typography>
+                <RadioGroup
+                  aria-label="stamping-level"
+                  name="stamping-level"
+                  value={selectedLevelName || ''}
+                  onChange={(e) => setSelectedLevelName(e.target.value)}
+                >
+                  {stampingLevels.map((level) => (
+                    <Paper
+                      key={level.level}
+                      variant="outlined"
+                      sx={{
+                        p: 1.5,
+                        mb: 1,
+                        cursor: 'pointer',
+                        borderColor:
+                          selectedLevelName === level.level ? 'var(--primary)' : 'var(--gray-300)',
+                        backgroundColor:
+                          selectedLevelName === level.level ? 'var(--primary-light)' : '#fff',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': {
+                          borderColor: 'var(--primary)',
+                          backgroundColor: 'var(--primary-light)',
+                        },
+                      }}
+                      onClick={() => setSelectedLevelName(level.level)}
+                    >
+                      <FormControlLabel
+                        value={level.level}
+                        control={<Radio />}
+                        label={
+                          <Box sx={{ ml: 1, width: '100%' }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Typography variant="body1" fontWeight="bold">
+                                {level.level}
+                              </Typography>
+                              <Typography
+                                variant="body1"
+                                fontWeight="bold"
+                                color="var(--primary-dark)"
+                              >
+                                + ${level.price?.toLocaleString()}
+                              </Typography>
+                            </Box>
+                            <Typography variant="caption" color="text.secondary">
+                              {level.description}
+                            </Typography>
+                          </Box>
+                        }
+                        sx={{
+                          width: '100%',
+                          cursor: 'pointer',
+                        }}
+                      />
+                    </Paper>
+                  ))}
+                </RadioGroup>
+              </FormControl>
               <Grid container spacing={2}>
-                {/* Uploader Imagen Estampado */}
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" gutterBottom>
                     Tu Imagen:
                   </Typography>
                   <ImageUploader onUploadSuccess={handleStampImageUploadSuccess} />
                 </Grid>
-                {/* Campo Instrucciones */}
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" gutterBottom>
-                    Instrucciones:
+                    Instrucciones Adicionales:
                   </Typography>
                   <TextField
-                    label="Detalles del estampado"
+                    label="Detalles extra (opcional)"
                     multiline
-                    rows={hasStampOptionsConfigured ? 2 : 4}
+                    rows={4}
                     fullWidth
                     value={stampInstructions}
                     onChange={(e) => setStampInstructions(e.target.value)}
-                    placeholder="Ej: Posición (pecho, espalda), tamaño (10cm), colores..."
+                    placeholder="Ej: Alinear el logo un poco más a la izquierda."
                     variant="outlined"
                     InputLabelProps={{ shrink: true }}
                   />
@@ -434,7 +573,7 @@ const ProductDetail = () => {
               <Button
                 variant="outlined"
                 onClick={() => handleQuantityChange(1)}
-                disabled={quantity >= product.quantity}
+                disabled={!selectedStock || quantity >= currentStockQuantity}
                 className="quantity-selector__button"
               >
                 +
@@ -449,7 +588,7 @@ const ProductDetail = () => {
               variant="contained"
               size="large"
               onClick={handleAddToCartAndCheckout}
-              disabled={product.quantity === 0}
+              disabled={!selectedStock || currentStockQuantity === 0}
               className="add-to-cart-button animate--pulse"
             >
               {isStampable ? 'Añadir Personalización y Comprar' : 'Añadir al Carrito y Comprar'}

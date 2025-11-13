@@ -13,24 +13,15 @@ const OrderSchema = new EntitySchema({
     status: {
       type: "enum",
       enum: [
-        "pendiente",
-        "pagado",
+        "pendiente_de_pago",
+        "en_proceso",
         "enviado",
         "completado",
         "cancelado",
-        "fallido",
       ],
-      default: "pendiente",
+      default: "pendiente_de_pago",
     },
 
-    paymentStatus: {
-      type: "varchar",
-      length: 50,
-      default: "pendiente_anticipo",
-      nullable: false,
-      comment:
-        "Estado del pago (pendiente_anticipo, anticipo_pagado, pagado_completo, reembolsado)",
-    },
     subtotal: {
       type: "int",
       nullable: false,
@@ -39,22 +30,11 @@ const OrderSchema = new EntitySchema({
       type: "int",
       nullable: false,
     },
-    advancePaymentRequired: {
-      type: "int",
-      nullable: true,
-      comment: "Monto del anticipo requerido para iniciar el procesamiento",
-    },
-    amountPaid: {
-      type: "int",
-      default: 0,
-      nullable: false,
-      comment: "Monto total pagado hasta el momento",
-    },
+
     paymentMethod: {
       type: "varchar",
       length: 100,
       nullable: true,
-      comment: "Método de pago utilizado (ej: Transferencia, MercadoPago)",
     },
     paymentDate: {
       type: "timestamp",
@@ -66,7 +46,7 @@ const OrderSchema = new EntitySchema({
       length: 255,
       nullable: true,
     },
-    customerEmail: {
+    guestEmail: {
       type: "varchar",
       length: 255,
       nullable: true,
@@ -96,8 +76,8 @@ const OrderSchema = new EntitySchema({
   },
   indices: [
     { name: "IDX_ORDER_STATUS", columns: ["status"] },
-    { name: "IDX_ORDER_PAYMENT_STATUS", columns: ["paymentStatus"] },
-    { name: "IDX_ORDER_USER_ID", columns: ["user"] }, // Indexar la relación de usuario
+    { name: "IDX_ORDER_USER_ID", columns: ["user"] },
+    { name: "IDX_ORDER_GUEST_EMAIL", columns: ["guestEmail"] },
   ],
 });
 

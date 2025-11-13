@@ -12,19 +12,18 @@ const StampingLevelsForm = ({ initialLevels = [], onChange }) => {
   );
 
   useEffect(() => {
-    if (initialLevels.length === 0) return;
+    if (initialLevels.length === 0 && levels.length === 0) return;
 
     setLevels((prev) => {
-      const same =
-        prev.length === initialLevels.length &&
-        prev.every(
+      const hasChanged =
+        prev.length !== initialLevels.length ||
+        prev.some(
           (p, i) =>
-            p.level === initialLevels[i].level &&
-            parseFloat(p.price) === parseFloat(initialLevels[i].price) &&
-            p.description === initialLevels[i].description
+            p.level !== (initialLevels[i]?.level?.toString() || '') ||
+            p.price !== (initialLevels[i]?.price?.toString() || '0') ||
+            p.description !== (initialLevels[i]?.description?.toString() || '')
         );
-
-      if (same) return prev;
+      if (!hasChanged) return prev;
 
       return initialLevels.map((l) => ({
         level: l.level?.toString() || '',
@@ -50,7 +49,7 @@ const StampingLevelsForm = ({ initialLevels = [], onChange }) => {
       {
         level: '',
         description: '',
-        price: 0,
+        price: '0',
         tempId: Date.now() + Math.random(),
       },
     ]);
@@ -64,7 +63,14 @@ const StampingLevelsForm = ({ initialLevels = [], onChange }) => {
     setLevels((prev) => prev.map((l) => (l.tempId === tempId ? { ...l, [field]: value } : l)));
   };
 
-  const hasInvalidPrice = levels.some((l) => l.price < 0 || l.price === null || isNaN(l.price));
+  const hasInvalidPrice = levels.some(
+    (l) =>
+      l.price === null ||
+      l.price === undefined ||
+      (typeof l.price === 'string' && l.price.trim() === '') ||
+      parseFloat(l.price) < 0 ||
+      isNaN(parseFloat(l.price))
+  );
   const hasEmptyLevelName = levels.some((l) => !l.level.trim());
   const hasValidationErrors = hasInvalidPrice || hasEmptyLevelName;
 

@@ -83,6 +83,7 @@ const Checkout = () => {
         quantity: Number(item.quantity) || 1,
         stampImageUrl: item.stampImageUrl,
         stampInstructions: item.stampInstructions,
+        stampOptionsSnapshot: item.stampOptionsSnapshot,
       })),
       customerData: isAuthenticated ? null : customerData,
     };

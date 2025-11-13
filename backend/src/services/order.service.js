@@ -33,10 +33,12 @@ export const orderService = {
         const orderItemsData = [];
 
         for (const itemInput of items) {
-          let calculatedPriceForItem = 0;
-          let basePrice = 0;
+
+          const selectedLevelObject = itemInput.stampOptionsSnapshot || null;
           let itemNameSnapshot = "Artículo Desconocido";
-          let selectedOptionsSnapshot = itemInput.selectedStampOptions || null;
+
+          let sizeSnapshot = null;
+          let colorHexSnapshot = null;
 
           if (itemInput.itemStockId) {
             const stockItem = await itemStockRepo.findOne({
@@ -55,88 +57,45 @@ export const orderService = {
               );
             }
 
-            basePrice = stockItem.price;
-            calculatedPriceForItem = basePrice;
-            itemNameSnapshot =
-              stockItem.itemType?.name || `Stock ID ${stockItem.id}`;
+            sizeSnapshot = stockItem.size;
+            colorHexSnapshot = stockItem.hexColor;
+            itemNameSnapshot = stockItem.itemType?.name || `Stock ID ${stockItem.id}`;
 
-            if (
-              stockItem.stampOptionsPricing &&
-              selectedOptionsSnapshot &&
-              typeof selectedOptionsSnapshot === "object"
-            ) {
-              console.log(
-                "Calculando costo de estampado para ${itemNameSnapshot}",
-                selectedOptionsSnapshot,
-              );
-              console.log(
-                "Precios disponibles:",
-                stockItem.stampOptionsPricing,
-              );
+            const isStampable = stockItem.itemType.category === "clothing" || stockItem.itemType.category === "object";
 
-              // Costo por ubicación (ej: 'front', 'back')
-              if (
-                selectedOptionsSnapshot.location &&
-                stockItem.stampOptionsPricing.locations
-              ) {
-                const locationCost =
-                  stockItem.stampOptionsPricing.locations[
-                    selectedOptionsSnapshot.location
-                  ];
-                if (typeof locationCost === "number" && locationCost > 0) {
-                  calculatedPriceForItem += locationCost;
-                  console.log(
-                    `+ Costo por ubicación (${selectedOptionsSnapshot.location}): ${locationCost}`,
-                  );
-                } else {
-                  console.warn(
-                    `Opción de ubicación '${selectedOptionsSnapshot.location}' ` +
-                      "seleccionada pero sin costo definido o inválido.",
-                  );
-                  throw new Error(
-                    `Costo no definido para la ubicación de estampado '${selectedOptionsSnapshot.location}'`,
-                  );
-                }
-              }
-
-              if (
-                selectedOptionsSnapshot.type &&
-                stockItem.stampOptionsPricing.types
-              ) {
-                const typeCost =
-                  stockItem.stampOptionsPricing.types[
-                    selectedOptionsSnapshot.type
-                  ];
-                if (typeof typeCost === "number" && typeCost > 0) {
-                  calculatedPriceForItem += typeCost;
-                  console.log(
-                    `+ Costo por tipo (${selectedOptionsSnapshot.type}): ${typeCost}`,
-                  );
-                } else {
-                  console.warn(
-                    `Opción de tipo '${selectedOptionsSnapshot.type}' ` +
-                      "seleccionada pero sin costo definido o inválido.",
-                  );
-
-                  // Opcional: lanzar error
-                  throw new Error(
-                    `Costo no definido para el tipo de estampado '${selectedOptionsSnapshot.type}'`,
-                  );
-                }
-              }
-              console.log(
-                `Precio recalculado para ${itemNameSnapshot}: ${calculatedPriceForItem}`,
+            if (isStampable && (!selectedLevelObject || typeof selectedLevelObject.price !== "number")) {
+              throw new Error(
+                `El item ${itemNameSnapshot}
+                es estampable pero no se envió un nivel de estampado (StampingLevel) válido.`
               );
             }
+
+            const priceAtTime = selectedLevelObject.price;
+
+            if (priceAtTime < 0) {
+              throw new Error("El precio del nivel seleccionado no puede ser negativo.");
+            }
+
+            calculatedSubtotal += priceAtTime * itemInput.quantity;
+
+            itemsToUpdateStock.set(
+              stockItem.id,
+              (itemsToUpdateStock.get(stockItem.id) || 0) + itemInput.quantity,
+            );
 
             orderItemsData.push({
               itemStock: { id: stockItem.id },
               pack: null,
               quantity: itemInput.quantity,
-              priceAtTimeOfOrder: priceAtTime,
+              priceAtTimeOfOrder: priceAtTime, 
               itemNameSnapshot: itemNameSnapshot,
               stampImageUrl: itemInput.stampImageUrl || null,
               stampInstructions: itemInput.stampInstructions || null,
+
+              sizeSnapshot: sizeSnapshot,
+              colorHexSnapshot: colorHexSnapshot,
+              colorNameSnapshot: null, 
+              stampOptionsSnapshot: selectedLevelObject
             });
           } else if (itemInput.packId) {
             const pack = await packRepo.findOne({
@@ -152,9 +111,8 @@ export const orderService = {
                 `Pack no encontrado o inactivo: ID ${itemInput.packId}`,
               );
             }
-            priceAtTime = pack.price;
             itemNameSnapshot = `Pack: ${pack.name}`;
-            subtotal += priceAtTime * itemInput.quantity;
+            calculatedSubtotal += pack.price * itemInput.quantity;
 
             for (const packItem of pack.packItems) {
               if (
@@ -186,6 +144,10 @@ export const orderService = {
               itemNameSnapshot: itemNameSnapshot,
               stampImageUrl: itemInput.stampImageUrl || null,
               stampInstructions: itemInput.stampInstructions || null,
+              sizeSnapshot: null,
+              colorHexSnapshot: null,
+              colorNameSnapshot: null,
+              stampOptionsSnapshot: null
             });
           } else {
             throw new Error(
@@ -194,11 +156,11 @@ export const orderService = {
           }
         }
 
-        const total = subtotal;
+        const total = calculatedSubtotal;
 
         const newOrder = orderRepo.create({
-          status: "pendiente",
-          subtotal,
+          status: "pendiente_de_pago",
+          subtotal: calculatedSubtotal,
           total,
           user: userId ? { id: userId } : null,
           guestEmail: !userId ? customerData?.email : null,
@@ -243,7 +205,6 @@ export const orderService = {
           });
         }
 
-        // Devolver la orden completa con sus items
         const finalOrder = await orderRepo.findOne({
           where: { id: savedOrder.id },
 
@@ -351,7 +312,7 @@ export const orderService = {
     }
   },
 
-  async updateOrderStatus(orderId, updateData, adminUserId) {
+  async updateOrderStatus(orderId, newStatus, adminUserId) {
     return await AppDataSource.transaction(
       async (transactionalEntityManager) => {
         const orderRepo = transactionalEntityManager.getRepository(Order);
@@ -367,179 +328,59 @@ export const orderService = {
         const changes = {};
         let requiresAuditLog = false;
 
-        if (updateData.status && updateData.status !== order.status) {
-          const allowedGeneralStatus = [
-            "pendiente",
-            "confirmado",
-            "procesando",
-            "listo_para_retiro",
+        let statusToUpdate = newStatus;
+
+        if (statusToUpdate && statusToUpdate !== order.status) {
+          const allowedStatus = [
+            "pendiente_de_pago",
+            "en_proceso",
             "enviado",
-            "entregado",
+            "completado",
             "cancelado",
-            "fallido",
           ];
-          if (!allowedGeneralStatus.includes(updateData.status)) {
-            throw new Error(`Estado general inválido: ${updateData.status}`);
-          }
-          changes.status = {
-            oldValue: order.status,
-            newValue: updateData.status,
+          const legacyStatusMap = {
+            pendiente: "pendiente_de_pago",
+            pagado: "en_proceso",
+            procesando: "en_proceso",
+            entregado: "completado"
           };
-          order.status = updateData.status;
-          requiresAuditLog = true;
-        }
-
-        if (
-          updateData.paymentStatus &&
-          updateData.paymentStatus !== order.paymentStatus
-        ) {
-          const allowedPaymentStatus = [
-            "pendiente_anticipo",
-            "anticipo_pagado",
-            "pagado_completo",
-            "reembolsado",
-            "pago_fallido",
-          ];
-          if (!allowedPaymentStatus.includes(updateData.paymentStatus)) {
-            throw new Error(
-              `Estado de pago inválido: ${updateData.paymentStatus}`,
-            );
+            if (legacyStatusMap[statusToUpdate]) {
+            statusToUpdate = legacyStatusMap[statusToUpdate];
           }
-          changes.paymentStatus = {
-            oldValue: order.paymentStatus,
-            newValue: updateData.paymentStatus,
-          };
-          order.paymentStatus = updateData.paymentStatus;
-          requiresAuditLog = true;
 
-          if (updateData.paymentStatus === "anticipo_pagado") {
-            if (
-              updateData.amountPaid === undefined &&
-              order.amountPaid < order.advancePaymentRequired
-            ) {
-              changes.amountPaid = {
-                oldValue: order.amountPaid,
-                newValue: order.advancePaymentRequired,
-              };
-              order.amountPaid = order.advancePaymentRequired;
-            }
-            if (!changes.status && order.status === "pendiente") {
-              changes.status = {
-                oldValue: order.status,
-                newValue: "procesando",
-              };
-              order.status = "procesando";
-            }
-          } else if (updateData.paymentStatus === "pagado_completo") {
-            if (
-              updateData.amountPaid === undefined &&
-              order.amountPaid < order.total
-            ) {
-              changes.amountPaid = {
-                oldValue: order.amountPaid,
-                newValue: order.total,
-              };
-              order.amountPaid = order.total;
-            }
+          if (!allowedStatus.includes(statusToUpdate)) {
+             throw new Error(`Estado general inválido: ${newStatus}`);
           }
-        }
 
-        if (
-          updateData.amountPaid !== undefined &&
-          updateData.amountPaid !== order.amountPaid
-        ) {
-          const newAmountPaid = Number(updateData.amountPaid);
-          if (
-            isNaN(newAmountPaid) ||
-            newAmountPaid < 0 ||
-            newAmountPaid > order.total
-          ) {
-            throw new Error(
-              `Monto pagado inválido: ${updateData.amountPaid}. ` +
-                `Debe ser un número entre 0 y ${order.total}.`,
-            );
-          }
-          if (newAmountPaid !== order.amountPaid) {
-            changes.amountPaid = {
-              oldValue: order.amountPaid,
-              newValue: newAmountPaid,
+          if (statusToUpdate !== order.status) {
+            changes.status = {
+              oldValue: order.status,
+              newValue: newStatus,
             };
-            order.amountPaid = newAmountPaid;
+            order.status = newStatus;
             requiresAuditLog = true;
-          }
 
-          if (!changes.paymentStatus) {
-            if (
-              newAmountPaid >= order.total &&
-              order.paymentStatus !== "pagado_completo"
-            ) {
-              changes.paymentStatus = {
-                oldValue: order.paymentStatus,
-                newValue: "pagado_completo",
+            if (statusToUpdate === "en_proceso" && !order.paymentDate) {
+              const paymentDate = new Date();
+              changes.paymentDate = {
+                oldValue: order.paymentDate,
+                newValue: paymentDate,
               };
-              order.paymentStatus = "pagado_completo";
-            } else if (
-              newAmountPaid >= order.advancePaymentRequired &&
-              order.paymentStatus === "pendiente_anticipo"
-            ) {
-              changes.paymentStatus = {
-                oldValue: order.paymentStatus,
-                newValue: "anticipo_pagado",
-              };
-              order.paymentStatus = "anticipo_pagado";
-              if (!changes.status && order.status === "pendiente") {
-                changes.status = {
-                  oldValue: order.status,
-                  newValue: "procesando",
-                };
-                order.status = "procesando";
-              }
-            } else if (
-              newAmountPaid < order.advancePaymentRequired &&
-              order.paymentStatus !== "pendiente_anticipo"
-            ) {
-              changes.paymentStatus = {
-                oldValue: order.paymentStatus,
-                newValue: "pendiente_anticipo",
-              };
-              order.paymentStatus = "pendiente_anticipo";
+              order.paymentDate = paymentDate;
+            
+              if (!order.paymentMethod) {
+                order.paymentMethod = "Confirmado por Admin";
+                changes.paymentMethod = { oldValue: null, newValue: "Confirmado por Admin" };
             }
           }
         }
-
-        if (
-          updateData.paymentMethod &&
-          updateData.paymentMethod !== order.paymentMethod
-        ) {
-          changes.paymentMethod = {
-            oldValue: order.paymentMethod,
-            newValue: updateData.paymentMethod,
-          };
-          order.paymentMethod = updateData.paymentMethod;
-          order.paymentDate = new Date();
-          changes.paymentDate = {
-            oldValue: order.paymentDate,
-            newValue: order.paymentDate,
-          };
-          requiresAuditLog = true;
-        } else if (changes.amountPaid || changes.paymentStatus) {
-          const newPaymentDate = new Date();
-          if (
-            !order.paymentDate ||
-            order.paymentDate.getTime() !== newPaymentDate.getTime()
-          ) {
-            changes.paymentDate = {
-              oldValue: order.paymentDate,
-              newValue: newPaymentDate,
-            };
-            order.paymentDate = newPaymentDate;
-          }
         }
 
         if (Object.keys(changes).length === 0) {
           console.log(`No se realizaron cambios en el pedido ID ${orderId}`);
-          return [order, null];
+          return [order, null]; 
         }
+        
 
         order.updatedAt = new Date();
 
@@ -549,8 +390,8 @@ export const orderService = {
           const { operation, reason } = generateInventoryReason("update");
           await movementRepo.save({
             type: "modificacion",
-            operation: "update_order",
-            reason: `Actualización de estado/pago del pedido #${orderId}`,
+            operation: operation,
+            reason: reason,
             quantity: 0,
             order: updatedOrder,
             createdBy: { id: adminUserId },
@@ -558,7 +399,6 @@ export const orderService = {
             snapshotItemName: `Pedido #${orderId}`,
           });
         }
-
         return [updatedOrder, null];
       },
     ).catch((error) => {
@@ -569,7 +409,7 @@ export const orderService = {
       return [
         null,
         error.message ||
-          "Error interno al actualizar el estado/pago del pedido.",
+          "Error interno al actualizar el estado del pedido.",
       ];
     });
   },
