@@ -1,22 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useCreateItemType } from '../../hooks/itemType/useCreateItemType.jsx';
 import { useUpdateItemType } from '../../hooks/itemType/useUpdateItemType.jsx';
-import {
-  Shirt,
-  Coffee,
-  GlassWater,
-  Key,
-  Table,
-  Notebook,
-  Gift,
-  GraduationCap,
-  Baby,
-  Backpack,
-  Smartphone,
-  FlaskConical,
-  UploadCloud as UploadIcon,
-  X as XIcon,
-} from 'lucide-react';
 import {
   Dialog,
   DialogTitle,
@@ -32,7 +16,6 @@ import {
   OutlinedInput,
   Chip,
   Box,
-  ListSubheader,
   Typography,
   Grid,
   Alert,
@@ -43,201 +26,17 @@ import { Autocomplete } from '@mui/material';
 import { showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
 import { uploadMultipleProductImages } from '../../services/upload.service';
 import ITEM_TYPE_SUGGESTIONS from '../../data/itemTypeSuggestions';
+
 import '../../styles/components/modal.css';
 import '../../styles/components/addItemTypeModal.css';
 
+import UploadIcon from '@mui/icons-material/Upload';
+import CloseIcon from '@mui/icons-material/Close';
+
+import StampingLevelsForm from './StampingLevelsForm.jsx';
+
 const PRINTING_OPTIONS = ['sublimación', 'DTF', 'vinilo'];
 const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL'];
-
-const StampingLevelsForm = ({ initialLevels, onChange }) => {
-  const [levels, setLevels] = useState(
-    (initialLevels || []).map((l) => ({
-      level: l.level,
-      price: l.price,
-      description: l.description || '',
-      tempId: l.tempId || Date.now() + Math.random(),
-    }))
-  );
-
-  useEffect(() => {
-    const cleanedLevels = levels.map((l) => ({
-      level: l.level?.trim() || 'Nivel',
-      price: l.price || 0,
-      description: l.description || '',
-    }));
-    onChange(cleanedLevels);
-  }, [levels, onChange]);
-
-  useEffect(() => {
-    if (initialLevels && initialLevels.length > 0) {
-      setLevels(
-        initialLevels.map((l) => ({
-          level: l.level || '',
-          price: l.price || 0,
-          description: l.description || '',
-          tempId: l.tempId || Date.now() + Math.random(),
-        }))
-      );
-    }
-  }, [initialLevels]);
-
-  const handleAddLevel = () => {
-    setLevels([
-      ...levels,
-      {
-        level: '',
-        description: '',
-        price: 0,
-        tempId: Date.now() + Math.random(),
-      },
-    ]);
-  };
-
-  const handleRemoveLevel = (tempId) => {
-    setLevels(levels.filter((level) => level.tempId !== tempId));
-  };
-
-  const handleChangeLevel = (tempId, field, value) => {
-    setLevels(
-      levels.map((level) => (level.tempId === tempId ? { ...level, [field]: value } : level))
-    );
-  };
-
-  const hasInvalidPrice = levels.some((l) => l.price < 0 || l.price === null || isNaN(l.price));
-  const hasEmptyLevelName = levels.some((l) => !l.level.trim());
-  const hasValidationErrors = hasInvalidPrice || hasEmptyLevelName;
-
-  return (
-    <Box
-      sx={{
-        mt: 3,
-        p: 2,
-        border: hasValidationErrors ? '1px solid var(--error-dark)' : '1px solid var(--gray-300)',
-        borderRadius: '4px',
-        bgcolor: 'var(--gray-200)',
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'var(--primary-dark)' }}>
-          Niveles de Servicio de Estampado
-        </Typography>
-        <Button
-          type="button"
-          onClick={handleAddLevel}
-          size="small"
-          variant="contained"
-          sx={{ bgcolor: 'var(--success)', '&:hover': { bgcolor: 'var(--success-dark)' } }}
-        >
-          + Agregar Nivel
-        </Button>
-      </Box>
-      {levels.map((level, index) => (
-        <Box
-          key={level.tempId}
-          sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: '6px', bgcolor: 'white' }}
-        >
-          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Nivel #{index + 1} ({level.level || 'Sin Nombre'})
-          </Typography>
-          <Grid container spacing={1}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Nombre del Nivel"
-                value={level.level}
-                size="small"
-                onChange={(e) => handleChangeLevel(level.tempId, 'level', e.target.value)}
-                fullWidth
-                error={!level.level.trim()}
-                helperText={!level.level.trim() ? 'El nombre del nivel es obligatorio.' : ''}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Precio Total Absoluto ($)"
-                type="number"
-                value={level.price}
-                size="small"
-                onChange={(e) =>
-                  handleChangeLevel(level.tempId, 'price', parseFloat(e.target.value) || 0)
-                }
-                fullWidth
-                inputProps={{ min: 0.01, step: 0.01 }}
-                error={level.price < 0 || isNaN(level.price)}
-                helperText={level.price < 0 ? 'El precio debe ser no negativo.' : ''}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Descripción para el Cliente"
-                multiline
-                rows={1}
-                value={level.description}
-                size="small"
-                onChange={(e) => handleChangeLevel(level.tempId, 'description', e.target.value)}
-                fullWidth
-              />
-            </Grid>
-          </Grid>
-
-          <Button
-            type="button"
-            onClick={() => handleRemoveLevel(level.tempId)}
-            size="small"
-            color="error"
-            sx={{ mt: 1 }}
-          >
-            Eliminar
-          </Button>
-        </Box>
-      ))}
-      {levels.length === 0 && (
-        <Alert severity="error" sx={{ mt: 1 }}>
-          Debe definir al menos un Nivel de Precio para el producto.
-        </Alert>
-      )}
-      {hasValidationErrors && levels.length > 0 && (
-        <Alert severity="warning" sx={{ mt: 1 }}>
-          Revise los niveles: los nombres son obligatorios y los precios deben ser no negativos.
-        </Alert>
-      )}
-    </Box>
-  );
-};
-
-const ICON_CATEGORIES = [
-  {
-    name: 'Ropa y Textiles',
-    icons: [
-      { label: 'Camiseta', value: 'shirt', Icon: Shirt },
-      { label: 'Gorra', value: 'cap', Icon: GraduationCap },
-      { label: 'Pijama', value: 'pijama', Icon: Baby },
-      { label: 'Bolso/Mochila', value: 'bag', Icon: Backpack },
-    ],
-  },
-  {
-    name: 'Accesorios',
-    icons: [
-      { label: 'Taza', value: 'mug', Icon: Coffee },
-      { label: 'Vaso', value: 'glass', Icon: GlassWater },
-      { label: 'Llave', value: 'key', Icon: Key },
-    ],
-  },
-  {
-    name: 'Hogar',
-    icons: [
-      { label: 'Mesa', value: 'table', Icon: Table },
-      { label: 'Smartphone', value: 'phone', Icon: Smartphone },
-    ],
-  },
-  {
-    name: 'Promocionales/Regalos',
-    icons: [
-      { label: 'Libreta', value: 'notebook', Icon: Notebook },
-      { label: 'Botella', value: 'bottle', Icon: FlaskConical },
-      { label: 'Regalo', value: 'gift', Icon: Gift },
-    ],
-  },
-];
 
 const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -254,7 +53,6 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
       printingMethods: [],
       hasSizes: false,
       sizesAvailable: [],
-      icon: '',
       stampLocations: '',
       stampTypes: '',
       productImageUrls: [],
@@ -270,7 +68,6 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
 
   useEffect(() => {
     if (open) {
-      console.log('Modal abierto. editingType recibido:', editingType);
       if (editingType) {
         setForm({
           name: editingType.name,
@@ -279,11 +76,8 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
           printingMethods: editingType.printingMethods || [],
           hasSizes: editingType.hasSizes,
           sizesAvailable: editingType.sizesAvailable || [],
-          icon: editingType.iconName || '',
           productImageUrls: editingType.productImageUrls || [],
         });
-
-        console.log('📦 editingType.stampingLevels:', editingType.stampingLevels);
 
         const initialLevels = (editingType.stampingLevels || []).map((level) => ({
           level: level.level || level.name,
@@ -291,7 +85,6 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
           description: level.description || '',
           tempId: level.level + Math.random(),
         }));
-        console.log('✅ initialLevels procesados para setStampingLevels:', initialLevels);
         setStampingLevels(initialLevels);
       } else {
         setForm(initialFormState);
@@ -426,10 +219,6 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
         formData.append('sizesAvailable', JSON.stringify(form.sizesAvailable));
       }
 
-      if (form.icon) {
-        formData.append('iconName', form.icon);
-      }
-
       const cleanedLevels = stampingLevels.map(({ level, price, description }) => ({
         level: level,
         price: price,
@@ -516,41 +305,6 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                 <MenuItem value="object">Objeto</MenuItem>
               </Select>
             </FormControl>
-            <FormControl fullWidth margin="normal" className="modal-field">
-              <InputLabel>Ícono</InputLabel>
-              <Select
-                name="icon"
-                value={form.icon}
-                onChange={handleChange}
-                renderValue={(value) => {
-                  let selectedIcon;
-                  for (const category of ICON_CATEGORIES || []) {
-                    selectedIcon = category?.icons?.find((i) => i.value === value);
-                    if (selectedIcon) break;
-                  }
-                  return selectedIcon ? (
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <selectedIcon.Icon size={20} />
-                      {selectedIcon.label}
-                    </Box>
-                  ) : (
-                    'Sin ícono'
-                  );
-                }}
-              >
-                {ICON_CATEGORIES.map((category) => (
-                  <React.Fragment key={category.name}>
-                    <ListSubheader>{category.name}</ListSubheader>
-                    {(category.icons || []).map((icon) => (
-                      <MenuItem key={icon.value} value={icon.value}>
-                        <icon.Icon size={24} style={{ marginRight: 8 }} />
-                        {icon.label}
-                      </MenuItem>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </Select>
-            </FormControl>
             <FormControl fullWidth required margin="normal" className="modal-field">
               <InputLabel>Métodos de Impresión</InputLabel>
               <Select
@@ -575,7 +329,6 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                 ))}
               </Select>
             </FormControl>
-
             {form.hasSizes && (
               <FormControl fullWidth required margin="normal" className="modal-field">
                 <InputLabel>Tallas disponibles</InputLabel>
@@ -602,6 +355,8 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                 </Select>
               </FormControl>
             )}
+            {/* Sección de Precios */}
+            <StampingLevelsForm initialLevels={stampingLevels} onChange={setStampingLevels} />
           </Grid>
           <Grid item xs={12} md={6}>
             {/* Sección de Imágenes */}
@@ -648,7 +403,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                       className="image-preview-item__remove-btn"
                       title="Eliminar imagen"
                     >
-                      <XIcon size={14} />
+                      <CloseIcon size={14} />
                     </IconButton>
                   </Box>
                 ))}
@@ -661,7 +416,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                       className="image-preview-item__remove-btn"
                       title="Quitar selección"
                     >
-                      <XIcon size={14} />
+                      <CloseIcon size={14} />
                     </IconButton>
                   </Box>
                 ))}
@@ -672,12 +427,6 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                 </Typography>
               )}
             </Box>
-            {/* Sección de Precios */}
-            <StampingLevelsForm
-              key={editingType ? `${editingType.id}-${stampingLevels.length}` : 'new'}
-              initialLevels={stampingLevels}
-              onChange={setStampingLevels}
-            />
           </Grid>
         </Grid>
       </DialogContent>

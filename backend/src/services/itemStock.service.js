@@ -136,7 +136,7 @@ export const itemStockService = {
 
         qb.andWhere("itemType.stampingLevels IS NOT NULL");
 
-        qb.andWhere("jsonb_array_length(itemType.stampingLevels) > 0");
+        qb.andWhere("jsonb_array_length(\"itemType\".\"stampingLevels\"::jsonb) > 0");
         
       } else if (parsedFilters.isActive !== undefined) {
         qb.andWhere("itemStock.isActive = :isActive", {
@@ -169,7 +169,8 @@ export const itemStockService = {
         .where("itemStock.id = :id", { id })
         .andWhere("itemStock.isActive = true")
         .andWhere("itemType.stampingLevels IS NOT NULL")
-        .andWhere("jsonb_array_length(itemType.stampingLevels) > 0");
+        .andWhere("jsonb_array_length(\"itemType\".\"stampingLevels\"::jsonb) > 0");
+
 
       const item = await qb.getOne();
 

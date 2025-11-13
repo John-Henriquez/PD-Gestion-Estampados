@@ -10,9 +10,9 @@ export async function getItemStock() {
   }
 }
 
-export async function getPublicItemStock() {
+export async function getPublicItemStock(filters = {}) {
   try {
-    const response = await axios.get('/item-stocks/public');
+    const response = await axios.get('/item-stocks/public', { params: filters });
 
     if (response.status === 200 && response.data.status === 'Success') {
       console.log('Stock público obtenido:', response.data.data);
@@ -134,25 +134,28 @@ export async function removeManualStock(id, quantity) {
   }
 }
 
-export async function getItemStockById(id) {
+export async function getItemStockById(itemTypeId) {
   try {
-    const response = await axios.get(`/item-stocks/public/${id}`);
+    const response = await axios.get(`/item-stocks/public`, {
+      params: { itemTypeId: itemTypeId },
+    });
 
     if (response.status === 200 && response.data.status === 'Success') {
-      console.log(`Detalles de ItemStock ${id} obtenidos:`, response.data.data);
-      const itemData = Array.isArray(response.data.data)
-        ? response.data.data[0]
-        : response.data.data;
-      if (!itemData) throw new Error('Item no encontrado');
-      return itemData;
+      console.log(`Detalles de ItemStock ${itemTypeId} obtenidos:`, response.data.data);
+      return response.data.data || [];
     } else {
-      throw new Error(response.data.message || `Error inesperado al obtener ItemStock ${id}`);
+      throw new Error(
+        response.data.message || `Error inesperado al obtener ItemStock ${itemTypeId}`
+      );
     }
   } catch (error) {
-    console.error(`Error al obtener ItemStock ${id}:`, error.response?.data || error.message);
+    console.error(
+      `Error al obtener ItemStock ${itemTypeId}:`,
+      error.response?.data || error.message
+    );
     throw (
       error.response?.data ||
-      new Error(error.message || `Error de red o servidor al obtener ItemStock ${id}`)
+      new Error(error.message || `Error de red o servidor al obtener ItemStock ${itemTypeId}`)
     );
   }
 }

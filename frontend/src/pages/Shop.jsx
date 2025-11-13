@@ -1,11 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Grid, CircularProgress, Alert } from '@mui/material';
 import { getPublicItemStock } from '../services/itemStock.service';
 import ProductCard from '../components/Shop/ProductCard.jsx';
 import '../styles/pages/shop.css';
 
+const groupStockByItemType = (stockItems) => {
+  const itemTypesMap = new Map();
+  stockItems.forEach((item) => {
+    const typeId = item.itemType.id;
+
+    if (!itemTypesMap.has(typeId)) {
+      itemTypesMap.set(typeId, {
+        itemType: item.itemType,
+        representativeStock: item,
+      });
+    }
+  });
+  return Array.from(itemTypesMap.values());
+};
+
 const Shop = () => {
-  const [products, setProducts] = useState([]);
+  const [allPublicStock, setAllPublicStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -15,7 +30,7 @@ const Shop = () => {
         setLoading(true);
         setError(null);
         const publicStock = await getPublicItemStock();
-        setProducts(publicStock || []);
+        setAllPublicStock(publicStock || []);
       } catch (err) {
         console.error('Error al cargar productos:', err);
         setError(err.message || 'No se pudieron cargar los productos.');
@@ -26,6 +41,11 @@ const Shop = () => {
 
     fetchProducts();
   }, []);
+
+  const productsGroupedByItemType = useMemo(
+    () => groupStockByItemType(allPublicStock),
+    [allPublicStock]
+  );
 
   let content;
 
@@ -41,7 +61,7 @@ const Shop = () => {
         {error}
       </Alert>
     );
-  } else if (products.length === 0) {
+  } else if (productsGroupedByItemType.length === 0) {
     content = (
       <Typography color="textSecondary" className="shop-empty-message">
         No hay productos disponibles en este momento.
@@ -50,9 +70,12 @@ const Shop = () => {
   } else {
     content = (
       <Grid container spacing={4} className="shop-product-grid">
-        {products.map((product) => (
-          <Grid item key={product.id} xs={12} sm={6} md={4} lg={6}>
-            <ProductCard product={product} />
+        {productsGroupedByItemType.map((productGroup) => (
+          <Grid item key={productGroup.itemType.id} xs={12} sm={6} md={4} lg={6}>
+            <ProductCard
+              itemType={productGroup.itemType}
+              representativeStock={productGroup.representativeStock}
+            />
           </Grid>
         ))}
       </Grid>

@@ -19,7 +19,6 @@ import {
   IconReceipt,
 } from '@tabler/icons-react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import LogoDark from '../../../public/logoMorado.jpg';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -90,7 +89,7 @@ const Navbar = () => {
     <nav className="navbar" style={{ fontFamily: 'var(--font-family)' }}>
       {/* Información de Usuario o Placeholder */}
       <div className="navbar__user-info">
-        <img src={LogoDark} alt="Vibra Estampados" className="navbar__logo" />
+        <img src="/logoMorado.jpg" alt="Vibra Estampados" className="navbar__logo" />
         {isAuthenticated ? (
           <>
             <IconUser size={24} />

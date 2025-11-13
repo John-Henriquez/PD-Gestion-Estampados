@@ -5,7 +5,6 @@ import useRegister from '../hooks/auth/useRegister.jsx';
 import { showErrorAlert, showSuccessAlert } from '../helpers/sweetAlert';
 import './../styles/components/form.css';
 import './../styles/pages/register.css';
-import logoVibra from '../../public/logoClaro.jpg';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -36,7 +35,7 @@ const Register = () => {
     <main className="register-page">
       <div className="register-card">
         <img
-          src={logoVibra}
+          src="/logoClaro.jpg"
           alt="Logo Vibra Estampados"
           className="auth-logo" // Clase para estilizar el logo
         />

@@ -4,7 +4,6 @@ import Form from '../components/UI/Form.jsx';
 import useLogin from '../hooks/auth/useLogin.jsx';
 import './../styles/pages/login.css';
 import './../styles/components/form.css';
-import logoVibra from '../../public/logoClaro.jpg';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -27,7 +26,7 @@ const Login = () => {
     <main className="login-page">
       <div className="login-card">
         <img
-          src={logoVibra}
+          src="/logoClaro.jpg"
           alt="Logo Vibra Estampados"
           className="auth-logo" // Clase para estilizar el logo
         />

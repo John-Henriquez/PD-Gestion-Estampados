@@ -31,6 +31,19 @@ const Inventario = () => {
   const [openStockTrash, setOpenStockTrash] = useState(false);
   const [openHistory, setOpenHistory] = useState(false);
 
+  useEffect(() => {
+    const isModalOpen = openAddStock || openStockTrash || openHistory;
+
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [openAddStock, openStockTrash, openHistory]);
+
   //edicion
   const [editingStock, setEditingStock] = useState(null);
 
