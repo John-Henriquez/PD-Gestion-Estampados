@@ -13,6 +13,7 @@ import MyOrders from './pages/MyOrders.jsx';
 import AdminOrders from './pages/AdminOrders.jsx';
 import OrderConfirmation from './pages/OrderConfirmation.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
+import OrderDetail from './pages/OrderDetail.jsx';
 import Error404 from './pages/Error404.jsx';
 import Root from './pages/Root.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -43,6 +44,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <MyOrders />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/order-details/:id',
+        element: (
+          <ProtectedRoute>
+            <OrderDetail />
           </ProtectedRoute>
         ),
       },
