@@ -1,66 +1,27 @@
-import { useState, useEffect } from 'react';
 import { Box, Button, TextField, Typography, Grid, Alert } from '@mui/material';
 
-const StampingLevelsForm = ({ initialLevels = [], onChange }) => {
-  const [levels, setLevels] = useState(() =>
-    (initialLevels || []).map((l) => ({
-      level: l.level?.toString() || '',
-      price: l.price?.toString() || '0',
-      description: l.description?.toString() || '',
-      tempId: l.tempId || Date.now() + Math.random(),
-    }))
-  );
-
-  useEffect(() => {
-    if (initialLevels.length === 0 && levels.length === 0) return;
-
-    setLevels((prev) => {
-      const hasChanged =
-        prev.length !== initialLevels.length ||
-        prev.some(
-          (p, i) =>
-            p.level !== (initialLevels[i]?.level?.toString() || '') ||
-            p.price !== (initialLevels[i]?.price?.toString() || '0') ||
-            p.description !== (initialLevels[i]?.description?.toString() || '')
-        );
-      if (!hasChanged) return prev;
-
-      return initialLevels.map((l) => ({
-        level: l.level?.toString() || '',
-        price: l.price?.toString() || '0',
-        description: l.description?.toString() || '',
-        tempId: l.tempId || Date.now() + Math.random(),
-      }));
-    });
-  }, [initialLevels]);
-
-  useEffect(() => {
-    const cleanedLevels = levels.map((l) => ({
-      level: l.level?.trim() || 'Nivel',
-      price: parseFloat(l.price) || 0,
-      description: l.description || '',
-    }));
-    onChange(cleanedLevels);
-  }, [levels, onChange]);
-
+const StampingLevelsForm = ({ levels, onChange }) => {
   const handleAddLevel = () => {
-    setLevels((prev) => [
-      ...prev,
+    const newLevels = [
+      ...levels,
       {
         level: '',
         description: '',
         price: '0',
         tempId: Date.now() + Math.random(),
       },
-    ]);
+    ];
+    onChange(newLevels);
   };
 
   const handleRemoveLevel = (tempId) => {
-    setLevels((prev) => prev.filter((l) => l.tempId !== tempId));
+    const newLevels = levels.filter((l) => l.tempId !== tempId);
+    onChange(newLevels);
   };
 
   const handleChangeLevel = (tempId, field, value) => {
-    setLevels((prev) => prev.map((l) => (l.tempId === tempId ? { ...l, [field]: value } : l)));
+    const newLevels = levels.map((l) => (l.tempId === tempId ? { ...l, [field]: value } : l));
+    onChange(newLevels);
   };
 
   const hasInvalidPrice = levels.some(
@@ -164,7 +125,7 @@ const StampingLevelsForm = ({ initialLevels = [], onChange }) => {
       )}
       {hasValidationErrors && levels.length > 0 && (
         <Alert severity="warning" sx={{ mt: 1 }}>
-          Revise los niveles: los nombres son obligatorios y los precios deben ser no negativos.
+          Revise los niveles: los nombres son obligatorios y los precios deben ser positivos.
         </Alert>
       )}
     </Box>

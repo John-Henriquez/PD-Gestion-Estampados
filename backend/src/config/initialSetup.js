@@ -9,24 +9,14 @@ async function createUsers() {
 
     const count = await userRepository.count();
     if (count > 0) return;
-
     await Promise.all([
       userRepository.save(
         userRepository.create({
-          nombreCompleto: "Admin Badmin Cadmin Dadmin",
+          nombreCompleto: "Administrador Principal",
           rut: "11.111.111-1",
           email: "user@admin.com",
           password: await encryptPassword("admin123"),
           rol: "administrador",
-        }),
-      ),
-      userRepository.save(
-        userRepository.create({
-          nombreCompleto: "Usuario Ausuario Busuario Cusuario",
-          rut: "22.222.222-2",
-          email: "user@usuario.com",
-          password: await encryptPassword("usuario123"),
-          rol: "usuario",
         }),
       ),
     ]);

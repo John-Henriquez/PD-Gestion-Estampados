@@ -259,6 +259,18 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" className="modal">
       <DialogTitle className="modal-title">
         {editingType ? 'Editar Tipo de Ítem' : 'Nuevo Tipo de Ítem'}
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
       <DialogContent dividers className="modal-content">
         <Grid container spacing={3}>
@@ -356,7 +368,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
               </FormControl>
             )}
             {/* Sección de Precios */}
-            <StampingLevelsForm initialLevels={stampingLevels} onChange={setStampingLevels} />
+            <StampingLevelsForm levels={stampingLevels} onChange={setStampingLevels} />
           </Grid>
           <Grid item xs={12} md={6}>
             {/* Sección de Imágenes */}

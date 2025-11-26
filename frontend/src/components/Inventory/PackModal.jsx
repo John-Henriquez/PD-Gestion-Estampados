@@ -9,6 +9,10 @@ import {
   Box,
   IconButton,
   Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 
@@ -51,6 +55,7 @@ const PackModal = ({
       const initialStocks = editingPack.packItems.map((pi) => ({
         itemStock: pi.itemStock,
         quantity: pi.quantity.toString(),
+        stampingLevel: pi.sstampingLevels || '',
       }));
       setSelectedStocks(initialStocks);
 
@@ -87,6 +92,32 @@ const PackModal = ({
     setSelectedStocks((prev) => prev.filter((s) => s.itemStock.id !== id));
   };
 
+  const getPriceForItem = (stockData) => {
+    const { itemStock, stampingLevel } = stockData;
+
+    if (stampingLevel && itemStock.itemType?.stampingLevels) {
+      const levelObj = itemStock.itemType.stampingLevels.find((l) => l.level === stampingLevel);
+      if (levelObj && levelObj.price !== undefined) {
+        return Number(levelObj.price) || 0;
+      }
+    }
+
+    return Number(itemStock.price || itemStock.itemType?.basePrice || 0);
+  };
+
+  const calculateSubtotal = () => {
+    return selectedStocks.reduce((sum, s) => {
+      const itemPrice = getPriceForItem(s);
+      const quantity = Number(s.quantity || 1);
+      return sum + itemPrice * quantity;
+    }, 0);
+  };
+
+  const calculateTotal = () => {
+    const discount = Number(form.discount || 0) / 100;
+    return subtotal * (1 - discount);
+  };
+
   const handleSubmit = async () => {
     if (!form.name.trim() || selectedStocks.length === 0) {
       return showErrorAlert(
@@ -98,14 +129,22 @@ const PackModal = ({
     if (Number(form.discount) < 0 || Number(form.discount) < 0) {
       return showErrorAlert('Datos inválidos', 'Precio y descuento deben ser no negativos.');
     }
+    const invalidItems = selectedStocks.filter(
+      (s) => !s.quantity || isNaN(Number(s.quantity)) || Number(s.quantity) <= 0
+    );
 
-    if (
-      selectedStocks.some(
-        (s) => !s.quantity || isNaN(Number(s.quantity)) || Number(s.quantity) <= 0
-      )
-    ) {
+    if (invalidItems.length > 0) {
       return showErrorAlert('Cantidad inválida', 'Cada ítem debe tener cantidad mayor a 0.');
     }
+
+    const itemsWithInvalidPrices = selectedStocks.filter(
+      (s) => isNaN(getPriceForItem(s)) || getPriceForItem(s) < 0
+    );
+
+    if (itemsWithInvalidPrices.length > 0) {
+      return showErrorAlert('Precios inválidos', 'Revise los precios de los ítems seleccionados.');
+    }
+
     console.log('currentUserRut:', currentUserRut);
     if (!currentUserRut) {
       return showErrorAlert('Usuario no identificado', 'No se pudo obtener el usuario actual.');
@@ -114,12 +153,10 @@ const PackModal = ({
     const items = selectedStocks.map((s) => ({
       itemStockId: s.itemStock.id,
       quantity: parseInt(s.quantity, 10) || 1,
+      stampingLevel: s.stampingLevel || null,
     }));
 
-    const calculatedPrice = selectedStocks.reduce(
-      (sum, s) => sum + Number(s.itemStock.price || 0) * Number(s.quantity || 1),
-      0
-    );
+    const calculatedPrice = calculateSubtotal();
 
     const payload = {
       ...form,
@@ -148,10 +185,23 @@ const PackModal = ({
     }
   };
 
-  const total = selectedStocks.reduce(
-    (sum, s) => sum + Number(s.itemStock.price || 0) * Number(s.quantity || 1),
-    0
-  );
+  const handleSelectStock = (stock) => {
+    const isSelected = selectedStocks.some((s) => s.itemStock.id === stock.id);
+    if (!isSelected) {
+      const defaultLevel = stock.itemType?.stampingLevels?.[0]?.level || '';
+      setSelectedStocks((prev) => [
+        ...prev,
+        {
+          itemStock: stock,
+          quantity: '1',
+          stampingLevel: defaultLevel,
+        },
+      ]);
+    }
+  };
+
+  const subtotal = calculateSubtotal();
+  const total = calculateTotal();
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
@@ -198,11 +248,7 @@ const PackModal = ({
               return (
                 <Box
                   key={stock.id}
-                  onClick={() => {
-                    if (!isSelected) {
-                      setSelectedStocks((prev) => [...prev, { itemStock: stock, quantity: '1' }]);
-                    }
-                  }}
+                  onClick={() => handleSelectStock(stock)}
                   sx={{
                     border: isSelected ? '2px solid #1976d2' : '1px solid #ccc',
                     padding: 1.5,
@@ -240,48 +286,97 @@ const PackModal = ({
             })}
           </Box>
 
-          {selectedStocks.map((s) => (
-            <Box key={s.itemStock.id} display="flex" alignItems="center" gap={1} mt={1}>
-              <Box flexGrow={1} display="flex" alignItems="center" gap={1}>
-                <Typography variant="body2">
-                  {s.itemStock.itemType.name}
-                  {s.itemStock.size ? ` – ${s.itemStock.size}` : ''}
-                </Typography>
-                {s.itemStock.hexColor && (
-                  <Box
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '4px',
-                      backgroundColor: s.itemStock.hexColor,
-                      border: '1px solid #999',
-                    }}
+          {selectedStocks.map((s) => {
+            // Detectamos si este ítem tiene niveles de estampado configurados
+            const hasLevels = s.itemStock.itemType?.stampingLevels?.length > 0;
+            // Calculamos precio actual para mostrar
+            const currentPrice = getPriceForItem(s);
+
+            return (
+              <Box
+                key={s.itemStock.id}
+                display="flex"
+                flexDirection="column" // Cambiamos a columna para tener dos filas
+                gap={1}
+                mt={2}
+                p={1.5}
+                border="1px dashed #ccc"
+                borderRadius={1}
+              >
+                {/* FILA 1: Datos del Producto y Cantidad */}
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Box flexGrow={1}>
+                    <Typography variant="body2" fontWeight="bold">
+                      {s.itemStock.itemType.name}
+                    </Typography>
+                    {/* Mostrar talla y color si existen */}
+                    <Typography variant="caption" color="textSecondary">
+                      {s.itemStock.size ? `Talla: ${s.itemStock.size}` : ''}
+                      {s.itemStock.hexColor ? ` - Color: ${s.itemStock.hexColor}` : ''}
+                    </Typography>
+                  </Box>
+                  <TextField
+                    label="Cant."
+                    type="number"
+                    size="small"
+                    value={s.quantity}
+                    onChange={(e) => handleStockQty(s.itemStock.id, e.target.value)}
+                    style={{ width: 80 }}
+                    inputProps={{ min: 1 }}
                   />
-                )}
+                  <IconButton onClick={() => handleRemoveStock(s.itemStock.id)} color="error">
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+
+                {/* FILA 2: Selector de Nivel de Estampado (NUEVO) */}
+                <Box display="flex" justifyContent="space-between" alignItems="center" gap={2}>
+                  {hasLevels ? (
+                    <FormControl size="small" sx={{ minWidth: 200, flexGrow: 1 }}>
+                      <InputLabel>Nivel de Estampado</InputLabel>
+                      {/* Este Select actualiza el estado 'stampingLevel' */}
+                      <Select
+                        value={s.stampingLevel || ''}
+                        label="Nivel de Estampado"
+                        onChange={(e) => {
+                          // Actualizamos manualmente el array de stocks seleccionados
+                          setSelectedStocks((prev) =>
+                            prev.map((item) =>
+                              item.itemStock.id === s.itemStock.id
+                                ? { ...item, stampingLevel: e.target.value }
+                                : item
+                            )
+                          );
+                        }}
+                      >
+                        {s.itemStock.itemType.stampingLevels.map((lvl, idx) => (
+                          <MenuItem key={idx} value={lvl.level}>
+                            {/* Mostramos Nombre y Precio para claridad */}
+                            {lvl.level} (${Number(lvl.price).toLocaleString()})
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  ) : (
+                    <Typography variant="caption" color="textSecondary">
+                      Precio base (sin estampado variable)
+                    </Typography>
+                  )}
+
+                  {/* Precio calculado de este ítem */}
+                  <Typography variant="body2" fontWeight="bold" color="primary">
+                    ${(currentPrice * Number(s.quantity || 1)).toLocaleString()}
+                  </Typography>
+                </Box>
               </Box>
-              <TextField
-                label="Cantidad"
-                type="number"
-                size="small"
-                value={s.quantity}
-                onChange={(e) => handleStockQty(s.itemStock.id, e.target.value)}
-                style={{ width: 100 }}
-                inputProps={{ min: 1 }}
-              />
-              <IconButton onClick={() => handleRemoveStock(s.itemStock.id)}>
-                <DeleteIcon />
-              </IconButton>
-            </Box>
-          ))}
+            );
+          })}
 
           {selectedStocks.length > 0 && (
             <Box mt={2}>
-              <Typography variant="subtitle2">
-                Total sin descuento: ${total.toLocaleString()}
-              </Typography>
+              <Typography variant="subtitle2"> Subtotal: ${total.toLocaleString()} </Typography>
               <Typography variant="subtitle2" color="primary">
-                Precio con descuento: $
-                {(total * (1 - (Number(form.discount) / 100 || 0))).toFixed(0)}
+                Precio Pack: ${(total * (1 - (Number(form.discount) / 100 || 0))).toFixed(0)}
               </Typography>
             </Box>
           )}

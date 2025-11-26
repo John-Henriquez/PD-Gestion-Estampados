@@ -16,7 +16,6 @@ export const packService = {
         const {
           name,
           description,
-          price,
           discount,
           validFrom,
           validUntil,
@@ -26,22 +25,14 @@ export const packService = {
 
         const packRepo = transactionalEntityManager.getRepository(Pack);
         const packItemRepo = transactionalEntityManager.getRepository(PackItem);
-        const itemStockRepo =
-          transactionalEntityManager.getRepository(ItemStock);
-        const movementRepo =
-          transactionalEntityManager.getRepository(InventoryMovement);
+        const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
+        const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
 
-        if (!name || price == null || !items || items.length === 0) {
+        if (!name || !items || items.length === 0) {
           return [null, "Faltan campos obligatorios"];
         }
         if (discount < 0 || discount > 1) {
-          return [
-            null,
-            "El descuento debe ser un valor decimal entre 0 y 1 (ej: 0.2 para 20%)",
-          ];
-        }
-        if (price < 0 || discount < 0) {
-          return [null, "El precio y el descuento deben ser no negativos"];
+          return [null, "El descuento debe ser un valor decimal entre 0 y 1"];
         }
 
         let totalPrice = 0;
@@ -59,6 +50,19 @@ export const packService = {
               null,
               `El ítem con ID ${itemData.itemStockId} no existe o está inactivo`,
             ];
+          }
+
+          let unitPrice = Number(item.price);
+
+          if (itemData.stampingLevel) {
+            const levels = item.itemType.stampingLevels || [];
+            const selectedLevel = levels.find(
+              (l) => l.level === itemData.stampingLevel
+            );
+
+            if (selectedLevel) {
+              unitPrice = Number(selectedLevel.price);
+            }
           }
 
           const requestedQty = itemData.quantity;
@@ -82,15 +86,24 @@ export const packService = {
               }'. Disponible: ${item.quantity}, requerido: ${requestedQty}`,
             ];
           }
-          totalPrice += item.price * requestedQty;
-          totalQuantity += requestedQty;
+
+        if (isNaN(unitPrice)) {
+          return [
+            null,
+            `El ítem '${item.itemType?.name || item.id}' tiene un precio inválido (${item.price}).`,
+          ];
+        }
+
+        totalPrice += unitPrice * requestedQty;
+        totalQuantity += requestedQty;
 
           packItemsDetails.push({
             id: item.id,
             name: item.itemType?.name || `Ítem ${item.id}`,
             color: item.hexColor,
             size: item.size || "N/A",
-            price: item.price,
+            price: unitPrice,
+            stampingLevel: itemData.stampingLevel || "Base",
             quantity: requestedQty,
             snapshot: createItemSnapshot(item),
           });
@@ -120,7 +133,6 @@ export const packService = {
           );
         }
 
-        // Registrar UN SOLO movimiento de auditoría consolidado
         await movementRepo.save({
           type: "entrada",
           operation: "create_pack",
@@ -131,7 +143,6 @@ export const packService = {
           changes: {
             pack: {
               name,
-              description,
               price: finalPrice,
               discount,
             },
@@ -159,10 +170,8 @@ export const packService = {
       if (filters.id) where.id = filters.id;
       if (filters.isActive !== undefined) {
         where.isActive =
-          filters.isActive === "false"
-            ? false
-            : filters.isActive === "true"
-              ? true
+          filters.isActive === "false" ? false
+            : filters.isActive === "true" ? true
               : filters.isActive;
       }
 
@@ -233,8 +242,7 @@ export const packService = {
           }
         }
 
-        pack.updatedBy = updateData.updatedById
-          ? { id: updateData.updatedById }
+        pack.updatedBy = updateData.updatedById ? { id: updateData.updatedById }
           : null;
 
         const updatedPack = await repo.save(pack);

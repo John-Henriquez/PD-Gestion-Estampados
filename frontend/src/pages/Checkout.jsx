@@ -121,6 +121,7 @@ const Checkout = () => {
         maxWidth: '900px',
         margin: 'var(--spacing-xl) auto',
         padding: 'var(--spacing-md)',
+        paddingTop: '4.5rem',
       }}
     >
       <Typography

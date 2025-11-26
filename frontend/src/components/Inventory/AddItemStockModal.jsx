@@ -13,7 +13,9 @@ import {
   Box,
   Typography,
   CircularProgress,
+  IconButton,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { Autocomplete } from '@mui/material';
 import { showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
 import { useCreateItemStock } from '../../hooks/itemStock/useCreateItemStock.jsx';
@@ -115,6 +117,18 @@ const AddItemStockModal = ({ open, onClose, onCreated, itemTypes = [], editingSt
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" className="modal">
       <DialogTitle className="modal-title">
         {editingStock ? 'Editar Stock' : 'Nuevo Stock'}
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
       <DialogContent dividers className="modal-content">
         <Box sx={{ p: 0 }}>

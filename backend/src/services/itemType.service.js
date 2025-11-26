@@ -180,6 +180,21 @@ export const itemTypeService = {
         ];
       }
 
+      if (itemTypeData.name && itemTypeData.name !== itemType.name) {
+      const existingItemType = await repo.findOne({
+        where: { name: itemTypeData.name },
+      });
+      if (existingItemType && existingItemType.id !== parseInt(id)) {
+        return [
+          null,
+          {
+            type: "DUPLICATE_NAME",
+            message: "Ya existe un tipo de ítem con ese nombre",
+            field: "name",
+          },
+        ];
+      }
+    }
       const newCategory = itemType.category;
 
       let parsedStampingLevels = itemType.stampingLevels; 
