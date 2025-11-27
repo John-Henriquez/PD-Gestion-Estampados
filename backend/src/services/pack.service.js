@@ -192,6 +192,29 @@ export const packService = {
     }
   },
 
+  async getPackById(id) {
+    try {
+      const repo = AppDataSource.getRepository(Pack);
+      const pack = await repo.findOne({
+        where: { id },
+        relations: [
+          "packItems",
+          "packItems.itemStock",
+          "packItems.itemStock.itemType",
+        ],
+      });
+
+      if (!pack) {
+        return [null, "Pack no encontrado"];
+      }
+
+      return [pack, null];
+    } catch (error) {
+      console.error("Error en getPackById:", error);
+      return [null, "Error al obtener el pack"];
+    }
+  },
+
   async updatePack(id, updateData) {
     return await AppDataSource.transaction(
       async (transactionalEntityManager) => {

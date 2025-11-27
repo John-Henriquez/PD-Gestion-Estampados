@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import {
   Box,
+  Button,
   Typography,
   CircularProgress,
   Alert,
-  Paper,
+  Chip,
+  Card,
   Select,
   MenuItem,
   FormControl,
@@ -14,6 +16,34 @@ import { getAllOrders } from '../services/order.service';
 import OrderItemDisplay from '../components/Order/OrderItemDisplay.jsx';
 
 import './../styles/pages/myOrders.css';
+
+const STATUS_CONFIG = {
+  pendiente_de_pago: {
+    color: '#212529', // Texto oscuro para contraste
+    bgColor: 'var(--warning)',
+    label: 'Pendiente de Pago',
+  },
+  en_proceso: {
+    color: '#ffffff',
+    bgColor: 'var(--info)',
+    label: 'En Proceso',
+  },
+  enviado: {
+    color: '#ffffff',
+    bgColor: 'var(--secondary)',
+    label: 'Enviado',
+  },
+  completado: {
+    color: '#ffffff',
+    bgColor: 'var(--success)',
+    label: 'Completado',
+  },
+  cancelado: {
+    color: '#ffffff',
+    bgColor: 'var(--error)',
+    label: 'Cancelado',
+  },
+};
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -43,65 +73,106 @@ const AdminOrders = () => {
     ? orders.filter((order) => order.status === statusFilter)
     : orders;
 
-  const statusOptions = [
-    'pendiente',
-    'pagado',
-    'procesando',
-    'enviado',
-    'entregado',
-    'cancelado',
-    'fallido',
-  ];
+  const statusOptions = Object.keys(STATUS_CONFIG);
 
   return (
     <Box className="myorders-container">
-      <Typography variant="h4" component="h1" className="myorders-title">
-        Gestionar Pedidos
-      </Typography>
+      {/* Header Mejorado */}
+      <Box className="admin-orders-header">
+        <Typography variant="h4" component="h1" className="admin-orders-title">
+          Gestión de Pedidos
+        </Typography>
+      </Box>
 
-      {/* Sección de Filtros */}
-      <Paper sx={{ p: 2, mb: 3, backgroundColor: 'var(--gray-100)' }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Filtrar por Estado</InputLabel>
-          <Select
-            value={statusFilter}
-            label="Filtrar por Estado"
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <MenuItem value="">
-              <em>Todos los Estados</em>
-            </MenuItem>
-            {statusOptions.map((status) => (
-              <MenuItem key={status} value={status}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+      {/* Panel de Filtros Mejorado */}
+      <Card className="filters-panel" elevation={1}>
+        <Box className="filters-header">
+          <Typography variant="h6" className="filters-title">
+            Filtros y Búsqueda
+          </Typography>
+        </Box>
+        <Box className="filters-content">
+          <FormControl fullWidth size="small" className="filter-select">
+            <InputLabel>Estado del Pedido</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Estado del Pedido"
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <MenuItem value="">
+                <em>Todos los estados</em>
               </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Paper>
+              {statusOptions.map((status) => (
+                <MenuItem key={status} value={status}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip
+                      label={STATUS_CONFIG[status].label}
+                      size="small"
+                      sx={{
+                        backgroundColor: STATUS_CONFIG[status].bgColor,
+                        color: STATUS_CONFIG[status].color,
+                        fontWeight: 600,
+                      }}
+                    />
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
+          {/* Contador de resultados */}
+          <Box className="results-count">
+            <Typography variant="body2" color="textSecondary">
+              {filteredOrders.length} de {orders.length} pedidos
+            </Typography>
+          </Box>
+        </Box>
+      </Card>
+
+      {/* Estados de Carga y Error */}
       {loading && (
         <Box className="loading-container">
-          <CircularProgress />
+          <CircularProgress size={60} thickness={4} className="loading-spinner" />
+          <Typography variant="h6" className="loading-text">
+            Cargando pedidos...
+          </Typography>
         </Box>
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          className="error-alert"
+          action={
+            <Button color="inherit" size="small" onClick={fetchAllOrders}>
+              Reintentar
+            </Button>
+          }
+        >
           {error}
         </Alert>
       )}
 
+      {/* Lista de Pedidos */}
       {!loading && !error && filteredOrders.length === 0 && (
-        <Typography variant="body1" color="textSecondary" className="empty-message">
-          {statusFilter
-            ? `No hay pedidos con el estado "${statusFilter}".`
-            : 'No hay pedidos registrados.'}
-        </Typography>
+        <Card className="empty-state">
+          <Box className="empty-state-content">
+            <Typography variant="h6" className="empty-state-title">
+              {statusFilter ? 'No hay pedidos con este estado' : 'No hay pedidos registrados'}
+            </Typography>
+            <Typography variant="body2" color="textSecondary" className="empty-state-description">
+              {statusFilter
+                ? `No se encontraron pedidos con estado "${STATUS_CONFIG[statusFilter]?.label}".`
+                : 'Cuando los clientes realicen pedidos, aparecerán aquí.'}
+            </Typography>
+          </Box>
+        </Card>
       )}
 
+      {/* Lista de Pedidos */}
       {!loading && !error && filteredOrders.length > 0 && (
-        <Box>
+        <Box className="orders-list">
           {filteredOrders.map((order) => (
             <OrderItemDisplay
               key={order.id}

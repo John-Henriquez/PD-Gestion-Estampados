@@ -12,6 +12,7 @@ router.patch("/restore/:id", isAdmin, packController.restorePack);
 router.delete("/force-delete/:id", isAdmin, packController.forceDeletePack);
 
 router.get("/", packController.getPacks);
+router.get("/:id", packController.getPackById);
 router.post("/", isAdmin, packController.createPack);
 router.patch("/:id", isAdmin, packController.updatePack);
 router.delete("/:id", isAdmin, packController.deletePack);

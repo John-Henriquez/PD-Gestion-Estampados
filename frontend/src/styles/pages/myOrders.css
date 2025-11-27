@@ -1,5 +1,5 @@
 .myorders-container {
-  max-width: 900px;
+  max-width: 1200px;
   margin: var(--spacing-xl) auto;
   padding: var(--spacing-md);
   padding-top: calc(4.5rem + var(--spacing-lg));
@@ -10,6 +10,16 @@
   color: var(--primary-dark);
   text-align: center;
   margin-bottom: var(--spacing-lg) !important;
+  font-weight: 700 !important;
+  font-size: 2.5rem !important;
+}
+
+.filter-paper {
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  background-color: var(--gray-100) !important;
+  border-radius: var(--border-radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 .order-item-paper {
@@ -19,7 +29,13 @@
   border-left: 5px solid var(--gray-300);
   border-radius: var(--border-radius-sm);
   box-shadow: var(--shadow-sm);
+  border-left: 6px solid var(--primary);
   transition: border-color var(--transition-normal) ease;
+}
+
+.order-item-paper:hover {
+  box-shadow: var(--shadow-lg) !important;
+  transform: translateY(-2px);
 }
 
 .order-item-details {
@@ -47,65 +63,43 @@
 
 .order-item-status-chip {
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: 16px;
+  border-radius: 20px;
   font-weight: 600;
   font-size: 0.8rem;
-  color: white;
   text-align: center;
-  min-width: 90px;
+  min-width: 100px;
   text-transform: capitalize;
+  box-shadow: var(--shadow-sm);
 }
 
-.status-pendiente {
-  border-color: var(--warning);
-}
-.status-pagado {
-  border-color: var(--info);
-}
-.status-procesando {
-  border-color: var(--primary);
-}
-.status-enviado {
-  border-color: var(--secondary);
-}
-.status-entregado {
-  border-color: var(--success);
-}
-.status-cancelado {
-  border-color: var(--error);
-}
-.status-fallido {
-  border-color: var(--error-dark);
-}
-.status-default {
-  border-color: var(--gray-700);
-}
-
-.chip-pendiente {
+.status-pendiente_de_pago { border-color: var(--warning); }
+.chip-pendiente_de_pago {
   background-color: var(--warning);
-  color: var(--gray-900);
+  color: var(--gray-900); 
 }
-.chip-pagado {
+
+.status-en_proceso { border-color: var(--info); }
+.chip-en_proceso {
   background-color: var(--info);
+  color: white;
 }
-.chip-procesando {
-  background-color: var(--primary-light);
-  color: var(--primary-dark);
-}
+
+.status-enviado { border-color: var(--secondary); }
 .chip-enviado {
   background-color: var(--secondary);
+  color: white;
 }
-.chip-entregado {
+
+.status-completado { border-color: var(--success); }
+.chip-completado {
   background-color: var(--success);
+  color: white;
 }
+
+.status-cancelado { border-color: var(--error); }
 .chip-cancelado {
   background-color: var(--error);
-}
-.chip-fallido {
-  background-color: var(--error-dark);
-}
-.chip-default {
-  background-color: var(--gray-700);
+  color: white;
 }
 
 .loading-container {

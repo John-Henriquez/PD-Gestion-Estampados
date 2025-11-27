@@ -10,17 +10,18 @@ const OrderSchema = new EntitySchema({
       primary: true,
       generated: true,
     },
-    status: {
-      type: "enum",
-      enum: [
-        "pendiente_de_pago",
-        "en_proceso",
-        "enviado",
-        "completado",
-        "cancelado",
-      ],
-      default: "pendiente_de_pago",
-    },
+
+  status: {
+    type: "enum",
+    enum: [
+      "pendiente_de_pago",
+      "en_proceso",
+      "enviado",
+      "completado",        
+      "cancelado"
+    ],
+    default: "pendiente_de_pago",
+  },
 
     subtotal: {
       type: "int",
@@ -39,7 +40,6 @@ const OrderSchema = new EntitySchema({
     paymentDate: {
       type: "timestamp",
       nullable: true,
-      comment: "Fecha del último pago registrado",
     },
     customerName: {
       type: "varchar",

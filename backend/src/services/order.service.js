@@ -112,7 +112,9 @@ export const orderService = {
               );
             }
             itemNameSnapshot = `Pack: ${pack.name}`;
-            calculatedSubtotal += pack.price * itemInput.quantity;
+
+            const priceAtTime = pack.price;
+            calculatedSubtotal += priceAtTime * itemInput.quantity;
 
             for (const packItem of pack.packItems) {
               if (
@@ -336,20 +338,11 @@ export const orderService = {
             "en_proceso",
             "enviado",
             "completado",
-            "cancelado",
+            "cancelado"
           ];
-          const legacyStatusMap = {
-            pendiente: "pendiente_de_pago",
-            pagado: "en_proceso",
-            procesando: "en_proceso",
-            entregado: "completado"
-          };
-            if (legacyStatusMap[statusToUpdate]) {
-            statusToUpdate = legacyStatusMap[statusToUpdate];
-          }
 
-          if (!allowedStatus.includes(statusToUpdate)) {
-             throw new Error(`Estado general inválido: ${newStatus}`);
+          if (!allowedStatus.includes(newStatus)) {
+            throw new Error(`Estado inválido: ${newStatus}`);
           }
 
           if (statusToUpdate !== order.status) {

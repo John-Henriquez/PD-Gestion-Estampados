@@ -40,6 +40,22 @@ export const packController = {
       handleErrorServer(res, 500, "Error interno del servidor");
     }
   },
+  
+  async getPackById(req, res) {
+  try {
+    const { id } = req.params;
+    if (!id || isNaN(parseInt(id))) {
+      return handleErrorClient(res, 400, "ID inválido");
+    }
+
+    const [pack, error] = await packService.getPackById(parseInt(id));
+    if (error) return handleErrorClient(res, 404, error);
+
+    handleSuccess(res, 200, "Pack obtenido", pack);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+},
 
   async createPack(req, res) {
     try {

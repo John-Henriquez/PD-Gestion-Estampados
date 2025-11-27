@@ -10,6 +10,16 @@ export async function getPacks(params = {}) {
   }
 }
 
+export async function getPackById(id) {
+  try {
+    const { data } = await axios.get('/packs', { params: { id, isActive: true } });
+    return data.data && data.data.length > 0 ? data.data[0] : null;
+  } catch (error) {
+    console.error(`Error fetching pack ${id}:`, error);
+    throw error;
+  }
+}
+
 export async function createPack(packData) {
   try {
     const response = await axios.post('/packs', packData);

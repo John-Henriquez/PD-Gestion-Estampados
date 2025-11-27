@@ -2,7 +2,7 @@
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
   background-color: var(--gray-100) !important;
-  border-left: 5px solid var(--gray-300); /* Borde por defecto */
+  border-left: 5px solid var(--gray-300); 
   border-radius: var(--border-radius-sm);
   box-shadow: var(--shadow-sm);
   transition: border-color var(--transition-normal) ease;
@@ -36,62 +36,37 @@
   border-radius: 16px;
   font-weight: 600;
   font-size: 0.8rem;
-  color: white; /* Color de texto por defecto */
+  color: white; 
   text-align: center;
   min-width: 90px;
   text-transform: capitalize;
 }
 
 /* --- Colores de Borde Izquierdo --- */
-.status-pendiente {
-  border-color: var(--warning);
-}
-.status-pagado {
-  border-color: var(--info);
-}
-.status-procesando {
-  border-color: var(--primary);
-}
-.status-enviado {
-  border-color: var(--secondary);
-}
-.status-entregado {
-  border-color: var(--success);
-}
-.status-cancelado {
-  border-color: var(--error);
-}
-.status-fallido {
-  border-color: var(--error-dark);
-}
-.status-default {
-  border-color: var(--gray-700);
-}
+.status-confirmado { border-color: var(--info); }
+.status-en_preparacion { border-color: var(--primary); }
+.status-listo_para_entrega { border-color: var(--secondary); }
+.status-en_camino { border-color: var(--info-dark); }
+.status-rechazado { border-color: var(--error-dark); }
 
 /* --- Colores de Fondo para el Chip --- */
-.chip-pendiente {
-  background-color: var(--warning);
-  color: var(--gray-900);
-}
-.chip-pagado {
+.chip-confirmado {
   background-color: var(--info);
 }
-.chip-procesando {
+
+.chip-en_preparacion {
   background-color: var(--primary-light);
   color: var(--primary-dark);
 }
-.chip-enviado {
+
+.chip-listo_para_entrega {
   background-color: var(--secondary);
 }
-.chip-entregado {
-  background-color: var(--success);
+
+.chip-en_camino {
+  background-color: var(--info-dark);
 }
-.chip-cancelado {
-  background-color: var(--error);
-}
-.chip-fallido {
+
+.chip-rechazado {
   background-color: var(--error-dark);
-}
-.chip-default {
-  background-color: var(--gray-700);
 }

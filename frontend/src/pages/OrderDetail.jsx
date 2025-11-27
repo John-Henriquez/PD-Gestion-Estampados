@@ -10,18 +10,28 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Stepper,
+  Step,
+  StepLabel,
 } from '@mui/material';
 import { ArrowLeft, FileText, Receipt } from 'lucide-react';
-import { getOrderById } from '../services/order.service';
+import { getOrderById, updateOrderStatus } from '../services/order.service';
 import { generateOrderReceipt } from '../helpers/pdfGenerator';
-import { showErrorAlert } from '../helpers/sweetAlert';
+import { showErrorAlert, showSuccessAlert, deleteDataAlert } from '../helpers/sweetAlert';
+import { useAuth } from '../context/AuthContext.jsx';
 import '../styles/pages/orderDetail.css';
+
+const ORDER_STEPS = [
+  { label: 'Pendiente de Pago', value: 'pendiente_de_pago' },
+  { label: 'En Proceso', value: 'en_proceso' },
+  { label: 'Enviado', value: 'enviado' },
+  { label: 'Completado', value: 'completado' },
+];
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Fecha desconocida';
   try {
     const date = new Date(dateString);
-    // Formato: 13 de noviembre de 2025, 18:18
     return new Intl.DateTimeFormat('es-CL', {
       day: 'numeric',
       month: 'long',
@@ -38,25 +48,82 @@ const formatDate = (dateString) => {
 
 const OrderDetail = () => {
   const { id } = useParams();
+  const { user } = useAuth();
+  const isAdmin = user?.rol === 'administrador';
+
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [error, setError] = useState(null);
 
+  const fetchOrder = async () => {
+    try {
+      setLoading(true);
+      const data = await getOrderById(id);
+      setOrder(data);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Error al cargar el pedido');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        setLoading(true);
-        const data = await getOrderById(id);
-        setOrder(data);
-      } catch (err) {
-        console.error(err);
-        setError(err.message || 'Error al cargar el pedido');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchOrder();
   }, [id]);
+
+  const getCurrentStepIndex = (status) => {
+    if (status === 'cancelado' || status === 'fallido') return -1;
+
+    let normalizedStatus = status;
+    if (status === 'pendiente') normalizedStatus = 'pendiente_de_pago';
+    if (status === 'procesando') normalizedStatus = 'en_proceso';
+    if (status === 'entregado') normalizedStatus = 'completado';
+
+    const index = ORDER_STEPS.findIndex((s) => s.value === normalizedStatus);
+    return index !== -1 ? index : 0;
+  };
+
+  const activeStep = order ? getCurrentStepIndex(order.status) : 0;
+  const isCancelled = order?.status === 'cancelado' || order?.status === 'fallido';
+
+  const handleAdvanceStep = async () => {
+    if (activeStep >= ORDER_STEPS.length - 1) return; // Ya está completado
+    const nextStatus = ORDER_STEPS[activeStep + 1].value;
+    // Confirmación simple
+    const confirm = window.confirm(`¿Avanzar estado a "${ORDER_STEPS[activeStep + 1].label}"?`);
+    if (!confirm) return;
+
+    await changeStatus(nextStatus);
+  };
+
+  const handleCancelOrder = async () => {
+    const result = await deleteDataAlert(
+      '¿Cancelar este pedido?',
+      'Esta acción detendrá el proceso. Puedes revertirlo manualmente si es necesario contactando a soporte técnico.'
+    );
+
+    if (result.isConfirmed) {
+      await changeStatus('cancelado');
+    }
+  };
+
+  const changeStatus = async (newStatus) => {
+    setUpdatingStatus(true);
+    try {
+      await updateOrderStatus(order.id, newStatus);
+      showSuccessAlert(
+        'Estado Actualizado',
+        `El pedido ahora está: ${newStatus.replace(/_/g, ' ')}`
+      );
+      fetchOrder(); // Recargar datos
+    } catch (err) {
+      showErrorAlert('Error', err.message || 'No se pudo actualizar el estado');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const handleDownloadBoleta = () => {
     if (order) {
@@ -70,7 +137,6 @@ const OrderDetail = () => {
   };
 
   const handleRequestFactura = () => {
-    // Placeholder para funcionalidad futura
     showErrorAlert(
       'Funcionalidad en desarrollo',
       'Para emitir factura necesitamos registrar datos de empresa (Razón social, Giro).'
@@ -123,11 +189,11 @@ const OrderDetail = () => {
     <Box className="order-detail-container">
       <Button
         component={RouterLink}
-        to="/my-orders"
+        to={isAdmin ? '/admin/orders' : '/my-orders'}
         startIcon={<ArrowLeft />}
         sx={{ mb: 2, color: 'var(--gray-700)' }}
       >
-        Volver a Mis Pedidos
+        {isAdmin ? 'Volver a Gestión de Pedidos' : 'Volver a Mis Pedidos'}
       </Button>
 
       <Grid container spacing={3}>
@@ -159,6 +225,67 @@ const OrderDetail = () => {
 
             <Divider sx={{ my: 3 }} />
 
+            {/* --- SECCIÓN DE SEGUIMIENTO (STEPPER) --- */}
+            <Typography variant="h6" gutterBottom>
+              Estado del pedido
+            </Typography>
+
+            {isCancelled ? (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                Este pedido ha sido cancelado.
+              </Alert>
+            ) : (
+              <Box sx={{ width: '100%', mb: 4, mt: 2 }}>
+                <Stepper activeStep={activeStep} alternativeLabel>
+                  {ORDER_STEPS.map((step) => (
+                    <Step key={step.value}>
+                      <StepLabel>{step.label}</StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
+              </Box>
+            )}
+
+            {/* --- CONTROLES DE ADMINISTRADOR --- */}
+
+            {isAdmin && !isCancelled && activeStep < ORDER_STEPS.length - 1 && (
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: 'var(--gray-100)',
+                  borderRadius: 2,
+                  mb: 3,
+                  border: '1px dashed var(--gray-300)',
+                }}
+              >
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  Zona de Administración
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleAdvanceStep}
+                    disabled={updatingStatus}
+                  >
+                    {updatingStatus
+                      ? 'Actualizando...'
+                      : `Avanzar a: ${ORDER_STEPS[activeStep + 1]?.label}`}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleCancelOrder}
+                    disabled={updatingStatus}
+                  >
+                    Cancelar Pedido
+                  </Button>
+                </Box>
+              </Box>
+            )}
+
+            <Divider sx={{ my: 3 }} />
+
             <Typography variant="h6" gutterBottom>
               Productos
             </Typography>
@@ -167,19 +294,59 @@ const OrderDetail = () => {
               {order.orderItems?.map((item) => (
                 <Box key={item.id} className="item-row">
                   {/* Icono Placeholder */}
-                  <Box className="item-image-placeholder"> {item.pack ? '📦' : '👕'} </Box>
 
                   <Box className="item-info">
                     <Typography variant="subtitle1" fontWeight="600">
                       {item.itemNameSnapshot || 'Nombre del producto no disponible'}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.sizeSnapshot && `Talla: ${item.sizeSnapshot}`}
-                      {item.sizeSnapshot &&
-                        (item.colorHexSnapshot || item.colorNameSnapshot) &&
-                        ' | '}
-                      {getColorDisplay(item)}
-                    </Typography>
+
+                    {!item.pack && (
+                      <Typography variant="body2" color="text.secondary">
+                        {item.sizeSnapshot && `Talla: ${item.sizeSnapshot}`}
+                        {item.sizeSnapshot &&
+                          (item.colorHexSnapshot || item.colorNameSnapshot) &&
+                          ' | '}
+                        {getColorDisplay(item)}
+                      </Typography>
+                    )}
+
+                    {item.pack && item.pack.packItems && (
+                      <Box
+                        sx={{
+                          mt: 1,
+                          padding: 1,
+                          backgroundColor: 'var(--gray-100)',
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                          Contenido del Pack:
+                        </Typography>
+                        <ul style={{ margin: '4px 0 0 0', paddingLeft: '20px' }}>
+                          {item.pack.packItems.map((pi) => (
+                            <li key={pi.id}>
+                              <Typography variant="caption" component="span">
+                                {pi.quantity}x {pi.itemStock?.itemType?.name}
+                                {pi.itemStock?.size ? ` (${pi.itemStock.size})` : ''}
+                                <span
+                                  style={{
+                                    display: 'inline-block',
+                                    width: 10,
+                                    height: 10,
+                                    borderRadius: '50%',
+                                    backgroundColor: pi.itemStock?.hexColor,
+                                    marginLeft: 6,
+                                    border: '1px solid #ccc',
+                                    verticalAlign: 'middle',
+                                  }}
+                                  title={pi.itemStock?.hexColor}
+                                />
+                              </Typography>
+                            </li>
+                          ))}
+                        </ul>
+                      </Box>
+                    )}
 
                     {item.stampOptionsSnapshot && (
                       <Typography

@@ -13,6 +13,7 @@ import MyOrders from './pages/MyOrders.jsx';
 import AdminOrders from './pages/AdminOrders.jsx';
 import OrderConfirmation from './pages/OrderConfirmation.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
+import PackDetail from './pages/PackDetail.jsx';
 import OrderDetail from './pages/OrderDetail.jsx';
 import Error404 from './pages/Error404.jsx';
 import Root from './pages/Root.jsx';
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
       { path: '/inventario', element: <Inventory /> },
       { path: '/checkout', element: <Checkout /> },
       { path: '/shop', element: <Shop /> },
+      { path: '/pack/:packId', element: <PackDetail /> },
       { path: '/product/:itemTypeId', element: <ProductDetail /> },
       { path: '/order-confirmation/:orderId', element: <OrderConfirmation /> },
       {
