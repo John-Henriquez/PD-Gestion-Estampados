@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from '../components/UI/Navbar.jsx';
+import Footer from '../components/UI/Footer.jsx';
 import { AuthProvider } from '../context/AuthProvider.jsx';
 import { CartProvider } from '../context/CartProvider.jsx';
 
@@ -18,6 +19,7 @@ function PageRoot() {
     <>
       <Navbar />
       <Outlet />
+      <Footer />
     </>
   );
 }

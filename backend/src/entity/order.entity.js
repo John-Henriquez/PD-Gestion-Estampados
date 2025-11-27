@@ -51,6 +51,16 @@ const OrderSchema = new EntitySchema({
       length: 255,
       nullable: true,
     },
+    customerPhone: { 
+      type: "varchar",
+      length: 20,
+      nullable: true
+    },
+    shippingAddress: {
+      type: "text",
+      nullable: true
+    },
+
     createdAt: {
       type: "timestamp",
       createDate: true,

@@ -33,6 +33,17 @@ const customerDataSchema = Joi.object({
   }),
 });
 
+const shippingDataSchema = Joi.object({
+  phone: Joi.string().min(8).required().messages({
+    "string.empty": "El teléfono es obligatorio.",
+    "any.required": "El teléfono es requerido.",
+  }),
+  address: Joi.string().min(5).required().messages({
+    "string.empty": "La dirección es obligatoria.",
+    "any.required": "La dirección es requerida.",
+  }),
+});
+
 export const createOrderSchema = Joi.object({
   items: Joi.array().items(orderItemSchema).min(1).required().messages({
     "array.base": "El campo `items` debe ser un array.",
@@ -49,4 +60,6 @@ export const createOrderSchema = Joi.object({
     .messages({
       "any.required": "customerData es requerido para pedidos de invitados.",
     }),
+
+  shippingData: shippingDataSchema.required(),
 });

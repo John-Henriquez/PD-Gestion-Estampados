@@ -9,14 +9,18 @@ import {
   Alert,
   Grid,
   Divider,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useCart } from '../hooks/cart/useCart.jsx';
 import { createOrder } from '../services/order.service';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
-
 import { XCircle } from 'lucide-react';
+import { regionesYComunas } from '../data/chileData';
 
 const getFullImageUrl = (url) => {
   if (!url) return '';
@@ -31,6 +35,13 @@ const Checkout = () => {
   const { isAuthenticated, user } = useContext(AuthContext);
 
   const [customerData, setCustomerData] = useState({ name: '', email: '' });
+  const [addressDetails, setAddressDetails] = useState({
+    region: '',
+    comuna: '',
+    street: '',
+    phone: '',
+  });
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
 
@@ -51,18 +62,37 @@ const Checkout = () => {
     }
   }, [cartItems, isProcessing, navigate]);
 
-  const handleGuestDataChange = (event) => {
+  const handleCustomerDataChange = (event) => {
     setCustomerData((prev) => ({
       ...prev,
       [event.target.name]: event.target.value,
     }));
   };
-
+  const handleAddressChange = (event) => {
+    const { name, value } = event.target;
+    if (name === 'region') {
+      setAddressDetails((prev) => ({ ...prev, region: value, comuna: '' }));
+    } else {
+      setAddressDetails((prev) => ({ ...prev, [name]: value }));
+    }
+  };
   const handleSubmitOrder = async () => {
     setError(null);
     if (!isAuthenticated && !customerData.email) {
       setError('Por favor, ingresa tu dirección de correo electrónico.');
       showErrorAlert('Datos incompletos', 'Ingresa tu correo electrónico para continuar.');
+      return;
+    }
+    if (
+      !addressDetails.region ||
+      !addressDetails.comuna ||
+      !addressDetails.street ||
+      !addressDetails.phone
+    ) {
+      setError(
+        'Por favor, completa todos los datos de envío (Región, Comuna, Dirección y Teléfono).'
+      );
+      showErrorAlert('Datos faltantes', 'Completa la dirección de envío.');
       return;
     }
     if (cartItems.length === 0) {
@@ -75,6 +105,7 @@ const Checkout = () => {
     }
 
     setIsProcessing(true);
+    const fullAddress = `${addressDetails.street}, ${addressDetails.comuna}, ${addressDetails.region}`;
 
     const orderPayload = {
       items: cartItems.map((item) => ({
@@ -86,6 +117,10 @@ const Checkout = () => {
         stampOptionsSnapshot: item.stampOptionsSnapshot,
       })),
       customerData: isAuthenticated ? null : customerData,
+      shippingData: {
+        phone: addressDetails.phone,
+        address: fullAddress,
+      },
     };
 
     try {
@@ -114,6 +149,9 @@ const Checkout = () => {
       0
     );
   };
+
+  const selectedRegionData = regionesYComunas.find((r) => r.region === addressDetails.region);
+  const availableComunas = selectedRegionData ? selectedRegionData.comunas : [];
 
   return (
     <Box
@@ -162,7 +200,7 @@ const Checkout = () => {
             <Grid container spacing={3} sx={{ marginBottom: 'var(--spacing-md)' }}>
               <Button
                 size="small"
-                onClick={() => removeFromCart(item.cartItemId)} // Llama a removeFromCart
+                onClick={() => removeFromCart(item.cartItemId)}
                 sx={{
                   position: 'absolute',
                   top: 0,
@@ -170,7 +208,7 @@ const Checkout = () => {
                   minWidth: 'auto',
                   padding: '2px',
                   color: 'var(--error)',
-                  zIndex: 1, // Asegura que esté encima
+                  zIndex: 1,
                 }}
                 title="Eliminar este item del carrito"
               >
@@ -230,67 +268,128 @@ const Checkout = () => {
         </Typography>
       </Paper>
 
-      {/* Datos Invitado */}
-      {!isAuthenticated && (
-        <Paper
-          elevation={2}
+      <Paper
+        elevation={2}
+        sx={{
+          padding: 'var(--spacing-md)',
+          marginBottom: 'var(--spacing-lg)',
+          backgroundColor: 'var(--gray-100)',
+        }}
+      >
+        <Typography
+          variant="h6"
+          gutterBottom
           sx={{
-            padding: 'var(--spacing-md)',
-            marginBottom: 'var(--spacing-lg)',
-            backgroundColor: 'var(--gray-100)',
+            color: 'var(--primary)',
+            pb: 1,
+            mb: 1,
+            borderBottom: '1px solid var(--gray-300)',
           }}
         >
-          <Typography
-            variant="h6"
-            gutterBottom
-            sx={{
-              color: 'var(--primary)',
-              pb: 1,
-              mb: 1,
-              borderBottom: '1px solid var(--gray-300)',
-            }}
-          >
-            Tus Datos (Invitado)
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Nombre (Opcional)"
-                name="name"
-                value={customerData.name}
-                onChange={handleGuestDataChange}
-                fullWidth
-                margin="normal"
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Correo Electrónico"
-                name="email"
-                type="email"
-                value={customerData.email}
-                onChange={handleGuestDataChange}
-                required
-                fullWidth
-                margin="normal"
-                variant="outlined"
-                helperText="Necesario para confirmar tu pedido."
-              />
-            </Grid>
-          </Grid>
-        </Paper>
-      )}
+          Datos de Envío y Contacto
+        </Typography>
 
-      {/* Error General */}
+        <Grid container spacing={2}>
+          {!isAuthenticated && (
+            <>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Nombre Completo"
+                  name="name"
+                  value={customerData.name}
+                  onChange={handleCustomerDataChange}
+                  fullWidth
+                  margin="normal"
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Correo Electrónico"
+                  name="email"
+                  type="email"
+                  value={customerData.email}
+                  onChange={handleCustomerDataChange}
+                  required
+                  fullWidth
+                  margin="normal"
+                  variant="outlined"
+                  helperText="Para enviarte el comprobante."
+                />
+              </Grid>
+            </>
+          )}
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth required>
+              <InputLabel>Región</InputLabel>
+              <Select
+                name="region"
+                value={addressDetails.region}
+                label="Región"
+                onChange={handleAddressChange}
+              >
+                {regionesYComunas.map((reg) => (
+                  <MenuItem key={reg.region} value={reg.region}>
+                    {reg.region}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth required disabled={!addressDetails.region}>
+              <InputLabel>Comuna</InputLabel>
+              <Select
+                name="comuna"
+                value={addressDetails.comuna}
+                label="Comuna"
+                onChange={handleAddressChange}
+              >
+                {availableComunas.map((com) => (
+                  <MenuItem key={com} value={com}>
+                    {com}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} sm={8}>
+            <TextField
+              label="Calle, Número, Depto"
+              name="street"
+              value={addressDetails.street}
+              onChange={handleAddressChange}
+              required
+              fullWidth
+              variant="outlined"
+              placeholder="Ej: Av. Siempre Viva 742"
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Teléfono / Celular"
+              name="phone"
+              value={handleAddressChange.phone}
+              onChange={handleAddressChange}
+              required
+              fullWidth
+              margin="normal"
+              variant="outlined"
+              placeholder="+569..."
+            />
+          </Grid>
+        </Grid>
+      </Paper>
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {' '}
-          {error}{' '}
+          {error}
         </Alert>
       )}
 
-      {/* Botones */}
       <Box
         sx={{
           display: 'flex',
@@ -301,16 +400,10 @@ const Checkout = () => {
         }}
       >
         {/* Botón Seguir Comprando */}
-        <Button
-          variant="outlined"
-          component={RouterLink} // Usar Link de react-router
-          to="/shop" // Enlace a la tienda
-          sx={{ flexGrow: 1 }} // Ocupa espacio disponible
-        >
+        <Button variant="outlined" component={RouterLink} to="/shop" sx={{ flexGrow: 1 }}>
           Seguir Comprando
         </Button>
 
-        {/* Botón Confirmar Pedido */}
         <Button
           variant="contained"
           onClick={handleSubmitOrder}
@@ -318,18 +411,12 @@ const Checkout = () => {
           size="large"
           className="animate--pulse"
           sx={{
-            flexGrow: 2, // Más grande que el otro botón
-            padding: 'var(--spacing-sm) 0',
+            flexGrow: 2,
             backgroundColor: 'var(--success)',
             color: 'white',
             fontWeight: 600,
-            fontSize: '1.1rem',
-            borderRadius: 'var(--border-radius-md)',
             '&:hover': { backgroundColor: 'var(--success-dark)' },
-            '&:disabled': {
-              backgroundColor: 'var(--gray-300)',
-              cursor: 'not-allowed',
-            },
+            '&:disabled': { backgroundColor: 'var(--gray-300)' },
           }}
           startIcon={isProcessing ? <CircularProgress size={24} color="inherit" /> : null}
         >

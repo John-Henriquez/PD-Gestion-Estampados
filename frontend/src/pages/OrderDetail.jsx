@@ -14,7 +14,8 @@ import {
   Step,
   StepLabel,
 } from '@mui/material';
-import { ArrowLeft, FileText, Receipt } from 'lucide-react';
+import { ArrowLeft, FileText, Receipt, User, MapPin, Phone } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { getOrderById, updateOrderStatus } from '../services/order.service';
 import { generateOrderReceipt } from '../helpers/pdfGenerator';
 import { showErrorAlert, showSuccessAlert, deleteDataAlert } from '../helpers/sweetAlert';
@@ -89,13 +90,24 @@ const OrderDetail = () => {
   const isCancelled = order?.status === 'cancelado' || order?.status === 'fallido';
 
   const handleAdvanceStep = async () => {
-    if (activeStep >= ORDER_STEPS.length - 1) return; // Ya está completado
-    const nextStatus = ORDER_STEPS[activeStep + 1].value;
-    // Confirmación simple
-    const confirm = window.confirm(`¿Avanzar estado a "${ORDER_STEPS[activeStep + 1].label}"?`);
-    if (!confirm) return;
+    if (activeStep >= ORDER_STEPS.length - 1) return;
+    const nextStep = ORDER_STEPS[activeStep + 1];
+    const nextStatus = nextStep.value;
 
-    await changeStatus(nextStatus);
+    const result = await Swal.fire({
+      title: '¿Avanzar etapa?',
+      text: `El pedido pasará al estado: ${nextStep.label}`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, avanzar',
+      cancelButtonText: 'Cancelar',
+    });
+
+    if (result.isConfirmed) {
+      await changeStatus(nextStatus);
+    }
   };
 
   const handleCancelOrder = async () => {
@@ -117,7 +129,7 @@ const OrderDetail = () => {
         'Estado Actualizado',
         `El pedido ahora está: ${newStatus.replace(/_/g, ' ')}`
       );
-      fetchOrder(); // Recargar datos
+      fetchOrder();
     } catch (err) {
       showErrorAlert('Error', err.message || 'No se pudo actualizar el estado');
     } finally {
@@ -433,31 +445,71 @@ const OrderDetail = () => {
               </Button>
             </Box>
           </Paper>
+        </Grid>
 
-          {/* Card de Información de Cliente */}
-          <Paper className="summary-paper" sx={{ mt: 2 }}>
-            <Typography variant="subtitle1" gutterBottom fontWeight="600">
-              Datos del Cliente
-            </Typography>
-
-            <Box sx={{ mb: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Nombre
-              </Typography>
-              <Typography variant="body2">
-                {order.user ? order.user.nombreCompleto : order.customerName || 'Invitado'}
+        {/* Información de Cliente */}
+        <Grid item xs={12}>
+          <Paper className="detail-paper">
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+               <Typography variant="h6" fontWeight="600">
+                Información de Envío y Cliente
               </Typography>
             </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Contacto
-              </Typography>
-              <Typography variant="body2">
-                {order.user ? order.user.email : order.guestEmail}
-              </Typography>
-            </Box>
+            
+            <Grid container spacing={4}>
+              {/* Columna 1: Destinatario */}
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                  <User size={24} color="var(--gray-500)" style={{ marginTop: 2 }} />
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Destinatario
+                    </Typography>
+                    <Typography variant="body1" fontWeight="500">
+                      {order.user ? order.user.nombreCompleto : order.customerName || 'Invitado'}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+
+              {/* Columna 2: Contacto */}
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                  <Phone size={24} color="var(--gray-500)" style={{ marginTop: 2 }} />
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Datos de Contacto
+                    </Typography>
+                    <Typography variant="body2">
+                      {order.user ? order.user.email : order.guestEmail}
+                    </Typography>
+                    {order.customerPhone && (
+                      <Typography variant="body2" fontWeight="500">
+                        {order.customerPhone}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              </Grid>
+
+              {/* Columna 3: Dirección */}
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                  <MapPin size={24} color="var(--gray-500)" style={{ marginTop: 2 }} />
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Dirección de Entrega
+                    </Typography>
+                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                      {order.shippingAddress || 'No especificada'}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
           </Paper>
         </Grid>
+
       </Grid>
     </Box>
   );
