@@ -13,13 +13,15 @@ import {
   Select,
   FormControl,
   InputLabel,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useCart } from '../hooks/cart/useCart.jsx';
 import { createOrder } from '../services/order.service';
 import { AuthContext } from '../context/AuthContext.jsx';
-import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
-import { XCircle } from 'lucide-react';
+import { showSuccessAlert, showErrorAlert, deleteDataAlert } from '../helpers/sweetAlert';
+import { Trash2 } from 'lucide-react';
 import { regionesYComunas } from '../data/chileData';
 
 const getFullImageUrl = (url) => {
@@ -74,6 +76,17 @@ const Checkout = () => {
       setAddressDetails((prev) => ({ ...prev, region: value, comuna: '' }));
     } else {
       setAddressDetails((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleRemoveItem = async (itemId) => {
+    const result = await deleteDataAlert(
+      '¿Eliminar producto?',
+      'Se quitará este producto de tu pedido actual.',
+      'Sí, quitar'
+    );
+    if (result.isConfirmed) {
+      removeFromCart(itemId);
     }
   };
   const handleSubmitOrder = async () => {
@@ -197,23 +210,31 @@ const Checkout = () => {
 
         {cartItems.map((item, index) => (
           <React.Fragment key={item.cartItemId}>
-            <Grid container spacing={3} sx={{ marginBottom: 'var(--spacing-md)' }}>
-              <Button
-                size="small"
-                onClick={() => removeFromCart(item.cartItemId)}
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  minWidth: 'auto',
-                  padding: '2px',
-                  color: 'var(--error)',
-                  zIndex: 1,
-                }}
-                title="Eliminar este item del carrito"
-              >
-                <XCircle size={18} />
-              </Button>
+            <Grid
+              container
+              spacing={3}
+              sx={{ marginBottom: 'var(--spacing-md)', position: 'relative' }}
+            >
+              <Tooltip title="Eliminar del carrito">
+                <IconButton
+                  size="small"
+                  onClick={() => handleRemoveItem(item.cartItemId)}
+                  sx={{
+                    position: 'absolute',
+                    top: -5,
+                    right: -5,
+                    backgroundColor: 'white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    color: 'var(--error)',
+                    zIndex: 2,
+                    '&:hover': {
+                      backgroundColor: '#ffebee',
+                    },
+                  }}
+                >
+                  <Trash2 size={18} />
+                </IconButton>
+              </Tooltip>
               {/* Columna Imagen Estampado */}
               {item.stampImageUrl && (
                 <Grid item xs={12} sm={3} md={2} sx={{ textAlign: 'center' }}>
@@ -372,7 +393,7 @@ const Checkout = () => {
             <TextField
               label="Teléfono / Celular"
               name="phone"
-              value={handleAddressChange.phone}
+              value={addressDetails.phone}
               onChange={handleAddressChange}
               required
               fullWidth

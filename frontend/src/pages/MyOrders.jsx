@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Grid } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { getMyOrders } from '../services/order.service';
 import OrderItemDisplay from '../components/Order/OrderItemDisplay.jsx';
@@ -53,11 +53,13 @@ const MyOrders = () => {
       )}
 
       {!loading && !error && orders.length > 0 && (
-        <Box>
+        <Grid container spacing={3}>
           {orders.map((order) => (
-            <OrderItemDisplay key={order.id} order={order} />
+            <Grid item xs={12} sm={6} md={4} key={order.id}>
+              <OrderItemDisplay order={order} />
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       )}
     </Box>
   );

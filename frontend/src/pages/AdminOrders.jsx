@@ -11,6 +11,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Grid,
 } from '@mui/material';
 import { getAllOrders } from '../services/order.service';
 import OrderItemDisplay from '../components/Order/OrderItemDisplay.jsx';
@@ -19,7 +20,7 @@ import './../styles/pages/myOrders.css';
 
 const STATUS_CONFIG = {
   pendiente_de_pago: {
-    color: '#212529', // Texto oscuro para contraste
+    color: '#ffffff',
     bgColor: 'var(--warning)',
     label: 'Pendiente de Pago',
   },
@@ -172,16 +173,15 @@ const AdminOrders = () => {
 
       {/* Lista de Pedidos */}
       {!loading && !error && filteredOrders.length > 0 && (
-        <Box className="orders-list">
+        // 2. Cambiamos Box por Grid Container
+        <Grid container spacing={3}>
           {filteredOrders.map((order) => (
-            <OrderItemDisplay
-              key={order.id}
-              order={order}
-              isAdminView={true}
-              onStatusChange={fetchAllOrders}
-            />
+            // 3. Cada item es un Grid Item (1 col móvil, 2 tablet, 3 escritorio)
+            <Grid item xs={12} sm={6} md={4} key={order.id}>
+              <OrderItemDisplay order={order} isAdminView={true} onStatusChange={fetchAllOrders} />
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       )}
     </Box>
   );

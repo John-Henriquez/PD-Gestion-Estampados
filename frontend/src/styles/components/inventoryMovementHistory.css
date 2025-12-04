@@ -1,72 +1,50 @@
-.movement-item {
+.movement-card {
+  display: flex;
+  align-items: flex-start;
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-sm);
-  background-color: var(--gray-100);
-  border-left: 6px solid var(--gray-300); /* Borde por defecto */
-  border-radius: var(--border-radius-sm);
-  transition: border-color var(--transition-normal) ease;
-  box-shadow: var(--shadow-sm); /* Añadir sombra */
+  background-color: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius-md) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Colores de Borde basados en tipo/operación semántica */
-/* Tipos generales */
-.movement-type-entrada {
-  border-color: var(--success);
-}
-.movement-type-salida {
-  border-color: var(--error);
-}
-.movement-type-ajuste {
-  border-color: var(--info);
-}
-.movement-type-modificacion {
+.movement-card:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-md) !important;
   border-color: var(--primary-light);
-} /* Color para modificaciones */
-
-/* Operaciones específicas (pueden sobrescribir el tipo si es necesario) */
-.movement-op-create {
-  border-color: var(--success);
-}
-.movement-op-sale {
-  border-color: var(--error);
-} /* Salida por venta */
-.movement-op-return {
-  border-color: var(--success-dark);
-} /* Devolución */
-.movement-op-adjust_in {
-  border-color: var(--info);
-}
-.movement-op-adjust_out {
-  border-color: var(--warning);
-} /* Naranja para ajuste manual salida */
-.movement-op-update {
-  border-color: var(--primary-light);
-} /* Actualizaciones */
-.movement-op-deactivate {
-  border-color: var(--warning);
-}
-.movement-op-reactivate {
-  border-color: var(--success);
-}
-.movement-op-delete {
-  border-color: var(--error-dark);
-}
-.movement-op-purge {
-  border-color: var(--error-dark);
 }
 
-.movement-snapshot-color {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--gray-700);
-  border-radius: var(--border-radius-sm);
-  margin-left: var(--spacing-xs);
-  vertical-align: middle;
+.movement-icon-container {
+  margin-right: var(--spacing-md);
+  padding-top: 4px;
 }
 
-.movement-snapshot-hex {
-  margin-left: var(--spacing-xs);
-  font-size: 0.85em;
-  color: var(--gray-700);
+.movement-details {
+  flex-grow: 1;
+}
+
+.movements-timeline h6 {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  margin-bottom: var(--spacing-sm);
+  padding-left: var(--spacing-xs);
+}
+
+
+.modal-content {
+  overflow-y: auto;
+  max-height: 70vh; 
+  padding-right: var(--spacing-sm); 
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-content::-webkit-scrollbar-track {
+  background: var(--gray-100);
+}
+.modal-content::-webkit-scrollbar-thumb {
+  background-color: var(--gray-400);
+  border-radius: 4px;
 }

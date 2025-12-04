@@ -343,12 +343,10 @@ const Inventario = () => {
             p: 4,
             borderRadius: 2,
             boxShadow: 24,
+            position: 'relative',
           }}
         >
-          <Typography id="historial-inventario" variant="h6" gutterBottom>
-            Historial de Movimientos de Inventario
-          </Typography>
-          <InventoryMovementHistory />
+          <InventoryMovementHistory onClose={() => setOpenHistory(false)} />
         </Box>
       </Modal>
     </Box>

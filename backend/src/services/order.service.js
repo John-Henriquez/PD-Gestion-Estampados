@@ -3,6 +3,7 @@ import Order from "../entity/order.entity.js";
 import OrderItem from "../entity/orderItem.entity.js";
 import ItemStock from "../entity/itemStock.entity.js";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
+import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail, sendPaymentSuccessEmail } from "./email.service.js";
 import {
   createItemSnapshot,
   generateInventoryReason,
@@ -220,7 +221,12 @@ export const orderService = {
             "orderItems.pack",
           ],
         });
-
+        try {
+        // Ejecutamos sin await bloqueante para responder rápido al cliente
+          sendOrderConfirmationEmail(finalOrder); 
+        } catch (emailErr) {
+          console.error("No se pudo enviar el correo de confirmación:", emailErr);
+        }
         return [finalOrder, null];
       },
     ).catch((error) => {
@@ -323,7 +329,22 @@ export const orderService = {
         const movementRepo =
           transactionalEntityManager.getRepository(InventoryMovement);
 
-        const order = await orderRepo.findOneBy({ id: orderId });
+        const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
+        const packRepo = transactionalEntityManager.getRepository(Pack);
+
+        const order = await orderRepo.findOne({
+          where: { id: orderId },
+          relations: [
+            "user", 
+            "orderItems", 
+            "orderItems.itemStock",
+            "orderItems.itemStock.itemType",
+            "orderItems.pack",
+            "orderItems.pack.packItems",
+            "orderItems.pack.packItems.itemStock",
+            "orderItems.pack.packItems.itemStock.itemType"
+          ]
+        });
 
         if (!order) {
           throw new Error("Pedido no encontrado.");
@@ -331,7 +352,6 @@ export const orderService = {
 
         const changes = {};
         let requiresAuditLog = false;
-
         let statusToUpdate = newStatus;
 
         if (statusToUpdate && statusToUpdate !== order.status) {
@@ -345,6 +365,58 @@ export const orderService = {
 
           if (!allowedStatus.includes(newStatus)) {
             throw new Error(`Estado inválido: ${newStatus}`);
+          }
+          changes.status = {
+            oldValue: order.status,
+            newValue: newStatus,
+          };
+
+          if (newStatus === "cancelado" && order.status !== "cancelado") {
+            console.log(`Cancelando pedido #${order.id}. Restaurando stock...`);
+            
+            for (const item of order.orderItems) {
+              // CASO 1: Item Individual
+              if (item.itemStock) {
+                // Restaurar cantidad
+                await itemStockRepo.increment({ id: item.itemStock.id }, "quantity", item.quantity);
+                
+                // Registrar movimiento de "Entrada por Devolución"
+                const { operation, reason } = generateInventoryReason("return");
+                await movementRepo.save({
+                  type: "entrada", // Vuelve a entrar al inventario
+                  operation,
+                  reason: `${reason} (Cancelación Pedido #${order.id})`,
+                  quantity: item.quantity,
+                  itemStock: item.itemStock,
+                  createdBy: { id: adminUserId },
+                  order: { id: order.id },
+                  ...createItemSnapshot(item.itemStock)
+                });
+              } 
+              // CASO 2: Pack (Devolver items que componen el pack)
+              else if (item.pack) {
+                // Iteramos sobre los items que componen ese pack
+                for (const packItem of item.pack.packItems) {
+                  // Cantidad total a devolver = Cantidad del Pack en la orden * Cantidad del item en el Pack
+                  const quantityToRestore = item.quantity * packItem.quantity;
+                  
+                  await itemStockRepo.increment({ id: packItem.itemStock.id }, "quantity", quantityToRestore);
+
+                  // Registrar movimiento
+                  const { operation, reason } = generateInventoryReason("return");
+                  await movementRepo.save({
+                    type: "entrada",
+                    operation,
+                    reason: `${reason} (Cancelación Pack en Pedido #${order.id})`,
+                    quantity: quantityToRestore,
+                    itemStock: packItem.itemStock,
+                    createdBy: { id: adminUserId },
+                    order: { id: order.id },
+                    ...createItemSnapshot(packItem.itemStock)
+                  });
+                }
+              }
+            }
           }
 
           if (statusToUpdate !== order.status) {
@@ -366,9 +438,14 @@ export const orderService = {
               if (!order.paymentMethod) {
                 order.paymentMethod = "Confirmado por Admin";
                 changes.paymentMethod = { oldValue: null, newValue: "Confirmado por Admin" };
+              }
+              try {
+                await sendPaymentSuccessEmail(order);
+              } catch (emailErr) {
+                console.error("Error al enviar la boleta PDF:", emailErr);
+              }
             }
           }
-        }
         }
 
         if (Object.keys(changes).length === 0) {
@@ -393,6 +470,13 @@ export const orderService = {
             changes: changes,
             snapshotItemName: `Pedido #${orderId}`,
           });
+        }
+        if (requiresAuditLog) {
+          try {
+            sendOrderStatusUpdateEmail(updatedOrder);
+          } catch (emailErr) {
+            console.error("No se pudo enviar correo de actualización:", emailErr);
+          }
         }
         return [updatedOrder, null];
       },
