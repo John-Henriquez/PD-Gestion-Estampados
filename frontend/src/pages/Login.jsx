@@ -1,18 +1,31 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import { login } from '../services/auth.service';
 import Form from '../components/UI/Form.jsx';
 import useLogin from '../hooks/auth/useLogin.jsx';
+import { jwtDecode } from 'jwt-decode';
 import './../styles/pages/login.css';
 import './../styles/components/form.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { loginSuccess } = useAuth();
   const { errorEmail, errorPassword, errorData, handleInputChange } = useLogin();
 
   const loginSubmit = async (data) => {
     try {
       const response = await login(data);
       if (response.status === 'Success') {
+        const token = response.data.token;
+        const decoded = jwtDecode(token);
+
+        const userData = {
+          nombreCompleto: decoded.nombreCompleto,
+          email: decoded.email,
+          rut: decoded.rut,
+          rol: decoded.rol,
+        };
+        loginSuccess(userData);
         navigate('/home');
       } else if (response.status === 'Client error') {
         errorData(response.details);

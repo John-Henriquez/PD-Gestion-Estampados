@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Grid, CircularProgress, Alert, Divider } from '@mui/material';
+import { Box, Typography, Grid, CircularProgress, Alert, Container, Button } from '@mui/material';
+import { ShoppingBag } from 'lucide-react';
 import { getPublicItemStock } from '../services/itemStock.service';
-import { getPacks } from '../services/pack.service'; // <--- Importar servicio packs
+import { getPacks } from '../services/pack.service';
 import ProductCard from '../components/Shop/ProductCard.jsx';
-import PackCard from '../components/Shop/PackCard.jsx'; // <--- Importar componente PackCard
+import PackCard from '../components/Shop/PackCard.jsx';
 import '../styles/pages/shop.css';
 
-// ... (la función groupStockByItemType se mantiene igual) ...
 const groupStockByItemType = (stockItems) => {
   const itemTypesMap = new Map();
   stockItems.forEach((item) => {
@@ -23,7 +23,7 @@ const groupStockByItemType = (stockItems) => {
 
 const Shop = () => {
   const [allPublicStock, setAllPublicStock] = useState([]);
-  const [activePacks, setActivePacks] = useState([]); // <--- Estado para packs
+  const [activePacks, setActivePacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -32,7 +32,6 @@ const Shop = () => {
       try {
         setLoading(true);
         setError(null);
-        // Cargar productos y packs en paralelo
         const [publicStock, packsData] = await Promise.all([
           getPublicItemStock(),
           getPacks({ isActive: true }),
@@ -73,53 +72,70 @@ const Shop = () => {
   }
 
   return (
-    <Box className="shop-container">
-      <Typography variant="h4" component="h1" gutterBottom className="shop-title">
-        Nuestra Tienda
-      </Typography>
+    <Box className="shop-wrapper animate--fadeIn">
+      {/* --- HERO SECTION --- */}
+      <Box className="shop-hero">
+        <Container maxWidth="lg" className="shop-hero-content">
+          <Box>
+            <Typography variant="h2" className="shop-hero-title">
+              Vibra con tu Estilo
+            </Typography>
+            <Typography variant="h6" className="shop-hero-subtitle">
+              Personalización exclusiva, packs únicos y la mejor calidad en estampados.
+            </Typography>
+            <Button variant="contained" size="large" className="shop-hero-button" href="#productos">
+              Ver Catálogo
+            </Button>
+          </Box>
+          <Box className="shop-hero-icon">
+            <ShoppingBag size={180} strokeWidth={1} />
+          </Box>
+        </Container>
+      </Box>
 
-      {/* --- SECCIÓN PACKS --- */}
-      {activePacks.length > 0 && (
-        <>
-          <Typography
-            variant="h5"
-            sx={{ mt: 4, mb: 2, color: 'var(--secondary-dark)', fontWeight: 'bold' }}
-          >
-            Packs Promocionales
-          </Typography>
-          <Grid container spacing={4} className="shop-product-grid" sx={{ mb: 6 }}>
-            {activePacks.map((pack) => (
-              <Grid item key={`pack-${pack.id}`} xs={12} sm={6} md={4}>
-                <PackCard pack={pack} />
-              </Grid>
-            ))}
-          </Grid>
-          <Divider sx={{ my: 4 }} />
-        </>
-      )}
-
-      <Typography
-        variant="h5"
-        sx={{ mt: 2, mb: 2, color: 'var(--primary-dark)', fontWeight: 'bold' }}
-      >
-        Productos Individuales
-      </Typography>
-      {productsGroupedByItemType.length === 0 ? (
-        <Typography color="textSecondary" className="shop-empty-message">
-          No hay productos individuales disponibles.
-        </Typography>
-      ) : (
-        <Grid container spacing={4} className="shop-product-grid">
-          {productsGroupedByItemType.map((productGroup) => (
-            <Grid item key={productGroup.itemType.id} xs={12} sm={6} md={4}>
-              <ProductCard
-                itemType={productGroup.itemType}
-                representativeStock={productGroup.representativeStock}
-              />
+      <Container maxWidth="lg" sx={{ py: 6 }} id="productos">
+        {/* --- SECCIÓN PACKS --- */}
+        {activePacks.length > 0 && (
+          <Box className="shop-section animate--slideUp">
+            <Typography variant="h4" className="shop-section-title">
+              Ofertas y Packs 🔥
+            </Typography>
+            <Typography variant="body1" className="shop-section-subtitle">
+              Ahorra comprando nuestros conjuntos seleccionados.
+            </Typography>
+            <Grid container spacing={3} className="shop-grid">
+              {activePacks.map((pack) => (
+                <Grid item key={`pack-${pack.id}`} xs={12} sm={6} md={4}>
+                  <PackCard pack={pack} />
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      )}
+          </Box>
+        )}
+
+        {/* --- SECCIÓN PRODUCTOS --- */}
+        <Box className="shop-section animate--slideUp">
+          <Typography variant="h4" className="shop-section-title">
+            Catálogo de Productos
+          </Typography>
+          {productsGroupedByItemType.length === 0 ? (
+            <Box className="shop-empty">
+              <Typography>No hay productos individuales disponibles por el momento.</Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={3} className="shop-grid">
+              {productsGroupedByItemType.map((group) => (
+                <Grid item key={group.itemType.id} xs={12} sm={6} md={4}>
+                  <ProductCard
+                    itemType={group.itemType}
+                    representativeStock={group.representativeStock}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      </Container>
     </Box>
   );
 };

@@ -8,7 +8,7 @@ import packRoutes from "./pack.routes.js";
 import inventoryMovementRoutes from "./inventoryMovement.routes.js";
 import orderRoutes from "./order.routes.js";
 import uploadRoutes from "./upload.routes.js";
-//import sendMail from "./email.routes.js";
+import fileRoutes from "./file.routes.js";
 
 const router = Router();
 
@@ -18,10 +18,11 @@ router.use("/user", userRoutes);
 router.use("/item-types", itemTypeRoutes);
 router.use("/item-stocks", itemStockRoutes);
 router.use("/packs", packRoutes);
-// router.use("/sendMail", sendMail);
 router.use("/reports/inventory-movements", inventoryMovementRoutes);
 
 router.use("/orders", orderRoutes);
 router.use("/uploads", uploadRoutes);
+
+router.use("/files", fileRoutes);
 
 export default router;

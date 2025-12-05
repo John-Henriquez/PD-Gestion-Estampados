@@ -1,7 +1,5 @@
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { AuthProvider } from './context/AuthProvider.jsx';
-import { CartProvider } from './context/CartProvider.jsx';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
 import Users from './pages/Users.jsx';
@@ -15,66 +13,88 @@ import OrderConfirmation from './pages/OrderConfirmation.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import PackDetail from './pages/PackDetail.jsx';
 import OrderDetail from './pages/OrderDetail.jsx';
+import Gallery from './pages/Gallery.jsx';
 import Error404 from './pages/Error404.jsx';
-import Root from './pages/Root.jsx';
+import { AppProviders, MainLayout } from './pages/Root.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import './styles/index.css';
 
 const router = createBrowserRouter([
   {
-    path: '/',
-    element: <Root />,
+    element: <AppProviders />,
     errorElement: <Error404 />,
     children: [
-      { path: '/home', element: <Home /> },
       {
-        path: '/users',
-        element: (
-          <ProtectedRoute allowedRoles={['administrador']}>
-            <Users />
-          </ProtectedRoute>
-        ),
-      },
-      { path: '/inventario', element: <Inventory /> },
-      { path: '/checkout', element: <Checkout /> },
-      { path: '/shop', element: <Shop /> },
-      { path: '/pack/:packId', element: <PackDetail /> },
-      { path: '/product/:itemTypeId', element: <ProductDetail /> },
-      { path: '/order-confirmation/:orderId', element: <OrderConfirmation /> },
-      {
-        path: '/my-orders',
-        element: (
-          <ProtectedRoute>
-            <MyOrders />
-          </ProtectedRoute>
-        ),
+        path: '/auth',
+        element: <Login />,
       },
       {
-        path: '/order-details/:id',
-        element: (
-          <ProtectedRoute>
-            <OrderDetail />
-          </ProtectedRoute>
-        ),
+        path: '/register',
+        element: <Register />,
       },
       {
-        path: '/admin/orders',
-        element: (
-          <ProtectedRoute allowedRoles={['administrador']}>
-            <AdminOrders />
-          </ProtectedRoute>
-        ),
+        path: '/',
+        element: <MainLayout />,
+        children: [
+          { path: 'home', element: <Home /> },
+          {
+            path: 'users',
+            element: (
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <Users />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'inventario',
+            element: (
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <Inventory />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'gallery',
+            element: (
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <Gallery />
+              </ProtectedRoute>
+            ),
+          },
+          { path: '/checkout', element: <Checkout /> },
+          { path: '/shop', element: <Shop /> },
+          { path: '/pack/:packId', element: <PackDetail /> },
+          { path: '/product/:itemTypeId', element: <ProductDetail /> },
+          { path: '/order-confirmation/:orderId', element: <OrderConfirmation /> },
+          {
+            path: '/my-orders',
+            element: (
+              <ProtectedRoute>
+                <MyOrders />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/order-details/:id',
+            element: (
+              <ProtectedRoute>
+                <OrderDetail />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/admin/orders',
+            element: (
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <AdminOrders />
+              </ProtectedRoute>
+            ),
+          },
+          { index: true, element: <Home /> },
+        ],
       },
     ],
   },
-  { path: '/auth', element: <Login /> },
-  { path: '/register', element: <Register /> },
 ]);
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <RouterProvider router={router}>
-    <AuthProvider>
-      <CartProvider> </CartProvider>
-    </AuthProvider>
-  </RouterProvider>
-);
+ReactDOM.createRoot(document.getElementById('root')).render(<RouterProvider router={router} />);

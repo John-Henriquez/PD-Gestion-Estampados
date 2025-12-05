@@ -1,17 +1,38 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback } from 'react';
 import { AuthContext } from './AuthContext.jsx';
+import { logout as logoutService } from '../services/auth.service';
 
 export function AuthProvider({ children }) {
-  const navigate = useNavigate();
-  const user = JSON.parse(sessionStorage.getItem('usuario')) || '';
-  const isAuthenticated = user ? true : false;
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/auth');
+  const [user, setUser] = useState(() => {
+    try {
+      const storedUser = sessionStorage.getItem('usuario');
+      return storedUser ? JSON.parse(storedUser) : null;
+    } catch {
+      return null;
     }
-  }, [isAuthenticated, navigate]);
+  });
 
-  return <AuthContext.Provider value={{ isAuthenticated, user }}>{children}</AuthContext.Provider>;
+  const isAuthenticated = !!user;
+
+  const loginSuccess = useCallback((userData) => {
+    sessionStorage.setItem('usuario', JSON.stringify(userData));
+    setUser(userData);
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await logoutService();
+    } catch (error) {
+      console.error('Error al cerrar sesión en servidor', error);
+    } finally {
+      sessionStorage.removeItem('usuario');
+      setUser(null);
+    }
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, user, loginSuccess, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

@@ -17,6 +17,7 @@ import {
   IconShoppingCart,
   IconClipboardList,
   IconReceipt,
+  IconPhoto,
 } from '@tabler/icons-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 
@@ -51,7 +52,7 @@ const Navbar = () => {
   const logoutSubmit = () => {
     try {
       logout();
-      navigate('/shop');
+      navigate('/auth');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
@@ -73,6 +74,7 @@ const Navbar = () => {
   const adminItems = [
     { to: '/users', text: 'Usuarios', icon: <IconUsers size={20} /> },
     { to: '/inventario', text: 'Inventario', icon: <IconPackage size={20} /> },
+    { to: '/gallery', text: 'Galería', icon: <IconPhoto size={20} /> },
     {
       to: '/admin/orders',
       text: 'Gestionar Pedidos',

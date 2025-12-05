@@ -52,13 +52,13 @@ const itemTypeSchema = Joi.object({
     }),
   productImageUrls: Joi.array()
     .items(
-       Joi.string().pattern(/^\/uploads\/[a-zA-Z0-9_.-]+\.[a-zA-Z0-9]{2,5}$/)
+       Joi.string().pattern(/^\/uploads\/[a-zA-Z0-9_.\-\s]+\.[a-zA-Z0-9]{2,5}$/)
     )
     .allow(null)
     .optional()
     .messages({
       "string.pattern.base":
-        "La URL de la imagen debe seguir el formato /uploads/<filename>.<extension>",
+        "La URL de la imagen debe seguir el formato /uploads/<filename>.<extension> (se permiten espacios)",
     }),
   sizesAvailable: Joi.array()
     .items(

@@ -5,25 +5,30 @@ import FloatingCartButton from '../components/UI/FloatingCartButton.jsx';
 import { AuthProvider } from '../context/AuthProvider.jsx';
 import { CartProvider } from '../context/CartProvider.jsx';
 
-function Root() {
+export function AppProviders() {
   return (
     <AuthProvider>
       <CartProvider>
-        <PageRoot />
+        <Outlet />
       </CartProvider>
     </AuthProvider>
   );
 }
 
-function PageRoot() {
+export function MainLayout() {
   return (
     <>
       <Navbar />
-      <Outlet />
+      <div
+        className="main-content"
+        style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+      >
+        <Outlet />
+      </div>
       <FloatingCartButton />
       <Footer />
     </>
   );
 }
 
-export default Root;
+export default AppProviders;
