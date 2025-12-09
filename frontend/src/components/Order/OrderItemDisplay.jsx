@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Divider, Button } from '@mui/material';
+import { Box, Typography, Divider, Button } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { format as formatTempo } from '@formkit/tempo';
 
@@ -20,7 +20,7 @@ const OrderItemDisplay = ({ order, isAdminView = false }) => {
   const chipClassName = `chip-${order.status || 'default'}`;
 
   return (
-    <Paper elevation={1} className={`order-item-paper ${statusClassName}`}>
+    <div className={`order-item-paper ${statusClassName}`}>
       <Box className="order-item-content-wrapper">
         <Box className="order-item-details">
           <Box>
@@ -93,7 +93,7 @@ const OrderItemDisplay = ({ order, isAdminView = false }) => {
           Ver Detalles
         </Button>
       </Box>
-    </Paper>
+    </div>
   );
 };
 
