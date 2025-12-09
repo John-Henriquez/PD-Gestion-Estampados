@@ -138,9 +138,11 @@ export const itemStockService = {
 
         qb.andWhere("jsonb_array_length(\"itemType\".\"stampingLevels\"::jsonb) > 0");
         
-      } else if (parsedFilters.isActive !== undefined) {
+      } else{
+        const isActiveStatus = parsedFilters.isActive !== undefined ? parsedFilters.isActive : true;
+        
         qb.andWhere("itemStock.isActive = :isActive", {
-          isActive: parsedFilters.isActive,
+          isActive: isActiveStatus,
         });
       }
 
