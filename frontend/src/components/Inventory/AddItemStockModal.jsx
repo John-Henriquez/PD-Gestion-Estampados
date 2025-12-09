@@ -43,9 +43,9 @@ const AddItemStockModal = ({ open, onClose, onCreated, itemTypes = [], editingSt
   useEffect(() => {
     if (open) {
       if (editingStock) {
-        const matchingType = itemTypes.find((t) => t.id === editingStock.itemTypeId);
+        const safeTypeId = editingStock.itemTypeId || editingStock.itemType?.id || '';
         setForm({
-          itemTypeId: matchingType ? editingStock.itemTypeId : '',
+          itemTypeId: safeTypeId,
           hexColor: editingStock.hexColor || '#FFFFFF',
           size: editingStock.size || '',
           quantity: editingStock.quantity?.toString() ?? '',

@@ -25,16 +25,26 @@
 .order-item-paper {
   padding: var(--spacing-md);
   background-color: var(--gray-100) !important;
-  border-left: 5px solid var(--gray-300);
   border-radius: var(--border-radius-sm);
   box-shadow: var(--shadow-sm);
-  border-left: 6px solid var(--primary);
-  transition: border-color var(--transition-normal) ease;
+  
+  border-left: 6px solid var(--primary); 
+  height: 100%; 
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
+  transition: all var(--transition-normal) ease;
 }
 
 .order-item-paper:hover {
   box-shadow: var(--shadow-lg) !important;
-  transform: translateY(-2px);
+  transform: translateY(-4px); 
+}
+
+.order-item-content-wrapper {
+  flex-grow: 1; 
+  display: flex;
+  flex-direction: column;
 }
 
 .order-item-details {

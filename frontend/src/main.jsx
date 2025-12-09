@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
 import Users from './pages/Users.jsx';
@@ -34,9 +34,23 @@ const router = createBrowserRouter([
       },
       {
         path: '/',
-        element: <MainLayout />,
+        element: (
+          <ProtectedRoute>
+            <MainLayout />
+          </ProtectedRoute>
+        ),
         children: [
+          { index: true, element: <Navigate to="/home" replace /> },
+
           { path: 'home', element: <Home /> },
+          { path: 'shop', element: <Shop /> },
+          { path: 'checkout', element: <Checkout /> },
+          { path: 'my-orders', element: <MyOrders /> },
+          { path: 'pack/:packId', element: <PackDetail /> },
+          { path: 'product/:itemTypeId', element: <ProductDetail /> },
+          { path: 'order-confirmation/:orderId', element: <OrderConfirmation /> },
+          { path: 'order-details/:id', element: <OrderDetail /> },
+
           {
             path: 'users',
             element: (
@@ -61,36 +75,14 @@ const router = createBrowserRouter([
               </ProtectedRoute>
             ),
           },
-          { path: '/checkout', element: <Checkout /> },
-          { path: '/shop', element: <Shop /> },
-          { path: '/pack/:packId', element: <PackDetail /> },
-          { path: '/product/:itemTypeId', element: <ProductDetail /> },
-          { path: '/order-confirmation/:orderId', element: <OrderConfirmation /> },
           {
-            path: '/my-orders',
-            element: (
-              <ProtectedRoute>
-                <MyOrders />
-              </ProtectedRoute>
-            ),
-          },
-          {
-            path: '/order-details/:id',
-            element: (
-              <ProtectedRoute>
-                <OrderDetail />
-              </ProtectedRoute>
-            ),
-          },
-          {
-            path: '/admin/orders',
+            path: 'admin/orders',
             element: (
               <ProtectedRoute allowedRoles={['administrador']}>
                 <AdminOrders />
               </ProtectedRoute>
             ),
           },
-          { index: true, element: <Home /> },
         ],
       },
     ],

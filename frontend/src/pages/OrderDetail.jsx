@@ -14,7 +14,7 @@ import {
   Step,
   StepLabel,
 } from '@mui/material';
-import { ArrowLeft, FileText, Receipt, User, MapPin, Phone } from 'lucide-react';
+import { ArrowLeft, Receipt, User, MapPin, Phone } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { getOrderById, updateOrderStatus } from '../services/order.service';
 import { generateOrderReceipt } from '../helpers/pdfGenerator';
@@ -148,12 +148,12 @@ const OrderDetail = () => {
     }
   };
 
-  const handleRequestFactura = () => {
+  /*   const handleRequestFactura = () => {
     showErrorAlert(
       'Funcionalidad en desarrollo',
       'Para emitir factura necesitamos registrar datos de empresa (Razón social, Giro).'
     );
-  };
+  }; */
 
   if (loading)
     return (
@@ -433,7 +433,7 @@ const OrderDetail = () => {
                 Descargar Boleta
               </Button>
 
-              <Button
+              {/* <Button
                 variant="outlined"
                 startIcon={<FileText size={20} />}
                 onClick={handleRequestFactura}
@@ -442,7 +442,7 @@ const OrderDetail = () => {
                 sx={{ borderColor: 'var(--gray-300)', color: 'var(--gray-700)' }}
               >
                 Solicitar Factura
-              </Button>
+              </Button> */}
             </Box>
           </Paper>
         </Grid>

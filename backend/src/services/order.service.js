@@ -3,24 +3,27 @@ import Order from "../entity/order.entity.js";
 import OrderItem from "../entity/orderItem.entity.js";
 import ItemStock from "../entity/itemStock.entity.js";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
-import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail, sendPaymentSuccessEmail } from "./email.service.js";
+import Pack from "../entity/pack.entity.js";
 import {
-  createItemSnapshot,
+createItemSnapshot,
   generateInventoryReason,
 } from "../helpers/inventory.helpers.js";
-import Pack from "../entity/pack.entity.js";
+import {
+  sendOrderCancelledEmail,
+  sendOrderCompletedEmail,
+  sendOrderCreatedEmail,
+  sendOrderPaidEmail,
+  sendOrderShippedEmail,
+} from "./email.service.js";
 
 export const orderService = {
   async createOrder(orderData, userId) {
     return await AppDataSource.transaction(
       async (transactionalEntityManager) => {
         const orderRepo = transactionalEntityManager.getRepository(Order);
-        const orderItemRepo =
-          transactionalEntityManager.getRepository(OrderItem);
-        const itemStockRepo =
-          transactionalEntityManager.getRepository(ItemStock);
-        const movementRepo =
-          transactionalEntityManager.getRepository(InventoryMovement);
+        const orderItemRepo = transactionalEntityManager.getRepository(OrderItem);
+        const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
+        const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
         const packRepo = transactionalEntityManager.getRepository(Pack);
 
         const { items, customerData, shippingData } = orderData;
@@ -37,7 +40,6 @@ export const orderService = {
 
           const selectedLevelObject = itemInput.stampOptionsSnapshot || null;
           let itemNameSnapshot = "Artículo Desconocido";
-
           let sizeSnapshot = null;
           let colorHexSnapshot = null;
 
@@ -62,7 +64,9 @@ export const orderService = {
             colorHexSnapshot = stockItem.hexColor;
             itemNameSnapshot = stockItem.itemType?.name || `Stock ID ${stockItem.id}`;
 
-            const isStampable = stockItem.itemType.category === "clothing" || stockItem.itemType.category === "object";
+            const isStampable =
+              stockItem.itemType.category === "clothing" || 
+              stockItem.itemType.category === "object";
 
             if (isStampable && (!selectedLevelObject || typeof selectedLevelObject.price !== "number")) {
               throw new Error(
@@ -71,11 +75,8 @@ export const orderService = {
               );
             }
 
-            const priceAtTime = selectedLevelObject.price;
-
-            if (priceAtTime < 0) {
-              throw new Error("El precio del nivel seleccionado no puede ser negativo.");
-            }
+            const priceAtTime = selectedLevelObject ? selectedLevelObject.price : 0; // Fallback seguro
+            if (priceAtTime < 0) throw new Error("El precio no puede ser negativo.");
 
             calculatedSubtotal += priceAtTime * itemInput.quantity;
 
@@ -92,7 +93,6 @@ export const orderService = {
               itemNameSnapshot: itemNameSnapshot,
               stampImageUrl: itemInput.stampImageUrl || null,
               stampInstructions: itemInput.stampInstructions || null,
-
               sizeSnapshot: sizeSnapshot,
               colorHexSnapshot: colorHexSnapshot,
               colorNameSnapshot: null, 
@@ -130,12 +130,10 @@ export const orderService = {
                   }" dentro del pack "${pack.name}"`,
                 );
               }
-              const quantityToDecrement =
-                packItem.quantity * itemInput.quantity;
+              const quantityToDecrement = packItem.quantity * itemInput.quantity;
               itemsToUpdateStock.set(
                 packItem.itemStock.id,
-                (itemsToUpdateStock.get(packItem.itemStock.id) || 0) +
-                  quantityToDecrement,
+                (itemsToUpdateStock.get(packItem.itemStock.id) || 0) + quantityToDecrement,
               );
             }
 
@@ -153,9 +151,7 @@ export const orderService = {
               stampOptionsSnapshot: null
             });
           } else {
-            throw new Error(
-              "Cada item del pedido debe tener 'itemStockId' o 'packId'.",
-            );
+            throw new Error("Cada item del pedido debe tener 'itemStockId' o 'packId'.");
           }
         }
 
@@ -182,15 +178,8 @@ export const orderService = {
         );
         await orderItemRepo.save(orderItemEntities);
 
-        for (const [
-          stockId,
-          quantityToDecrement,
-        ] of itemsToUpdateStock.entries()) {
-          await itemStockRepo.decrement(
-            { id: stockId },
-            "quantity",
-            quantityToDecrement,
-          );
+        for (const [stockId, quantityToDecrement] of itemsToUpdateStock.entries()) {
+          await itemStockRepo.decrement({ id: stockId }, "quantity", quantityToDecrement);
 
           const stockItemForSnapshot = await itemStockRepo.findOne({
             where: { id: stockId },
@@ -212,7 +201,6 @@ export const orderService = {
 
         const finalOrder = await orderRepo.findOne({
           where: { id: savedOrder.id },
-
           relations: [
             "user",
             "orderItems",
@@ -221,16 +209,16 @@ export const orderService = {
             "orderItems.pack",
           ],
         });
+
+        // ENVIO DE CORREO: CREACIÓN
         try {
-        // Ejecutamos sin await bloqueante para responder rápido al cliente
-          sendOrderConfirmationEmail(finalOrder); 
+          await sendOrderCreatedEmail(finalOrder);
         } catch (emailErr) {
           console.error("No se pudo enviar el correo de confirmación:", emailErr);
         }
         return [finalOrder, null];
       },
     ).catch((error) => {
-      console.error("Error en la transacción de creación de pedido:", error);
       return [null, error.message || "Error interno al procesar el pedido."];
     });
   },
@@ -326,11 +314,8 @@ export const orderService = {
     return await AppDataSource.transaction(
       async (transactionalEntityManager) => {
         const orderRepo = transactionalEntityManager.getRepository(Order);
-        const movementRepo =
-          transactionalEntityManager.getRepository(InventoryMovement);
-
+        const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
         const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
-        const packRepo = transactionalEntityManager.getRepository(Pack);
 
         const order = await orderRepo.findOne({
           where: { id: orderId },
@@ -352,9 +337,8 @@ export const orderService = {
 
         const changes = {};
         let requiresAuditLog = false;
-        let statusToUpdate = newStatus;
 
-        if (statusToUpdate && statusToUpdate !== order.status) {
+        if (newStatus && newStatus !== order.status) {
           const allowedStatus = [
             "pendiente_de_pago",
             "en_proceso",
@@ -372,18 +356,14 @@ export const orderService = {
           };
 
           if (newStatus === "cancelado" && order.status !== "cancelado") {
-            console.log(`Cancelando pedido #${order.id}. Restaurando stock...`);
-            
             for (const item of order.orderItems) {
-              // CASO 1: Item Individual
               if (item.itemStock) {
-                // Restaurar cantidad
                 await itemStockRepo.increment({ id: item.itemStock.id }, "quantity", item.quantity);
-                
+
                 // Registrar movimiento de "Entrada por Devolución"
                 const { operation, reason } = generateInventoryReason("return");
                 await movementRepo.save({
-                  type: "entrada", // Vuelve a entrar al inventario
+                  type: "entrada",
                   operation,
                   reason: `${reason} (Cancelación Pedido #${order.id})`,
                   quantity: item.quantity,
@@ -393,16 +373,12 @@ export const orderService = {
                   ...createItemSnapshot(item.itemStock)
                 });
               } 
-              // CASO 2: Pack (Devolver items que componen el pack)
               else if (item.pack) {
                 // Iteramos sobre los items que componen ese pack
                 for (const packItem of item.pack.packItems) {
-                  // Cantidad total a devolver = Cantidad del Pack en la orden * Cantidad del item en el Pack
                   const quantityToRestore = item.quantity * packItem.quantity;
                   
                   await itemStockRepo.increment({ id: packItem.itemStock.id }, "quantity", quantityToRestore);
-
-                  // Registrar movimiento
                   const { operation, reason } = generateInventoryReason("return");
                   await movementRepo.save({
                     type: "entrada",
@@ -419,43 +395,23 @@ export const orderService = {
             }
           }
 
-          if (statusToUpdate !== order.status) {
-            changes.status = {
-              oldValue: order.status,
-              newValue: newStatus,
-            };
-            order.status = newStatus;
-            requiresAuditLog = true;
-
-            if (statusToUpdate === "en_proceso" && !order.paymentDate) {
-              const paymentDate = new Date();
-              changes.paymentDate = {
-                oldValue: order.paymentDate,
-                newValue: paymentDate,
-              };
-              order.paymentDate = paymentDate;
-            
-              if (!order.paymentMethod) {
-                order.paymentMethod = "Confirmado por Admin";
-                changes.paymentMethod = { oldValue: null, newValue: "Confirmado por Admin" };
-              }
-              try {
-                await sendPaymentSuccessEmail(order);
-              } catch (emailErr) {
-                console.error("Error al enviar la boleta PDF:", emailErr);
-              }
+          if (newStatus === "en_proceso" && !order.paymentDate) {
+            order.paymentDate = new Date();
+            changes.paymentDate = { oldValue: null, newValue: order.paymentDate };
+            if (!order.paymentMethod) {
+              order.paymentMethod = "Confirmado por Admin";
             }
           }
+
+          order.status = newStatus;
+          requiresAuditLog = true;
         }
 
         if (Object.keys(changes).length === 0) {
-          console.log(`No se realizaron cambios en el pedido ID ${orderId}`);
-          return [order, null]; 
+          return [order, null];
         }
-        
 
         order.updatedAt = new Date();
-
         const updatedOrder = await orderRepo.save(order);
 
         if (requiresAuditLog) {
@@ -471,25 +427,34 @@ export const orderService = {
             snapshotItemName: `Pedido #${orderId}`,
           });
         }
-        if (requiresAuditLog) {
-          try {
-            sendOrderStatusUpdateEmail(updatedOrder);
-          } catch (emailErr) {
-            console.error("No se pudo enviar correo de actualización:", emailErr);
+
+        
+        try {
+          switch (newStatus) {
+            case "en_proceso":
+              await sendOrderPaidEmail(updatedOrder);
+              break;
+            case "enviado":
+              await sendOrderShippedEmail(updatedOrder);
+              break;
+            case "completado":
+              await sendOrderCompletedEmail(updatedOrder);
+              break;
+            case "cancelado":
+              await sendOrderCancelledEmail(updatedOrder);
+              break;
+            default:
+              break;
           }
+        } catch (emailErr) {
+          console.error(`⚠️ Error enviando correo para estado ${newStatus}:`, emailErr);
         }
+
         return [updatedOrder, null];
-      },
+      }
     ).catch((error) => {
-      console.error(
-        `Error en la transacción de updateOrderStatus para pedido ${orderId}:`,
-        error,
-      );
-      return [
-        null,
-        error.message ||
-          "Error interno al actualizar el estado del pedido.",
-      ];
+      console.error(`Error updateOrderStatus pedido ${orderId}:`, error);
+      return [null, error.message || "Error al actualizar el pedido."];
     });
   },
 };
