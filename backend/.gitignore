@@ -130,4 +130,6 @@ dist
 .pnp.*
 
 # Ignorar archivos subidos por el usuario/admin
-/backend/uploads/
+/uploads/
+
+
