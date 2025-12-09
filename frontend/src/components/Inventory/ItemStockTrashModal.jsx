@@ -155,7 +155,7 @@ const ItemStockTrashModal = ({ open, onClose, trashedItems, onRefresh }) => {
               >
                 <ListItemText
                   primary={`Producto: ${item.itemType?.name} — ${item.size || 'Talla única'}`}
-                  secondary={`Color: ${getColorNameFromHex(item.hexColor)} • Cantidad: ${item.quantity} • Precio unitario: $${item.price}`}
+                  secondary={`Color: ${getColorNameFromHex(item.hexColor)} • Cantidad: ${item.quantity}`}
                   className="trash-modal__item-text"
                 />
               </ListItem>
