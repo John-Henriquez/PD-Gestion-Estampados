@@ -216,7 +216,7 @@ const ProductDetail = () => {
     addToCart(itemToAdd);
     showSuccessAlert(
       '¡Añadido!',
-      `${itemToAdd.name} (${itemToAdd.size}, ${getColorName(itemToAdd.hexColor)}) fue añadido al carrito.`
+      `${itemToAdd.name}, ${getColorName(itemToAdd.hexColor)}) fue añadido al carrito.`
     );
     navigate('/checkout');
   };

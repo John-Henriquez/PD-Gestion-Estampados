@@ -45,7 +45,7 @@ const Register = () => {
             {
               label: 'Nombre completo',
               name: 'nombreCompleto',
-              placeholder: 'Nombre Usuario Prueba',
+              placeholder: 'Nombre Usuario',
               fieldType: 'input',
               type: 'text',
               required: true,
@@ -65,14 +65,14 @@ const Register = () => {
               maxLength: 35,
               errorMessageData: errorEmail,
               validate: {
-                emailDomain: (value) => value.includes('@'), // Validar presencia de @
+                emailDomain: (value) => value.includes('@'),
               },
               onChange: (e) => handleInputChange('email', e.target.value),
             },
             {
               label: 'Rut',
               name: 'rut',
-              placeholder: '21.133.447-9',
+              placeholder: '11.111.111-1',
               fieldType: 'input',
               type: 'text',
               minLength: 9,
