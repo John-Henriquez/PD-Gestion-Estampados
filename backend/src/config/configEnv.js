@@ -20,3 +20,5 @@ export const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 export const cookieKey = process.env.cookieKey;
 export const EMAIL_USER = process.env.EMAIL_USER;
 export const EMAIL_PASS = process.env.EMAIL_PASS;
+export const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
+export const FRONTEND_URL = process.env.FRONTEND_URL;
