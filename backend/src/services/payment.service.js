@@ -4,9 +4,12 @@ import { FRONTEND_URL, MP_ACCESS_TOKEN } from "../config/configEnv.js";
 const client = new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
 
 export const paymentService = {
-  // 1. Crear la Preferencia
   async createPreference(order) {
     try {
+      const baseUrl = FRONTEND_URL || "http://localhost:5173";
+
+      console.log("💰 Creando preferencia MP. Retorno a:", baseUrl);
+
       const preference = new Preference(client);
 
       const items = order.orderItems.map((item) => ({
@@ -30,7 +33,7 @@ export const paymentService = {
             failure: `${FRONTEND_URL}/order-confirmation/${order.id}`,
             pending: `${FRONTEND_URL}/order-confirmation/${order.id}`,
           },
-          auto_return: "approved",
+          binary_mode: true,
         },
       });
 

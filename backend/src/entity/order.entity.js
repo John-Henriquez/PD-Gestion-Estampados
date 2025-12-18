@@ -10,28 +10,18 @@ const OrderSchema = new EntitySchema({
       primary: true,
       generated: true,
     },
-
-  status: {
-    type: "enum",
-    enum: [
-      "pendiente_de_pago",
-      "en_proceso",
-      "enviado",
-      "completado",        
-      "cancelado"
-    ],
-    default: "pendiente_de_pago",
-  },
-
     subtotal: {
-      type: "int",
-      nullable: false,
+      type: "decimal",
+      precision: 12,
+      scale: 2,
+      transformer: { to: (v) => v, from: (v) => parseFloat(v) },
     },
     total: {
-      type: "int",
-      nullable: false,
+      type: "decimal",
+      precision: 12,
+      scale: 2,
+      transformer: { to: (v) => v, from: (v) => parseFloat(v) },
     },
-
     paymentMethod: {
       type: "varchar",
       length: 100,
@@ -71,6 +61,12 @@ const OrderSchema = new EntitySchema({
     },
   },
   relations: {
+    status: {
+      type: "many-to-one",
+      target: "OrderStatus",
+      joinColumn: { name: "status_id" },
+      nullable: false,
+  },
     user: {
       type: "many-to-one",
       target: "User",

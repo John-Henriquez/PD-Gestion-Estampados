@@ -4,14 +4,7 @@ import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import { esES } from '@mui/x-data-grid/locales';
 import { Edit as EditIcon, DeleteOutline as DeleteIcon } from '@mui/icons-material';
 import { iconMap } from '../../data/iconCategories';
-import { COLOR_DICTIONARY } from '../../data/colorDictionary';
 
-//import '../../styles/components/itemStockTable.css'; // Ajusta ruta
-
-const getColorName = (hex) => {
-  const color = COLOR_DICTIONARY.find((c) => c.hex?.toUpperCase() === hex?.toUpperCase());
-  return color ? color.name : hex || '-';
-};
 
 const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) => {
   const columns = [
@@ -41,26 +34,26 @@ const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) 
       ),
     },
     {
-      field: 'hexColor',
+      field: 'colorName',
       headerName: 'Color',
       minWidth: 120,
       flex: 1.5,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {params.value && (
+          {params.row.hexColor && (
             <Box
               component="span"
-              title={params.value}
+              title={params.row.hexColor}
               sx={{
                 width: 14,
                 height: 14,
                 borderRadius: '50%',
-                backgroundColor: params.value,
+                backgroundColor: params.row.hexColor,
                 border: '1px solid var(--gray-300)',
               }}
             />
           )}
-          <Typography variant="body2">{getColorName(params.value)}</Typography>
+          <Typography variant="body2">{params.value}</Typography>
         </Box>
       ),
     },
@@ -99,7 +92,7 @@ const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) 
       field: 'actions',
       type: 'actions',
       headerName: 'Acciones',
-      width: 100, // Un poco menos de espacio
+      width: 100,
       cellClassName: 'actions',
       getActions: (params) => [
         <GridActionsCellItem
@@ -121,12 +114,12 @@ const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) 
     },
   ];
 
-  // Mapear datos
   const rows = stockItems.map((item) => ({
     id: item.id,
     itemTypeName: item.itemType?.name || 'Desconocido',
     itemTypeIconName: item.itemType?.iconName,
-    hexColor: item.hexColor,
+    colorName: item.color?.name || 'Desconocido',
+    hexColor: item.color?.hex || '#FFFFFF',
     size: item.size,
     quantity: item.quantity,
     minStock: item.minStock,

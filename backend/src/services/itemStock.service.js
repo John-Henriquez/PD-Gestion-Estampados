@@ -17,18 +17,16 @@ export const itemStockService = {
       async (transactionalEntityManager) => {
         const {
           itemTypeId,
-          hexColor,
+          colorId,
           size,
           quantity,
           minStock,
         } = itemData;
-        const itemStockRepo =
-          transactionalEntityManager.getRepository(ItemStock);
+        const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
         const itemTypeRepo = transactionalEntityManager.getRepository(ItemType);
-        const movementRepo =
-          transactionalEntityManager.getRepository(InventoryMovement);
+        const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
 
-        if (!itemTypeId || !hexColor || quantity == null ) {
+        if (!itemTypeId || !colorId || quantity == null ) {
           return [null, "Faltan campos obligatorios"];
         }
         if (quantity < 0 ) {
@@ -50,7 +48,7 @@ export const itemStockService = {
         const existing = await itemStockRepo.findOne({
           where: {
             itemType: { id: itemTypeId },
-            hexColor,
+            color: { id: colorId },
             size: itemType.hasSizes ? size : null,
           },
           relations: ["itemType"],
@@ -70,7 +68,7 @@ export const itemStockService = {
           MIN_STOCK_DEFAULTS.default;
 
         const newItem = itemStockRepo.create({
-          hexColor,
+          color: { id: colorId },
           size: itemType.hasSizes ? size : null,
           quantity,
           minStock: minStockValue,
@@ -105,6 +103,8 @@ export const itemStockService = {
         "itemStock",
       );
       qb.leftJoinAndSelect("itemStock.itemType", "itemType");
+      qb.leftJoinAndSelect("itemStock.color", "color");
+
       const parsedFilters = {
         ...filters,
         isActive:
@@ -122,6 +122,11 @@ export const itemStockService = {
           itemTypeId: parsedFilters.itemTypeId,
         });
       }
+
+      if (parsedFilters.colorId) {
+        qb.andWhere("color.id = :colorId", { colorId: parsedFilters.colorId });
+      }
+
       if (parsedFilters.size !== undefined) {
         if (parsedFilters.size === "N/A") {
           qb.andWhere("itemStock.size IS NULL");
@@ -133,21 +138,18 @@ export const itemStockService = {
       if (parsedFilters.publicOnly === true) {
         qb.andWhere("itemStock.isActive = :isActive", { isActive: true });
         qb.andWhere("itemStock.quantity > 0");
-
         qb.andWhere("itemType.stampingLevels IS NOT NULL");
-
         qb.andWhere("jsonb_array_length(\"itemType\".\"stampingLevels\"::jsonb) > 0");
-        
       } else{
         const isActiveStatus = parsedFilters.isActive !== undefined ? parsedFilters.isActive : true;
-        
         qb.andWhere("itemStock.isActive = :isActive", {
           isActive: isActiveStatus,
         });
       }
 
       const items = await qb
-        .orderBy({ "itemType.name": "ASC", "itemStock.hexColor": "ASC" })
+        .orderBy("itemType.name", "ASC")
+        .addOrderBy("color.name", "ASC") 
         .getMany();
 
       return [items, null];

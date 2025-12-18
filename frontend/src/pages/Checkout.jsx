@@ -20,9 +20,10 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useCart } from '../hooks/cart/useCart.jsx';
 import { createOrder } from '../services/order.service';
 import { AuthContext } from '../context/AuthContext.jsx';
-import { showSuccessAlert, showErrorAlert, deleteDataAlert } from '../helpers/sweetAlert';
+import { showErrorAlert, deleteDataAlert } from '../helpers/sweetAlert';
 import { Trash2 } from 'lucide-react';
 import { regionesYComunas } from '../data/chileData';
+import { createPaymentPreference } from '../services/payment.service';
 
 const getFullImageUrl = (url) => {
   if (!url) return '';
@@ -137,22 +138,22 @@ const Checkout = () => {
     };
 
     try {
-      console.log('Enviando payload:', orderPayload);
       const createdOrder = await createOrder(orderPayload);
-      setIsProcessing(false);
-      showSuccessAlert('¡Pedido Creado!', `Tu pedido #${createdOrder.id} ha sido registrado.`);
-      clearCart();
-      navigate(`/order-confirmation/${createdOrder.id}`);
+      const preference = await createPaymentPreference(createdOrder.id);
+
+      if (preference && preference.init_point) {
+        // Limpiamos el carro antes de irnos
+        clearCart();
+        // REDIRECCIÓN A MERCADO PAGO
+        window.location.href = preference.init_point;
+      } else {
+        throw new Error('No se recibió el link de pago.');
+      }
     } catch (err) {
       setIsProcessing(false);
-      let displayError = err.message || err.details || 'No se pudo crear el pedido.';
-      if (err.message?.toLowerCase().includes('stock insuficiente')) {
-        displayError = `Stock insuficiente. ${err.message}`;
-      } else if (err.status === 400 && Array.isArray(err.details)) {
-        displayError = `Datos inválidos: ${err.details.map((d) => d.message).join('. ')}`;
-      }
+      let displayError = err.message || 'Error al procesar el pago.';
       setError(displayError);
-      showErrorAlert('Error al Crear Pedido', displayError);
+      showErrorAlert('Error', displayError);
     }
   };
 

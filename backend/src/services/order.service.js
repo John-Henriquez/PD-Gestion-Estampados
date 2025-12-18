@@ -4,6 +4,7 @@ import OrderItem from "../entity/orderItem.entity.js";
 import ItemStock from "../entity/itemStock.entity.js";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
 import Pack from "../entity/pack.entity.js";
+import OrderStatus from "../entity/orderStatus.entity.js";
 import {
 createItemSnapshot,
   generateInventoryReason,
@@ -25,19 +26,21 @@ export const orderService = {
         const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
         const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
         const packRepo = transactionalEntityManager.getRepository(Pack);
+        const statusRepo = transactionalEntityManager.getRepository(OrderStatus);
 
         const { items, customerData, shippingData } = orderData;
 
         if (!items || items.length === 0) {
           return [null, "El pedido debe contener al menos un artículo."];
         }
+        const initialStatus = await statusRepo.findOne({ where: { name: "pendiente_de_pago" } });
+        if (!initialStatus) throw new Error("Estado inicial 'pendiente_de_pago' no configurado.");
 
         let calculatedSubtotal = 0;
         const itemsToUpdateStock = new Map();
         const orderItemsData = [];
 
         for (const itemInput of items) {
-
           const selectedLevelObject = itemInput.stampOptionsSnapshot || null;
           let itemNameSnapshot = "Artículo Desconocido";
           let sizeSnapshot = null;
@@ -46,13 +49,9 @@ export const orderService = {
           if (itemInput.itemStockId) {
             const stockItem = await itemStockRepo.findOne({
               where: { id: itemInput.itemStockId },
-              relations: ["itemType"],
+              relations: ["itemType", "color"],
             });
-            if (
-              !stockItem ||
-              !stockItem.isActive ||
-              stockItem.quantity < itemInput.quantity
-            ) {
+            if (!stockItem || !stockItem.isActive || stockItem.quantity < itemInput.quantity) {
               throw new Error(
                 `Stock insuficiente o inválido para el producto: ${
                   stockItem?.itemType?.name || `ID ${itemInput.itemStockId}`
@@ -61,8 +60,8 @@ export const orderService = {
             }
 
             sizeSnapshot = stockItem.size;
-            colorHexSnapshot = stockItem.hexColor;
-            itemNameSnapshot = stockItem.itemType?.name || `Stock ID ${stockItem.id}`;
+            colorHexSnapshot = stockItem.color?.hex || stockItem.hexColor;
+            itemNameSnapshot = stockItem.itemType?.name;
 
             const isStampable =
               stockItem.itemType.category === "clothing" || 
@@ -75,9 +74,7 @@ export const orderService = {
               );
             }
 
-            const priceAtTime = selectedLevelObject ? selectedLevelObject.price : 0; // Fallback seguro
-            if (priceAtTime < 0) throw new Error("El precio no puede ser negativo.");
-
+            const priceAtTime = selectedLevelObject ? selectedLevelObject.price : 0;
             calculatedSubtotal += priceAtTime * itemInput.quantity;
 
             itemsToUpdateStock.set(
@@ -89,51 +86,33 @@ export const orderService = {
               itemStock: { id: stockItem.id },
               pack: null,
               quantity: itemInput.quantity,
-              priceAtTimeOfOrder: priceAtTime, 
-              itemNameSnapshot: itemNameSnapshot,
+              priceAtTime: priceAtTime,
+              itemNameSnapshot,
+              sizeSnapshot,
+              colorHexSnapshot,
+              stampOptionsSnapshot: selectedLevelObject,
               stampImageUrl: itemInput.stampImageUrl || null,
               stampInstructions: itemInput.stampInstructions || null,
-              sizeSnapshot: sizeSnapshot,
-              colorHexSnapshot: colorHexSnapshot,
-              colorNameSnapshot: null, 
-              stampOptionsSnapshot: selectedLevelObject
             });
+
           } else if (itemInput.packId) {
             const pack = await packRepo.findOne({
               where: { id: itemInput.packId, isActive: true },
-              relations: [
-                "packItems",
-                "packItems.itemStock",
-                "packItems.itemStock.itemType",
-              ],
+              relations: ["packItems", "packItems.itemStock", "packItems.itemStock.itemType"],
             });
-            if (!pack || !pack.isActive) {
-              throw new Error(
-                `Pack no encontrado o inactivo: ID ${itemInput.packId}`,
-              );
-            }
-            itemNameSnapshot = `Pack: ${pack.name}`;
 
-            const priceAtTime = pack.price;
-            calculatedSubtotal += priceAtTime * itemInput.quantity;
+            if (!pack) throw new Error(`Pack ID ${itemInput.packId} no encontrado.`);
 
-            for (const packItem of pack.packItems) {
-              if (
-                !packItem.itemStock ||
-                !packItem.itemStock.isActive ||
-                packItem.itemStock.quantity <
-                  packItem.quantity * itemInput.quantity
-              ) {
-                throw new Error(
-                  `Stock insuficiente para "${
-                    packItem.itemStock?.itemType?.name || "item"
-                  }" dentro del pack "${pack.name}"`,
-                );
+            calculatedSubtotal += parseFloat(pack.price) * itemInput.quantity;
+
+            for (const pItem of pack.packItems) {
+              const totalRequired = pItem.quantity * itemInput.quantity;
+              if (pItem.itemStock.quantity < totalRequired) {
+                throw new Error(`Stock insuficiente en pack para ${pItem.itemStock.itemType.name}`);
               }
-              const quantityToDecrement = packItem.quantity * itemInput.quantity;
               itemsToUpdateStock.set(
-                packItem.itemStock.id,
-                (itemsToUpdateStock.get(packItem.itemStock.id) || 0) + quantityToDecrement,
+                pItem.itemStock.id,
+                (itemsToUpdateStock.get(pItem.itemStock.id) || 0) + totalRequired,
               );
             }
 
@@ -141,26 +120,17 @@ export const orderService = {
               itemStock: null,
               pack: { id: pack.id },
               quantity: itemInput.quantity,
-              priceAtTimeOfOrder: priceAtTime,
-              itemNameSnapshot: itemNameSnapshot,
-              stampImageUrl: itemInput.stampImageUrl || null,
-              stampInstructions: itemInput.stampInstructions || null,
-              sizeSnapshot: null,
-              colorHexSnapshot: null,
-              colorNameSnapshot: null,
+              priceAtTime: parseFloat(pack.price),
+              itemNameSnapshot: `Pack: ${pack.name}`,
               stampOptionsSnapshot: null
             });
-          } else {
-            throw new Error("Cada item del pedido debe tener 'itemStockId' o 'packId'.");
           }
         }
 
-        const total = calculatedSubtotal;
-
         const newOrder = orderRepo.create({
-          status: "pendiente_de_pago",
+          status: initialStatus,
           subtotal: calculatedSubtotal,
-          total,
+          total: calculatedSubtotal,
           user: userId ? { id: userId } : null,
           guestEmail: !userId ? customerData?.email : null,
           customerName: customerData?.name || null,
@@ -169,21 +139,14 @@ export const orderService = {
         });
         const savedOrder = await orderRepo.save(newOrder);
 
-        const orderItemEntities = orderItemsData.map((itemData) =>
-          orderItemRepo.create({
-            ...itemData,
-            priceAtTime: itemData.priceAtTimeOfOrder,
-            order: { id: savedOrder.id },
-          }),
-        );
-        await orderItemRepo.save(orderItemEntities);
+        const itemEntities = orderItemsData.map(d => orderItemRepo.create({ ...d, order: savedOrder }));
+        await orderItemRepo.save(itemEntities);
 
-        for (const [stockId, quantityToDecrement] of itemsToUpdateStock.entries()) {
-          await itemStockRepo.decrement({ id: stockId }, "quantity", quantityToDecrement);
+        for (const [stockId, qty] of itemsToUpdateStock.entries()) {
+          await itemStockRepo.decrement({ id: stockId }, "quantity", qty);
 
           const stockItemForSnapshot = await itemStockRepo.findOne({
-            where: { id: stockId },
-            relations: ["itemType"],
+            where: { id: stockId }, relations: ["itemType", "color"]
           });
 
           const { operation, reason } = generateInventoryReason("sale");
@@ -191,7 +154,7 @@ export const orderService = {
             type: "salida",
             operation,
             reason: `${reason} (Pedido #${savedOrder.id})`,
-            quantity: quantityToDecrement,
+            quantity: qty,
             itemStock: { id: stockId },
             createdBy: userId ? { id: userId } : null,
             order: { id: savedOrder.id },
@@ -206,19 +169,23 @@ export const orderService = {
             "orderItems",
             "orderItems.itemStock",
             "orderItems.itemStock.itemType",
+            "orderItems.itemStock.color",
             "orderItems.pack",
           ],
         });
 
         // ENVIO DE CORREO: CREACIÓN
         try {
-          await sendOrderCreatedEmail(finalOrder);
+          if (finalOrder) {
+            await sendOrderCreatedEmail(finalOrder);
+          }
         } catch (emailErr) {
-          console.error("No se pudo enviar el correo de confirmación:", emailErr);
+          console.error("Error al enviar correo inicial:", emailErr);
         }
         return [finalOrder, null];
       },
     ).catch((error) => {
+      console.error("Error en transacción createOrder:", error);
       return [null, error.message || "Error interno al procesar el pedido."];
     });
   },

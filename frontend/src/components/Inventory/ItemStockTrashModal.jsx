@@ -20,7 +20,6 @@ import { showSuccessAlert, showErrorAlert, deleteDataAlert } from '../../helpers
 import { useEmptyDeletedItemStock } from '../../hooks/itemStock/useEmptyDeletedItemStock.jsx';
 import { useRestoreItemStock } from '../../hooks/itemStock/useRestoreItemStock.jsx';
 import { useForceDeleteItemStock } from '../../hooks/itemStock/useForceDeleteItemStock.jsx';
-import { COLOR_DICTIONARY } from '../../data/colorDictionary';
 import '../../styles/components/trashModal.css';
 
 const ItemStockTrashModal = ({ open, onClose, trashedItems, onRefresh }) => {

@@ -8,6 +8,7 @@ import PacksSection from '../components/Inventory/PacksSection.jsx';
 import ItemStockTable from '../components/Inventory/ItemStockTable.jsx';
 
 import { useItemTypes } from '../hooks/itemType/useItemType.jsx';
+import { useColors } from '../hooks/color/useColors.jsx';
 
 import AddItemStockModal from '../components/Inventory/AddItemStockModal.jsx';
 import ItemStockTrash from '../components/Inventory/ItemStockTrashModal.jsx';
@@ -22,7 +23,6 @@ import { useDeletedItemStock } from '../hooks/itemStock/useDeletedItemStock.jsx'
 import { AuthContext } from '../context/AuthContext.jsx';
 import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
 
-import { COLOR_DICTIONARY } from '../data/colorDictionary';
 import '../styles/pages/inventario.css';
 
 const Inventario = () => {
@@ -48,6 +48,8 @@ const Inventario = () => {
   const [editingStock, setEditingStock] = useState(null);
 
   const { isAuthenticated, user } = useContext(AuthContext);
+
+  const { colors: dbColors, loading: colorsLoading } = useColors();
 
   //hooks stock
   const {
@@ -98,33 +100,31 @@ const Inventario = () => {
       if (filters.searchTerm) {
         const searchTerm = filters.searchTerm.toLowerCase();
         const itemName = item.itemType?.name?.toLowerCase() || '';
-        const itemHex = item.hexColor?.toLowerCase() || '';
+        const colorName = item.color?.name?.toLowerCase() || '';
+        const colorHex = item.color?.hex?.toLowerCase() || item.hexColor?.toLowerCase() || '';
 
-        if (!itemName.includes(searchTerm) && !itemHex.includes(searchTerm)) {
+        if (!itemName.includes(searchTerm) && !colorName.includes(searchTerm) && !colorHex.includes(searchTerm)) {
           return false;
         }
       }
+
       if (filters.typeId && item.itemType.id !== filters.typeId) {
         return false;
       }
+
       if (filters.color) {
-        const selectedHex = COLOR_DICTIONARY.find(
-          (c) => c.name.toLowerCase() === filters.color.toLowerCase()
-        )?.hex;
-        if (!selectedHex || item.hexColor?.toLowerCase() !== selectedHex.toLowerCase()) {
+        if (item.color?.id !== parseInt(filters.color)) {
           return false;
         }
       }
+
       if (filters.size && item.size !== filters.size) {
         return false;
       }
+
       if (filters.stockStatus) {
-        if (filters.stockStatus === 'low' && item.quantity > item.minStock) {
-          return false;
-        }
-        if (filters.stockStatus === 'normal' && item.quantity <= item.minStock) {
-          return false;
-        }
+        if (filters.stockStatus === 'low' && item.quantity > item.minStock) return false;
+        if (filters.stockStatus === 'normal' && item.quantity <= item.minStock) return false;
       }
       return true;
     });
@@ -200,12 +200,15 @@ const Inventario = () => {
 
   //colores
   const colorOptions = useMemo(() => {
-    const usedHexColors = new Set(
-      itemStock.filter((item) => item.hexColor).map((item) => item.hexColor.toUpperCase())
-    );
+    if (!itemStock || !dbColors) return [];
 
-    return COLOR_DICTIONARY.filter(({ hex }) => usedHexColors.has(hex.toUpperCase()));
-  }, [itemStock]);
+    const usedColorIds = new Set(
+      itemStock
+        .filter(i => i.color?.id)
+        .map(i => i.color.id)
+    );
+    return dbColors.filter(c => usedColorIds.has(c.id));
+  }, [itemStock, dbColors]);
 
   if (!isAuthenticated || user?.rol !== 'administrador') {
     return <Navigate to="/auth" />;

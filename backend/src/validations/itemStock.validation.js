@@ -1,11 +1,15 @@
 import Joi from "joi";
 
 const itemStockSchema = Joi.object({
-  itemTypeId: Joi.number().integer().required(),
+  itemTypeId: Joi.number().integer().positive().required().messages({
+    "any.required": "El tipo de ítem es obligatorio.",
+    "number.base": "El ID del tipo de ítem debe ser un número."
+  }),
 
-  hexColor: Joi.string()
-    .pattern(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
-    .required(),
+  colorId: Joi.number().integer().positive().required().messages({
+    "any.required": "El color es obligatorio.",
+    "number.base": "El ID del color debe ser un número."
+  }),
 
   size: Joi.when("requiresSize", {
     is: true,

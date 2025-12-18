@@ -19,14 +19,14 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Autocomplete } from '@mui/material';
 import { showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
 import { useCreateItemStock } from '../../hooks/itemStock/useCreateItemStock.jsx';
+import { useColors } from '../../hooks/color/useColors.jsx';
 import useEditItemStock from '../../hooks/itemStock/useEditItemStock.jsx';
-import { COLOR_DICTIONARY } from '../../data/colorDictionary';
 
 import '../../styles/components/modal.css';
 
 const DEFAULT_FORM = {
   itemTypeId: '',
-  hexColor: '#FFFFFF',
+  colorId: '',
   size: '',
   quantity: '',
   minStock: '',
@@ -35,6 +35,8 @@ const DEFAULT_FORM = {
 const AddItemStockModal = ({ open, onClose, onCreated, itemTypes = [], editingStock = null }) => {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [selectedType, setSelectedType] = useState(null);
+
+  const { colors: dbColors, loading: loadingColors } = useColors();
 
   const { addStock: createStock, loading: creating } = useCreateItemStock();
   const { editItemStock: updateStock, loading: updating } = useEditItemStock();
@@ -46,7 +48,7 @@ const AddItemStockModal = ({ open, onClose, onCreated, itemTypes = [], editingSt
         const safeTypeId = editingStock.itemTypeId || editingStock.itemType?.id || '';
         setForm({
           itemTypeId: safeTypeId,
-          hexColor: editingStock.hexColor || '#FFFFFF',
+          colorId: editingStock.color?.id || '',
           size: editingStock.size || '',
           quantity: editingStock.quantity?.toString() ?? '',
           minStock: editingStock.minStock?.toString() || '',
@@ -55,7 +57,7 @@ const AddItemStockModal = ({ open, onClose, onCreated, itemTypes = [], editingSt
         setForm(DEFAULT_FORM);
       }
     }
-  }, [open, editingStock, itemTypes]);
+  }, [open, editingStock]);
 
   useEffect(() => {
     setSelectedType(itemTypes.find((type) => type.id === form.itemTypeId) || null);
@@ -67,7 +69,7 @@ const AddItemStockModal = ({ open, onClose, onCreated, itemTypes = [], editingSt
 
   const handleSubmit = async () => {
     const payload = {
-      hexColor: form.hexColor,
+      colorId: form.colorId,
       quantity: form.quantity ? parseInt(form.quantity, 10) : 0,
       minStock: form.minStock ? parseInt(form.minStock, 10) : undefined,
       ...(selectedType?.hasSizes && form.size && { size: form.size }),
@@ -84,6 +86,10 @@ const AddItemStockModal = ({ open, onClose, onCreated, itemTypes = [], editingSt
     }
     if (selectedType?.hasSizes && !form.size) {
       showErrorAlert('Error', 'Selecciona una talla.');
+      return;
+    }
+    if (!payload.colorId && !editingStock) {
+      showErrorAlert('Error', 'Selecciona un color.');
       return;
     }
 
@@ -109,7 +115,7 @@ const AddItemStockModal = ({ open, onClose, onCreated, itemTypes = [], editingSt
   const isSaveDisabled =
     loading ||
     !form.itemTypeId ||
-    !form.hexColor ||
+    !form.colorId ||
     form.quantity === '' ||
     (selectedType?.hasSizes && !form.size);
 
@@ -165,11 +171,11 @@ const AddItemStockModal = ({ open, onClose, onCreated, itemTypes = [], editingSt
             )}
           </FormControl>
           <Autocomplete
-            options={COLOR_DICTIONARY}
+            options={dbColors}
             getOptionLabel={(option) => option.name}
-            value={COLOR_DICTIONARY.find((c) => c.hex === form.hexColor) || null}
+            value={dbColors.find((c) => c.id === form.colorId) || null}
             onChange={(e, newValue) =>
-              newValue && setForm((prev) => ({ ...prev, hexColor: newValue.hex }))
+              newValue && setForm((prev) => ({ ...prev, colorId: newValue.id }))
             }
             isOptionEqualToValue={(option, value) => option.hex === value?.hex}
             renderInput={(params) => (

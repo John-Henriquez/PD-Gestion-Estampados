@@ -10,11 +10,6 @@ const ItemStockSchema = new EntitySchema({
       primary: true,
       generated: true,
     },
-    hexColor: {
-      type: "varchar",
-      length: 7,
-      nullable: false,
-    },
     size: {
       type: "varchar",
       length: 10,
@@ -51,6 +46,12 @@ const ItemStockSchema = new EntitySchema({
     },
   },
   relations: {
+    color: {
+      type: "many-to-one",
+      target: "Color",
+      joinColumn: { name: "color_id" },
+      nullable: false,
+    },
     itemType: {
       type: "many-to-one",
       target: "ItemType",

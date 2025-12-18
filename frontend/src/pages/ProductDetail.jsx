@@ -26,16 +26,10 @@ import { getPublicItemStock } from '../services/itemStock.service';
 
 import ImageUploader from '../components/UI/ImageUploader.jsx';
 import { iconMap } from '../data/iconCategories';
-import { COLOR_DICTIONARY } from '../data/colorDictionary';
 import { useCart } from '../hooks/cart/useCart.jsx';
 import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
 
 import '../styles/pages/productDetail.css';
-
-const getColorName = (hex) => {
-  const color = COLOR_DICTIONARY.find((c) => c.hex?.toUpperCase() === hex?.toUpperCase());
-  return color ? color.name : hex;
-};
 
 const getFullImageUrl = (url) => {
   if (!url) return '';
@@ -57,7 +51,8 @@ const ProductDetail = () => {
   const [error, setError] = useState(null);
 
   const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
+
+  const [selectedColorObj, setSelectedColorObj] = useState(null); 
   const [availableColors, setAvailableColors] = useState([]);
 
   const [selectedLevelName, setSelectedLevelName] = useState(null);
@@ -67,21 +62,37 @@ const ProductDetail = () => {
   const [stampImageUrl, setStampImageUrl] = useState(null);
   const [stampInstructions, setStampInstructions] = useState('');
 
+ const realAvailableSizes = useMemo(() => {
+  if (allStockVariations.length === 0) return [];
+  
+  const sizes = allStockVariations
+    .filter(stock => stock.quantity > 0)
+    .map(stock => stock.size);
+    
+  return [...new Set(sizes)];
+}, [allStockVariations]);
+
   //  EFECTO 1: Cargar datos iniciales del TIPO y todas sus variaciones
   useEffect(() => {
     const fetchProductData = async () => {
       try {
         setLoading(true);
-        setError(null);
-
         const typeInfo = await getItemTypeById(itemTypeId);
-        if (!typeInfo) {
-          throw new Error('Producto no encontrado.');
-        }
         setItemType(typeInfo);
 
         const stockVariations = await getPublicItemStock({ itemTypeId });
         setAllStockVariations(stockVariations || []);
+
+        const firstAvailableSize = stockVariations.find(s => s.quantity > 0)?.size;
+        if (firstAvailableSize) {
+          setSelectedSize(firstAvailableSize);
+        }
+
+        setError(null);
+
+        if (!typeInfo) {
+          throw new Error('Producto no encontrado.');
+        }
 
         if (typeInfo.hasSizes && typeInfo.sizesAvailable?.length > 0) {
           setSelectedSize(typeInfo.sizesAvailable[0]);
@@ -105,31 +116,41 @@ const ProductDetail = () => {
   // EFECTO 2: Actualizar colores disponibles cuando cambia la talla seleccionada
   useEffect(() => {
     if (allStockVariations.length === 0) return;
+    
     const stocksForSize = allStockVariations.filter((stock) => stock.size === selectedSize);
 
-    const colors = [...new Set(stocksForSize.map((stock) => stock.hexColor))];
-    setAvailableColors(colors);
+    const uniqueColors = [];
+    const map = new Map();
+    for (const stock of stocksForSize) {
+      if (stock.color && !map.has(stock.color.id)) {
+        map.set(stock.color.id, true);
+        uniqueColors.push(stock.color);
+      }
+    }
+    
+    setAvailableColors(uniqueColors);
 
-    if (colors.length > 0) {
-      setSelectedColor(colors[0]);
+    if (uniqueColors.length > 0) {
+      setSelectedColorObj(uniqueColors[0]);
     } else {
-      setSelectedColor('');
+      setSelectedColorObj(null);
     }
   }, [selectedSize, allStockVariations]);
 
   // EFECTO 3: Encontrar el stock exacto cuando cambia la talla O el color
   useEffect(() => {
-    if (!selectedColor && availableColors.length === 0) {
+    if (!selectedColorObj) {
       setSelectedStock(null);
       return;
     }
+    
     const matchingStock = allStockVariations.find(
-      (stock) => stock.size === selectedSize && stock.hexColor === selectedColor
+      (stock) => stock.size === selectedSize && stock.color?.id === selectedColorObj.id
     );
 
     setSelectedStock(matchingStock || null);
     setQuantity(1);
-  }, [selectedColor, selectedSize, allStockVariations, availableColors]);
+  }, [selectedColorObj, selectedSize, allStockVariations]);
 
   const selectedLevelObject = useMemo(() => {
     return itemType?.stampingLevels?.find((l) => l.level === selectedLevelName);
@@ -150,7 +171,9 @@ const ProductDetail = () => {
   };
 
   const handleColorChange = (event) => {
-    setSelectedColor(event.target.value);
+    const colorId = parseInt(event.target.value);
+    const colorObj = availableColors.find(c => c.id === colorId);
+    setSelectedColorObj(colorObj);
   };
 
   const handleQuantityChange = (amount) => {
@@ -196,22 +219,15 @@ const ProductDetail = () => {
       itemStockId: selectedStock.id,
       quantity: quantity,
       name: itemType?.name || 'Producto',
-      price: calculatedPrice,
-
+      price: calculateDynamicPrice(),
       stampOptionsSnapshot: selectedLevelObject,
-
       stampImageUrl: stampImageUrl,
       stampInstructions: stampInstructions,
-
-      hexColor: selectedStock.hexColor,
+      colorName: selectedColorObj?.name,
+      hexColor: selectedColorObj?.hex,
       size: selectedStock.size,
       productImageUrls: itemType.productImageUrls,
     };
-    console.log('🧾 Item que se enviará al carrito / backend:', {
-      isStampable,
-      selectedLevelObject,
-      itemToAdd,
-    });
 
     addToCart(itemToAdd);
     showSuccessAlert(
@@ -327,16 +343,9 @@ const ProductDetail = () => {
 
           <div className="product-info__details">
             {/* Selector de Talla */}
-            {itemType.hasSizes && sizesAvailable.length > 0 && (
+            {itemType.hasSizes && realAvailableSizes.length > 0 && (
               <div className="product-info__detail-item">
-                <Typography
-                  component="span"
-                  fontWeight="bold"
-                  sx={{
-                    alignSelf: 'flex-start',
-                    pt: 1,
-                  }}
-                >
+                <Typography component="span" fontWeight="bold" sx={{ pt: 1 }}>
                   Talla:
                 </Typography>
                 <ToggleButtonGroup
@@ -347,7 +356,7 @@ const ProductDetail = () => {
                   size="small"
                   sx={{ flexWrap: 'wrap' }}
                 >
-                  {sizesAvailable.map((size) => (
+                  {realAvailableSizes.map((size) => (
                     <ToggleButton
                       key={size}
                       value={size}
@@ -378,15 +387,14 @@ const ProductDetail = () => {
                 <FormControl component="fieldset">
                   <RadioGroup
                     row
-                    aria-label="color-selector"
                     name="color-selector"
-                    value={selectedColor}
+                    value={selectedColorObj?.id || ''}
                     onChange={handleColorChange}
                   >
-                    {availableColors.map((hex) => (
+                    {availableColors.map((color) => (
                       <FormControlLabel
-                        key={hex}
-                        value={hex}
+                        key={color.id}
+                        value={color.id}
                         control={<Radio sx={{ display: 'none' }} />}
                         label={
                           <Chip
@@ -397,22 +405,19 @@ const ProductDetail = () => {
                                   width: 20,
                                   height: 20,
                                   borderRadius: '50%',
-                                  backgroundColor: hex,
+                                  backgroundColor: color.hex,
                                   border: '1px solid #ccc',
                                   cursor: 'pointer',
                                   ml: 1,
                                 }}
                               />
                             }
-                            label={getColorName(hex)}
-                            variant={selectedColor === hex ? 'filled' : 'outlined'}
-                            onClick={() => setSelectedColor(hex)}
+                            label={color.name}
+                            variant={selectedColorObj?.id === color.id ? 'filled' : 'outlined'}
                             sx={{
                               cursor: 'pointer',
-                              borderColor:
-                                selectedColor === hex ? 'var(--primary)' : 'var(--gray-300)',
-                              backgroundColor:
-                                selectedColor === hex ? 'var(--primary-light)' : 'default',
+                              borderColor: selectedColorObj?.id === color.id ? 'var(--primary)' : 'var(--gray-300)',
+                              backgroundColor: selectedColorObj?.id === color.id ? 'var(--primary-light)' : 'default',
                               marginRight: 1,
                             }}
                           />
