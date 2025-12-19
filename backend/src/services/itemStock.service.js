@@ -17,7 +17,7 @@ const getOpEntity = async (manager, slug) => {
 };
 
 export const itemStockService = {
-async createItemStock(itemData, userId) {
+  async createItemStock(itemData, userId) {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
       const { itemTypeId, colorId, size, quantity, minStock } = itemData;
       const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
@@ -42,17 +42,22 @@ async createItemStock(itemData, userId) {
       });
 
       const savedItem = await itemStockRepo.save(newItem);
+
+      const fullItem = await itemStockRepo.findOne({
+        where: { id: savedItem.id },
+        relations: ["itemType", "color"]
+      });
       
-      const { operation, meta } = await getOperation(transactionalEntityManager, "initial_load");
+      const { operation, meta } = await getOpEntity(transactionalEntityManager, "initial_load");
       
       await movementRepo.save({
         type: meta.type,
         operation,
-        reason: meta.reason,
+        reason: `${meta.reason} (Creación individual)`,
         quantity: savedItem.quantity,
         itemStock: savedItem,
         createdBy: { id: userId },
-        ...createItemSnapshot(savedItem),
+        ...createItemSnapshot(fullItem),
       });
 
       return [savedItem, null];
@@ -154,7 +159,7 @@ async createItemStock(itemData, userId) {
     }
   },
 
-async updateItemStock(id, updateData, userId) {
+  async updateItemStock(id, updateData, userId) {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
       const repo = transactionalEntityManager.getRepository(ItemStock);
       const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
@@ -185,7 +190,7 @@ async updateItemStock(id, updateData, userId) {
         if (field === "quantity") slug = changes.quantity.newValue > changes.quantity.oldValue ? "adjust_in" : "adjust_out";
         if (field === "minStock") slug = "min_stock_change";
 
-        const { operation, meta } = await getOperation(transactionalEntityManager, slug);
+        const { operation, meta } = await getOpEntity(transactionalEntityManager, slug);
 
         await movementRepo.save({
           type: meta.type,
@@ -382,4 +387,52 @@ async emptyTrash(userId) {
         return [item, null];
       });
   },
+
+  async restockVariants(restockData, userId) {
+    return await AppDataSource.transaction(async (transactionalEntityManager) => {
+      const repo = transactionalEntityManager.getRepository(ItemStock);
+      const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
+      
+      const { operation, meta } = await getOpEntity(transactionalEntityManager, "restock");
+      
+      const updatedStocks = [];
+
+      for (const item of restockData) {
+        const { id, addedQuantity } = item;
+        
+        if (!addedQuantity || addedQuantity <= 0) continue;
+
+        const stock = await repo.findOne({ 
+          where: { id, isActive: true },
+          relations: ["itemType", "color"] 
+        });
+
+        if (!stock) throw new Error(`Stock con ID ${id} no encontrado.`);
+
+        const oldQty = stock.quantity;
+        stock.quantity += parseInt(addedQuantity);
+        const savedStock = await repo.save(stock);
+
+        await movementRepo.save({
+          type: meta.type,
+          operation,
+          quantity: parseInt(addedQuantity),
+          reason: meta.name || "Recarga de Stock",
+          itemStock: savedStock,
+          createdBy: { id: userId },
+          changes: {
+            cantidad: { oldValue: oldQty, newValue: savedStock.quantity }
+          },
+          ...createItemSnapshot(savedStock)
+        });
+
+        updatedStocks.push(savedStock);
+      }
+
+      return [updatedStocks, null];
+    }).catch(err => {
+      console.error("Error en restockVariants:", err);
+      return [null, err.message];
+    });
+  }
 };

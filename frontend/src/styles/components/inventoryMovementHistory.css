@@ -1,50 +1,141 @@
-.movement-card {
-  display: flex;
-  align-items: flex-start;
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
-  background-color: white;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--border-radius-md) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* Contenedor Principal */
+.history-modal-container {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    background-color: white;
 }
 
-.movement-card:hover {
-  transform: translateX(4px);
-  box-shadow: var(--shadow-md) !important;
-  border-color: var(--primary-light);
+.history-header {
+    padding: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--gray-200);
 }
 
-.movement-icon-container {
-  margin-right: var(--spacing-md);
-  padding-top: 4px;
+/* Paneles de Filtros y Resumen */
+.filter-panel, .summary-panel {
+    padding: var(--spacing-md);
+    background-color: var(--gray-50) !important;
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    align-items: center;
+    border-radius: var(--border-radius-md) !important;
 }
 
-.movement-details {
-  flex-grow: 1;
+.summary-panel {
+    text-align: center;
+    flex-direction: column;
 }
 
-.movements-timeline h6 {
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(4px);
-  margin-bottom: var(--spacing-sm);
-  padding-left: var(--spacing-xs);
+.summary-label {
+    letter-spacing: 1px;
+    font-weight: 700;
+    color: var(--gray-500);
 }
 
-
-.modal-content {
-  overflow-y: auto;
-  max-height: 70vh; 
-  padding-right: var(--spacing-sm); 
+.summary-values {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
 }
 
-.modal-content::-webkit-scrollbar {
-  width: 6px;
+/* Timeline y Filas */
+.date-separator {
+    text-transform: uppercase;
+    color: var(--primary);
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-sm) !important;
+    border-bottom: 2px solid var(--primary-light);
+    width: fit-content;
 }
-.modal-content::-webkit-scrollbar-track {
-  background: var(--gray-100);
+
+.movement-row {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+    transition: transform 0.2s ease;
 }
-.modal-content::-webkit-scrollbar-thumb {
-  background-color: var(--gray-400);
-  border-radius: 4px;
+
+.movement-row:hover {
+    transform: translateX(5px);
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* Detalles del Movimiento */
+.op-name {
+    color: var(--gray-900);
+    text-transform: capitalize;
+}
+
+.item-chip {
+    background-color: white !important;
+    border-color: var(--gray-300) !important;
+}
+
+.color-indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.movement-reason {
+    font-style: italic;
+    color: var(--gray-600);
+}
+
+/* Caja de Cambios (Auditoría) */
+.changes-log {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--gray-100);
+    border-radius: var(--border-radius-sm);
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.change-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+}
+
+.field-name { font-weight: 700; color: var(--gray-700); }
+.old-val { text-decoration: line-through; color: var(--gray-400); }
+.arrow { color: var(--primary); font-weight: bold; }
+.new-val { color: var(--primary-dark); font-weight: 700; }
+
+/* Balance y Usuario */
+.movement-qty {
+    font-family: 'Inter', sans-serif;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    color: var(--gray-500);
+}
+
+.user-info svg {
+    font-size: 14px;
+}
+
+/* Estados de Carga */
+.loading-state, .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    gap: 16px;
+    color: var(--gray-400);
+}
+
+.empty-state svg {
+    font-size: 64px;
 }

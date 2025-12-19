@@ -159,3 +159,16 @@ export async function getItemStockById(itemTypeId) {
     );
   }
 }
+
+export async function restockVariants(restockData) {
+  try {
+    const { data } = await axios.post('/item-stocks/restock', restockData);
+    return [data.data, null];
+  } catch (error) {
+    console.error('Error en restock masivo:', error);
+    return [
+      null,
+      error.response?.data?.message || 'Error al procesar la recarga masiva'
+    ];
+  }
+}

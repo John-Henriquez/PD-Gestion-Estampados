@@ -345,4 +345,30 @@ export const itemStockController = {
       handleErrorServer(res, 500, "Error interno del servidor");
     }
   },
+
+  async restockVariants(req, res) {
+    try {
+      const restockData = req.body; // Array: [{ id, addedQuantity }, ...]
+      const userId = req.user.id;
+
+      // Validación básica de entrada
+      if (!Array.isArray(restockData) || restockData.length === 0) {
+        return handleErrorClient(res, 400, "Se requiere un listado de variantes para procesar la recarga.");
+      }
+
+      const [updatedStocks, serviceError] = await itemStockService.restockVariants(
+        restockData,
+        userId
+      );
+
+      if (serviceError) {
+        return handleErrorClient(res, 400, serviceError);
+      }
+
+      handleSuccess(res, 200, "Recarga de stock procesada exitosamente", updatedStocks);
+    } catch (error) {
+      console.error("Error en restockVariants controller:", error);
+      handleErrorServer(res, 500, "Error interno al procesar la recarga masiva");
+    }
+  },
 };

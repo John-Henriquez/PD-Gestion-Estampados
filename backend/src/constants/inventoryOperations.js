@@ -3,8 +3,9 @@ export const INVENTORY_OPERATIONS = [
   { slug: "initial_load", name: "Carga Inicial", type: "entrada", description: "Stock ingresado al crear el producto por primera vez" },
   { slug: "purchase", name: "Compra a Proveedor", type: "entrada", description: "Ingreso de stock por orden de compra a proveedores" },
   { slug: "return", name: "Devolución de Cliente", type: "entrada", description: "Reingreso por devolución de producto vendido" },
-  { slug: "adjust_in", name: "Ajuste de Entrada", type: "entrada", description: "Corrección manual por inventario físico (faltante detectado)" },
+  { slug: "adjust_in", name: "Ajuste de Entrada", type: "entrada", description: "Corrección manual por inventario físico" },
   { slug: "pack_disassembly", name: "Desarmado de Pack", type: "entrada", description: "Retorno de unidades individuales al desarmar un paquete" },
+  { slug: "restock", name: "Recarga de Stock", type: "entrada", description: "Reabastecimiento de variantes existentes" },
 
   // SALIDAS
   { slug: "sale", name: "Venta Directa", type: "salida", description: "Egreso automático por venta confirmada" },

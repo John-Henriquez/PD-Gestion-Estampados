@@ -17,6 +17,7 @@ router.delete(
   isAdmin,
   itemStockController.forceDeleteItemStock,
 );
+router.post("/restock", isAdmin, itemStockController.restockVariants);
 
 router.get("/", itemStockController.getItemStock);
 router.post("/", isAdmin, itemStockController.createItemStock);

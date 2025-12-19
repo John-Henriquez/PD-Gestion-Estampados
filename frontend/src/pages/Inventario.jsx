@@ -200,7 +200,8 @@ const Inventario = () => {
   const handleFullRefresh = async () => {
     await Promise.all([
       fetchTypes(),
-      refetchStock()
+      refetchStock(),
+      fetchDeletedStock()
     ]);
   };
   //colores
@@ -324,11 +325,11 @@ const Inventario = () => {
       />
       <AddItemStockModal
         open={openAddStock}
-        onClose={() => setOpenAddStock(false)}
-        onCreated={() => {
-          refetchStock();
+        onClose={() => {
+          setOpenAddStock(false);
           setEditingStock(null);
         }}
+        onCreated={handleFullRefresh}
         itemTypes={itemTypes}
         editingStock={openAddStock ? editingStock : null}
       />
