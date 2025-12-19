@@ -2,6 +2,17 @@ import { startCase } from 'lodash';
 import { format as formatRut } from 'rut.js';
 import { format as formatTempo } from '@formkit/tempo';
 
+
+export const formatCLP = (value) => {
+  if (value === null || value === undefined) return '$0';
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
 export function formatUserData(user) {
   return {
     ...user,

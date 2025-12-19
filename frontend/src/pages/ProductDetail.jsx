@@ -336,7 +336,7 @@ const ProductDetail = () => {
           <Typography className="product-info__description">{description}</Typography>
 
           <Typography className="product-info__price">
-            ${(calculateDynamicPrice() || 0).toLocaleString()}
+            {formatCLP(calculateDynamicPrice() || 0)}
           </Typography>
 
           {/* --- INICIO SELECCIÓN TALLA Y COLOR --- */}

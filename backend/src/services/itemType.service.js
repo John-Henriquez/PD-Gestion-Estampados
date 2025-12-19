@@ -2,7 +2,8 @@ import { AppDataSource } from "../config/configDb.js";
 import ItemType from "../entity/itemType.entity.js";
 import ItemStock from "../entity/itemStock.entity.js";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
-import { generateInventoryReason } from "../helpers/inventory.helpers.js";
+import InventoryOperation from "../entity/inventoryOperation.entity.js";
+import { generateInventoryReason, createItemSnapshot } from "../helpers/inventory.helpers.js";
 
 const validateStampingLevels = (stampingLevels) => {
   if (!stampingLevels) {
@@ -34,74 +35,88 @@ const validateStampingLevels = (stampingLevels) => {
 
 export const itemTypeService = {
   async createItemType(itemTypeData, userId) {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const repo = AppDataSource.getRepository(ItemType);
+      const repo = queryRunner.manager.getRepository(ItemType);
+      const stockRepo = queryRunner.manager.getRepository(ItemStock);
+      const movementRepo = queryRunner.manager.getRepository(InventoryMovement);
+      const operationRepo = queryRunner.manager.getRepository(InventoryOperation);
 
-      const existingType = await repo.findOne({
-        where: { name: itemTypeData.name },
-      });
-      
+      // 1. Validar duplicado
+      const existingType = await repo.findOne({ where: { name: itemTypeData.name } });
       if (existingType) {
-         return [
-            null,
-            {
-              type: "CONFLICT_ERROR",
-              message: `El tipo de ítem con nombre '${itemTypeData.name}' ya existe.`,
-              field: "name",
-            },
-          ];
+        await queryRunner.rollbackTransaction();
+        return [null, { type: "CONFLICT_ERROR", message: `El nombre '${itemTypeData.name}' ya existe.`, field: "name" }];
       }
 
-      let parsedStampingLevels = null; 
+      // 2. Validar niveles de estampado
+      let parsedStampingLevels = itemTypeData.stampingLevels;
+      if (typeof parsedStampingLevels === "string") parsedStampingLevels = JSON.parse(parsedStampingLevels);
+      validateStampingLevels(parsedStampingLevels);
 
-      if (itemTypeData.stampingLevels !== undefined && itemTypeData.stampingLevels !== null) {
-        try {
-          parsedStampingLevels =
-            typeof itemTypeData.stampingLevels === "string" ? JSON.parse(itemTypeData.stampingLevels)
-              : itemTypeData.stampingLevels;
-
-          validateStampingLevels(parsedStampingLevels);
-
-        } catch (e) {
-          return [
-            null,
-            {
-              type: "VALIDATION_ERROR",
-              message: e.message || "Error procesando stamping levels.",
-              field: "stampingLevels",
-            },
-          ];
-        }
-      }
-
+      // 3. Crear nuevo tipo de ítem
       const newItemType = repo.create({
         name: itemTypeData.name,
         description: itemTypeData.description,
         category: itemTypeData.category,
         hasSizes: itemTypeData.hasSizes,
-        printingMethods: itemTypeData.printingMethods || [],
-        sizesAvailable: itemTypeData.hasSizes ? 
-          Array.isArray(itemTypeData.sizesAvailable) ? 
-            itemTypeData.sizesAvailable
-            : []
-          : [],
-        productImageUrls: Array.isArray(itemTypeData.productImageUrls) ? itemTypeData.productImageUrls
-          : [],
+        printingMethods: itemTypeData.printingMethods,
+        sizesAvailable: itemTypeData.sizesAvailable,
+        productImageUrls: itemTypeData.productImageUrls,
         stampingLevels: parsedStampingLevels,
         createdBy: { id: userId },
       });
-
       const savedItemType = await repo.save(newItemType);
+
+      // 4. Crear stock inicial
+      let initialStock = itemTypeData.initialStock;
+      if (typeof initialStock === "string") initialStock = JSON.parse(initialStock);
+
+      if (Array.isArray(initialStock) && initialStock.length > 0){
+        const meta = generateInventoryReason("initial_load");
+        const operationEntity = await operationRepo.findOneBy({ slug: meta.operation });
+
+        for (const stockVar of initialStock) {
+          const newStock = stockRepo.create({
+            itemType: savedItemType,
+            color: { id: stockVar.colorId },
+            size: savedItemType.hasSizes ? stockVar.size : null,
+            quantity: parseInt(stockVar.quantity) || 0,
+            minStock: parseInt(stockVar.minStock) || 5,
+            createdBy: { id: userId }
+          });
+
+          const savedStock = await stockRepo.save(newStock);
+          
+          const fullStock = await queryRunner.manager.findOne(ItemStock, { 
+            where: { id: savedStock.id }, 
+            relations: ["itemType", "color"] 
+          });
+
+          await movementRepo.save({
+            type: "entrada",
+            operation: operationEntity,
+            reason: `${meta.reason} (Carga inicial: ${savedItemType.name})`,
+            quantity: savedStock.quantity,
+            itemStock: savedStock,
+            createdBy: { id: userId },
+            ...createItemSnapshot(fullStock)
+          });
+        }
+      }
+
+      await queryRunner.commitTransaction();
       return [savedItemType, null];
+
     } catch (error) {
-      return [
-        null,
-        {
-          type: "INTERNAL_ERROR",
-          message: "Error inesperado al crear el tipo de ítem",
-          details: error.message,
-        },
-      ];
+      await queryRunner.rollbackTransaction();
+      console.error("Error en createItemType (Bulk):", error);
+      return [null, { type: "INTERNAL_ERROR", message: error.message }];
+    } finally {
+      await queryRunner.release();
     }
   },
 
@@ -267,91 +282,103 @@ export const itemTypeService = {
   },
 
   async deleteItemType(id, userId) {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const itemTypeRepo = AppDataSource.getRepository(ItemType);
+      const itemTypeRepo = queryRunner.manager.getRepository(ItemType);
+      const stockRepo = queryRunner.manager.getRepository(ItemStock);
+      const movementRepo = queryRunner.manager.getRepository(InventoryMovement);
+      const operationRepo = queryRunner.manager.getRepository(InventoryOperation);
 
       const itemType = await itemTypeRepo.findOne({
         where: { id: parseInt(id), isActive: true },
-        relations: ["stocks"],
+        relations: ["stocks", "stocks.color"],
       });
 
       if (!itemType) {
-        return [
-          null,
-          {
-            type: "NOT_FOUND",
-            message: "Tipo de ítem no encontrado o ya está desactivado",
-            id,
-          },
-        ];
+        await queryRunner.rollbackTransaction();
+        return [null, { type: "NOT_FOUND", message: "Tipo de ítem no encontrado" }];
       }
 
-      const hasActiveStocks = itemType.stocks.some((stock) => stock.isActive);
-      if (hasActiveStocks) {
-        return [
-          null,
-          {
-            type: "CONFLICT",
-            message:
-              "No se puede desactivar el tipo de ítem porque tiene stock activo asociado",
-            id,
-          },
-        ];
+      const meta = generateInventoryReason("type_deactivation");
+      const operationEntity = await operationRepo.findOneBy({ slug: meta.operation });
+
+      for (const stock of itemType.stocks) {
+        if (stock.isActive) {
+          stock.isActive = false;
+          stock.deactivatedByItemType = true;
+          await stockRepo.save(stock);
+
+          await movementRepo.save({
+            type: meta.type,
+            operation: operationEntity,
+            quantity: 0,
+            reason: meta.reason,
+            itemStock: stock,
+            createdBy: { id: userId },
+            ...createItemSnapshot({ ...stock, itemType })
+          });
+        }
       }
+
 
       itemType.isActive = false;
       await itemTypeRepo.save(itemType);
 
-      return [{ id: parseInt(id), affectedStocks: 0 }, null];
+      await queryRunner.commitTransaction();
+      return [{ id: parseInt(id) }, null];
     } catch (error) {
-      console.error("Error en deleteItemType [itemTypeService]:", error);
-      return [
-        null,
-        {
-          type: "INTERNAL_ERROR",
-          message: "Error inesperado al desactivar el tipo de ítem",
-          details: error.message,
-        },
-      ];
+      await queryRunner.rollbackTransaction();
+      return [null, { type: "INTERNAL_ERROR", message: error.message }];
+    } finally {
+      await queryRunner.release();
     }
   },
 
   async restoreItemType(id, userId) {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const itemTypeRepo = AppDataSource.getRepository(ItemType);
-      const itemStockRepo = AppDataSource.getRepository(ItemStock);
+      const itemTypeRepo = queryRunner.manager.getRepository(ItemType);
+      const stockRepo = queryRunner.manager.getRepository(ItemStock);
+      const movementRepo = queryRunner.manager.getRepository(InventoryMovement);
+      const operationRepo = queryRunner.manager.getRepository(InventoryOperation);
 
       const itemType = await itemTypeRepo.findOne({
         where: { id: parseInt(id), isActive: false },
-        relations: ["stocks"],
+        relations: ["stocks", "stocks.color"],
       });
 
       if (!itemType) {
-        return [
-          null,
-          {
-            type: "NOT_FOUND",
-            message: "Tipo de ítem no encontrado o ya está activo",
-            id,
-          },
-        ];
+        await queryRunner.rollbackTransaction();
+        return [null, { type: "NOT_FOUND", message: "Tipo no encontrado" }];
       }
+
+      const meta = generateInventoryReason("reactivate");
+      const operationEntity = await operationRepo.findOneBy({ slug: meta.operation });
 
       itemType.isActive = true;
       await itemTypeRepo.save(itemType);
 
-      const stocksToRestore = itemType.stocks.filter(
-        (s) => s.deactivatedByItemType,
-      );
-
+      const stocksToRestore = itemType.stocks.filter(s => s.deactivatedByItemType);
       for (const stock of stocksToRestore) {
         stock.isActive = true;
-        stock.deletedAt = null;
         stock.deactivatedByItemType = false;
-      }
+        await stockRepo.save(stock);
 
-      if (stocksToRestore.length > 0) {
-        await itemStockRepo.save(stocksToRestore);
+        await movementRepo.save({
+          type: meta.type,
+          operation: operationEntity,
+          quantity: 0,
+          reason: meta.reason,
+          itemStock: stock,
+          createdBy: { id: userId },
+          ...createItemSnapshot({ ...stock, itemType })
+        });
       }
 
       return [
@@ -396,40 +423,37 @@ export const itemTypeService = {
   },
 
   async forceDeleteItemType(id, userId) {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const itemTypeRepo = AppDataSource.getRepository(ItemType);
-      const itemStockRepo = AppDataSource.getRepository(ItemStock);
-      const movementRepo = AppDataSource.getRepository(InventoryMovement);
+      const itemTypeRepo = queryRunner.manager.getRepository(ItemType);
+      const itemStockRepo = queryRunner.manager.getRepository(ItemStock);
+      const movementRepo = queryRunner.manager.getRepository(InventoryMovement);
 
       const itemType = await itemTypeRepo.findOne({
         where: { id: parseInt(id) },
-        relations: ["stocks"],
+        relations: ["stocks", "stocks.color"],
       });
 
       if (!itemType) {
-        return [
-          null,
-          {
-            type: "NOT_FOUND",
-            message: "Tipo de ítem no encontrado",
-            field: "id",
-          },
-        ];
+        await queryRunner.rollbackTransaction();
+        return [null, { type: "NOT_FOUND", message: "No encontrado" }];
       }
 
-      const { reason, operation } = generateInventoryReason("purge");
+      const meta = generateInventoryReason("purge");
+      const operationEntity = await operationRepo.findOneBy({ slug: meta.operation });
+
       const movementPromises = itemType.stocks.map((stock) =>
         movementRepo.save({
-          type: "ajuste",
+          type: meta.type,
+          operation: operationEntity,
           quantity: 0, 
-          itemStock: stock,
+          itemStock: null,
           createdBy: { id: userId },
-          reason: reason, 
-          operation: operation, 
-          itemName: itemType.name,
-          itemColor: stock.hexColor,
-          itemSize: stock.size,
-          itemTypeName: itemType.name,
+          reason: meta.reason, 
+          ...createItemSnapshot({ ...stock, itemType })
         })
       );
       await Promise.all(movementPromises);
@@ -473,6 +497,7 @@ export const itemTypeService = {
       }
 
       const { reason, operation } = generateInventoryReason("purge");
+      const operationEntity = await operationRepo.findOneBy({ slug: meta.operation });
 
       for (const itemType of deletedItems) {
         await Promise.all(
@@ -480,10 +505,10 @@ export const itemTypeService = {
             movementRepo.save({
               type: "ajuste",
               quantity: 0,
-              itemStock: stock,
+              itemStock: null,
               createdBy: { id: userId },
-              reason: reason,
-              operation: operation,
+              reason: meta.reason,
+              operation: operationEntity,
               itemName: itemType.name,
               itemColor: stock.hexColor,
               itemSize: stock.size,

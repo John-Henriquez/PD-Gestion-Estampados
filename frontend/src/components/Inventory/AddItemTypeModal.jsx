@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback} from 'react';
 import { useCreateItemType } from '../../hooks/itemType/useCreateItemType.jsx';
 import { useUpdateItemType } from '../../hooks/itemType/useUpdateItemType.jsx';
 import {
@@ -21,11 +21,15 @@ import {
   Alert,
   CircularProgress,
   IconButton,
+  Divider
 } from '@mui/material';
 import { Autocomplete } from '@mui/material';
 import { showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
 import { uploadMultipleProductImages } from '../../services/upload.service';
 import ITEM_TYPE_SUGGESTIONS from '../../data/itemTypeSuggestions';
+import { useColors } from '../../hooks/color/useColors.jsx';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 
 import '../../styles/components/modal.css';
 import '../../styles/components/addItemTypeModal.css';
@@ -44,6 +48,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const fileInputRef = useRef(null);
+  const { colors: dbColors } = useColors();
 
   const initialFormState = useMemo(
     () => ({
@@ -56,6 +61,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
       stampLocations: '',
       stampTypes: '',
       productImageUrls: [],
+      initialStock: [],
     }),
     []
   );
@@ -177,7 +183,28 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
     return `${backendUrl.replace('/api', '')}${url}`;
   };
 
+  const addStockRow = () => {
+    setForm(prev => ({
+      ...prev,
+      initialStock: [...prev.initialStock, { colorId: '', size: '', quantity: 0, minStock: 5 }]
+    }));
+  };
+
+  const removeStockRow = (index) => {
+    setForm(prev => ({
+      ...prev,
+      initialStock: prev.initialStock.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateStockRow = (index, field, value) => {
+    const newStock = [...form.initialStock];
+    newStock[index][field] = value;
+    setForm(prev => ({ ...prev, initialStock: newStock }));
+  };
+
   const handleSubmit = async () => {
+    
     if (stampingLevels.length === 0) {
       showErrorAlert('Campos Incompletos', 'Debe definir al menos un Nivel de Precio.');
       return;
@@ -201,7 +228,6 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
       newlyUploadedUrls = result;
     }
 
-    // 2. Combinar URLs y preparar FormData
     const finalImageUrls = [...form.productImageUrls, ...newlyUploadedUrls];
 
     try {
@@ -211,6 +237,11 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
       formData.append('category', form.category);
       formData.append('hasSizes', form.hasSizes.toString());
       formData.append('printingMethods', JSON.stringify(form.printingMethods));
+
+      if (!editingType && form.initialStock.length > 0) {
+        formData.append('initialStock', JSON.stringify(form.initialStock));
+      }
+
       finalImageUrls.forEach((url) => {
         formData.append('productImageUrls[]', url);
       });
@@ -226,11 +257,6 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
       }));
       formData.append('stampingLevels', JSON.stringify(cleanedLevels));
 
-      console.log('Datos enviados al backend:');
-      for (let pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
-      }
-
       if (editingType) {
         await updateType(editingType.id, formData);
         showSuccessAlert('¡Tipo actualizado!', 'El tipo de ítem se actualizó correctamente.');
@@ -239,7 +265,8 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
         showSuccessAlert('¡Tipo creado!', 'El tipo de ítem se agregó correctamente.');
       }
 
-      onCreated();
+      if (onCreated) await onCreated();
+      
       onClose();
     } catch (error) {
       console.error(error);
@@ -257,6 +284,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" className="modal">
+      {/* Titulo y Boton de Cerrar */}
       <DialogTitle className="modal-title">
         {editingType ? 'Editar Tipo de Ítem' : 'Nuevo Tipo de Ítem'}
         <IconButton
@@ -272,6 +300,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
           <CloseIcon />
         </IconButton>
       </DialogTitle>
+      {/* Contenido */}
       <DialogContent dividers className="modal-content">
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
@@ -367,7 +396,78 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                 </Select>
               </FormControl>
             )}
-            {/* Sección de Precios */}
+            {!editingType && (
+              <Box sx={{ mt: 3, p: 2, border: '1px dashed #bbb', borderRadius: 2, bgcolor: '#fdfdfd' }}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom color="primary">
+                  Carga Masiva de Stock Inicial
+                </Typography>
+                <Typography variant="caption" display="block" sx={{ mb: 2, color: 'text.secondary' }}>
+                  Define las variaciones (color/talla) que vas a ingresar ahora mismo.
+                </Typography>
+
+                {form.initialStock.map((row, index) => (
+                  <Grid container spacing={1} key={index} alignItems="center" sx={{ mb: 1.5 }}>
+                    <Grid item xs={5}>
+                      <Autocomplete
+                        size="small"
+                        options={dbColors}
+                        getOptionLabel={(option) => option.name}
+                        onChange={(_, val) => updateStockRow(index, 'colorId', val?.id)}
+                        renderInput={(params) => <TextField {...params} label="Color" required />}
+                      />
+                    </Grid>
+                    
+                    {form.hasSizes && (
+                      <Grid item xs={3}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Talla</InputLabel>
+                          <Select
+                            value={row.size}
+                            label="Talla"
+                            onChange={(e) => updateStockRow(index, 'size', e.target.value)}
+                          >
+                            {/* Solo mostramos las tallas que el usuario seleccionó arriba */}
+                            {form.sizesAvailable.length > 0 ? (
+                                form.sizesAvailable.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)
+                            ) : (
+                                <MenuItem disabled>Define tallas arriba</MenuItem>
+                            )}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    )}
+
+                    <Grid item xs={2}>
+                      <TextField
+                        size="small"
+                        type="number"
+                        label="Cant."
+                        value={row.quantity}
+                        onChange={(e) => updateStockRow(index, 'quantity', e.target.value)}
+                        InputProps={{ inputProps: { min: 0 } }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={2}>
+                      <IconButton color="error" onClick={() => removeStockRow(index)} size="small">
+                        <DeleteIcon />
+                      </IconButton>
+                    </Grid>
+                  </Grid>
+                ))}
+
+                <Button 
+                  startIcon={<AddIcon />} 
+                  onClick={addStockRow} 
+                  variant="outlined" 
+                  size="small" 
+                  sx={{ mt: 1 }}
+                >
+                  Agregar Variación
+                </Button>
+              </Box>
+            )}
+            <Divider sx={{ my: 3 }} />
             <StampingLevelsForm levels={stampingLevels} onChange={setStampingLevels} />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -442,7 +542,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
           </Grid>
         </Grid>
       </DialogContent>
-
+      {/* Botones de Accion */}
       <DialogActions className="modal-actions">
         <Button onClick={onClose} className="modal-button modal-button--cancel">
           Cancelar

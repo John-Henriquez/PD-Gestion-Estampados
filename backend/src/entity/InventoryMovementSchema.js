@@ -12,12 +12,7 @@ const InventoryMovementSchema = new EntitySchema({
     },
     type: {
       type: "enum",
-      enum: ["entrada", "salida", "ajuste", "modificacion"],
-      nullable: false,
-    },
-    operation: {
-      type: "varchar",
-      length: 50,
+      enum: ["entrada", "salida", "ajuste"],
       nullable: false,
     },
     quantity: {
@@ -28,18 +23,10 @@ const InventoryMovementSchema = new EntitySchema({
     reason: {
       type: "text",
       nullable: false,
-      default: "Movimiento generado automáticamente",
-    },
-    changedField: {
-      type: "varchar",
-      length: 50,
-      nullable: true,
-      comment: "Campo específico que fue modificado",
     },
     changes: {
       type: "json",
       nullable: true,
-      comment: "Detalles del cambio en formato {oldValue, newValue}",
     },
     createdAt: {
       type: "timestamp",
@@ -63,7 +50,7 @@ const InventoryMovementSchema = new EntitySchema({
     },
     snapshotItemColor: {
       type: "varchar",
-      length: 7,
+      length: 50,
       nullable: true,
     },
     snapshotItemSize: {
@@ -73,7 +60,7 @@ const InventoryMovementSchema = new EntitySchema({
     },
     snapshotPrice: {
       type: "decimal",
-      precision: 10,
+      precision: 12,
       scale: 2,
       nullable: true,
       transformer: {
@@ -88,6 +75,12 @@ const InventoryMovementSchema = new EntitySchema({
     },
   },
   relations: {
+    operation: {
+      type: "many-to-one",
+      target: "InventoryOperation",
+      joinColumn: { name: "operation_id" },
+      nullable: false,
+    },
     itemStock: {
       type: "many-to-one",
       target: "ItemStock",
@@ -115,8 +108,14 @@ const InventoryMovementSchema = new EntitySchema({
         name: "created_by",
         referencedColumnName: "id",
       },
-      nullable: false,
+      nullable: true,
     },
+    order: {
+      type: "many-to-one",
+      target: "Order",
+      joinColumn: { name: "order_id" },
+      nullable: true,
+    }
   },
   indices: [
     {

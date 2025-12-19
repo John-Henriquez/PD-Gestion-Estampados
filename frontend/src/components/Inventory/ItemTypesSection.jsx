@@ -72,7 +72,11 @@ const ItemTypesSection = ({ itemTypes = [], fetchTypes, refetchStock }) => {
   };
 
   const handleCreatedOrUpdated = async () => {
-    await fetchTypes();
+    await Promise.all([
+      fetchTypes(),
+      refetchStock ? refetchStock() : Promise.resolve()
+    ]);
+
     setOpenAddTypeModal(false);
     setEditingType(null);
   };
@@ -115,17 +119,26 @@ const ItemTypesSection = ({ itemTypes = [], fetchTypes, refetchStock }) => {
           {itemTypes.map((type) => (
             <Paper key={type.id} variant="outlined" className="item-type-item">
               <Box className="item-type-info">
-                {type.iconName &&
-                  iconMap[type.iconName] &&
-                  React.createElement(iconMap[type.iconName], { size: 22 })}
-                <Typography component="strong" className="item-type-name">
-                  {type.name}
-                </Typography>
-                {type.sizesAvailable?.length > 0 && (
-                  <Typography variant="caption" className="item-type-details" sx={{ ml: 1 }}>
-                    Tallas: {type.sizesAvailable.join(', ')}
+                {type.iconName && iconMap[type.iconName] && React.createElement(iconMap[type.iconName], { size: 22 })}
+                <Box sx={{ ml: 1 }}>
+                  <Typography component="strong" className="item-type-name" sx={{ display: 'block' }}>
+                    {type.name}
                   </Typography>
-                )}
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    {type.hasSizes && (
+                      <Typography variant="caption" color="text.secondary">
+                        Tallas: {type.sizesAvailable?.join(', ')}
+                      </Typography>
+                    )}
+                    {type.stocks?.length > 0 && (
+                      <Chip 
+                        label={`${type.stocks.length} variaciones`} 
+                        size="small" 
+                        sx={{ height: 16, fontSize: '0.65rem', bgcolor: 'var(--primary-light)' }} 
+                      />
+                    )}
+                  </Box>
+                </Box>
               </Box>
               <Box className="item-type-actions">
                 <Button size="small" variant="text" onClick={() => handleOpenAddModal(type)}>

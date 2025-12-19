@@ -30,6 +30,15 @@ export const itemTypeController = {
         console.log("printingMethods parseado:", req.body.printingMethods);
       }
 
+      if (typeof req.body.initialStock === "string") {
+        try {
+          req.body.initialStock = JSON.parse(req.body.initialStock);
+          console.log("initialStock parseado:", req.body.initialStock);
+        } catch (e) {
+          req.body.initialStock = [];
+        }
+      }
+
       if (typeof req.body.stampingLevels === "string") {
         console.log("stampingLevels recibido como string, se procesará en el servicio.");
       }

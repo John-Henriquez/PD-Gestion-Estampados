@@ -3,7 +3,23 @@ import User from "../entity/user.entity.js";
 import Color from "../entity/color.entity.js";
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
-import { COLOR_DICTIONARY } from "../helpers/colorData.js";
+import { COLOR_DICTIONARY } from "../constants/colorData.js";
+import { INVENTORY_OPERATIONS } from "../constants/inventoryOperations.js";
+import InventoryOperation from "../entity/inventoryOperation.entity.js";
+
+export async function seedInventoryOperations(dataSource) {
+  const repo = dataSource.getRepository(InventoryOperation);
+  
+  const count = await repo.count();
+  if (count > 0) return;
+
+  console.log("* => Poblando tabla de operaciones de inventario...");
+  
+  // Insertamos las constantes definidas
+  await repo.save(INVENTORY_OPERATIONS);
+  
+  console.log("* => Operaciones de inventario inicializadas con éxito.");
+}
 
 async function createUsers() {
   try {
@@ -74,4 +90,5 @@ export async function initialSetup() {
   await createUsers();
   await seedColors();
   await seedOrderStatuses();
+  await seedInventoryOperations(AppDataSource);
 }

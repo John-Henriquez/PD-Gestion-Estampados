@@ -197,7 +197,12 @@ const Inventario = () => {
   const handleCloseStockTrash = () => {
     setOpenStockTrash(false);
   };
-
+  const handleFullRefresh = async () => {
+    await Promise.all([
+      fetchTypes(),
+      refetchStock()
+    ]);
+  };
   //colores
   const colorOptions = useMemo(() => {
     if (!itemStock || !dbColors) return [];
@@ -245,7 +250,7 @@ const Inventario = () => {
           <ItemTypesSection
             itemTypes={itemTypes}
             fetchTypes={fetchTypes}
-            refetchStock={refetchStock}
+            refetchStock={handleFullRefresh}
           />
 
           {/* Sección de Inventario */}
