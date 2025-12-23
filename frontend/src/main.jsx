@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import Login from './pages/Login.jsx';
-import Home from './pages/Home.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 import Users from './pages/Users.jsx';
 import Inventory from './pages/Inventario.jsx';
 import Register from './pages/Register.jsx';
@@ -38,11 +38,19 @@ const router = createBrowserRouter([
           <ProtectedRoute>
             <MainLayout />
           </ProtectedRoute>
-        ),
+        ),  
         children: [
-          { index: true, element: <Navigate to="/home" replace /> },
+          { index: true, element: <Navigate to="/shop" replace /> },
 
-          { path: 'home', element: <Home /> },
+          { 
+            path: 'dashboard', 
+            element: (
+              <ProtectedRoute allowedRoles={['administrador']}>
+                <Dashboard /> 
+              </ProtectedRoute>
+            ) 
+          },
+
           { path: 'shop', element: <Shop /> },
           { path: 'checkout', element: <Checkout /> },
           { path: 'my-orders', element: <MyOrders /> },

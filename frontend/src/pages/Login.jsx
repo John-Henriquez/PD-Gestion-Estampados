@@ -26,7 +26,7 @@ const Login = () => {
           rol: decoded.rol,
         };
         loginSuccess(userData);
-        navigate('/home');
+        navigate('/shop');
       } else if (response.status === 'Client error') {
         errorData(response.details);
       }

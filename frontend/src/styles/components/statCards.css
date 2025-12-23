@@ -1,0 +1,28 @@
+.stat-card {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary-light) !important;
+}
+
+.stat-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon-wrapper.blue { background-color: #e0f2fe; color: #0369a1; }
+.stat-icon-wrapper.green { background-color: #dcfce7; color: #15803d; }
+.stat-icon-wrapper.purple { background-color: #f3e8ff; color: #7e22ce; }
+.stat-icon-wrapper.red { background-color: #fee2e2; color: #b91c1c; }

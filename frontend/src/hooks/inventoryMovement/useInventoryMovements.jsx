@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getInventoryMovements } from '../../services/inventoryMovement.service';
 
 const initialFilters = {
@@ -12,7 +12,6 @@ const initialFilters = {
 const useInventoryMovements = () => {
   const [filters, setFilters] = useState(initialFilters);
   const [movements, setMovements] = useState([]);
-  const [totals, setTotals] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -20,9 +19,9 @@ const useInventoryMovements = () => {
     try {
       setLoading(true);
       setError(null);
-      const { movements, totals } = await getInventoryMovements(filters);
-      setMovements(movements);
-      setTotals(totals);
+
+      const data = await getInventoryMovements(filters);
+      setMovements(data.movements || []);
     } catch (err) {
       console.error('Error in useInventoryMovements:', err);
       setError(err);
@@ -30,6 +29,14 @@ const useInventoryMovements = () => {
       setLoading(false);
     }
   }, [filters]);
+
+  const totals = useMemo(() => {
+    return movements.reduce((acc, mov) => {
+      if (mov.type === 'entrada') acc.entrada += 1;
+      if (mov.type === 'salida') acc.salida += 1;
+      return acc;
+    }, { entrada: 0, salida: 0 });
+  }, [movements]);
 
   useEffect(() => {
     fetchMovements();

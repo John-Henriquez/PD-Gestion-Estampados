@@ -207,20 +207,18 @@ return (
       <PackModal
         open={openPackModal}
         onClose={() => { setOpenPackModal(false); setEditingPack(null); }}
-        onCompleted={async () => { setOpenPackModal(false); await refetchPacks(); refetchStock?.(); }}
+        onCompleted={handlePackModalCompleted}
         editingPack={editingPack}
-        currentUserRut={user?.rut}
+        currentUserRut={user?.id || user?.rut}
         itemStock={itemStock}
+        refetchStocks={refetchStock}
       />
       <PackTrashModal
         open={openPackTrash}
         onClose={() => setOpenPackTrash(false)}
         deletedPacks={deletedPacks || []}
-        onRestore={async (id) => {
-          await restorePackHook(id);
-          showSuccessAlert('Restaurado', 'Pack reactivado.');
-          await Promise.all([refetchPacks(), fetchDeletedPacks()]);
-        }}
+        onRestore={handleRestore}
+        onRefresh={async () => { await Promise.all([refetchPacks(), fetchDeletedPacks()]); }}
       />
     </section>
   );
