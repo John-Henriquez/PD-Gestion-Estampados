@@ -1,0 +1,31 @@
+/* inventoryManagementModal.css */
+.modal-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  background-color: white;
+}
+
+/* Divisor visual responsive */
+@media (min-width: 900px) {
+  .modal-content {
+    display: flex;
+  }
+}
+
+/* Efecto hover en las tarjetas */
+.MuiPaper-root:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+/* Scrollbar personalizado para las secciones del modal */
+.MuiDialogContent-root::-webkit-scrollbar {
+  width: 6px;
+}
+
+.MuiDialogContent-root::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+}

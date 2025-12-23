@@ -19,48 +19,68 @@ const getOpEntity = async (manager, slug) => {
 export const itemStockService = {
   async createItemStock(itemData, userId) {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
-      const { itemTypeId, colorId, size, quantity, minStock } = itemData;
       const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
       const itemTypeRepo = transactionalEntityManager.getRepository(ItemType);
       const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
 
-      const itemType = await itemTypeRepo.findOne({ where: { id: itemTypeId, isActive: true } });
-      if (!itemType) return [null, "Tipo de artículo no encontrado o inactivo"];
-
-      const existing = await itemStockRepo.findOne({
-        where: { itemType: { id: itemTypeId }, color: { id: colorId }, size: size || null }
-      });
-      if (existing) return [null, "Ya existe este stock (mismo tipo, color y talla)"];
-
-      const newItem = itemStockRepo.create({
-        color: { id: colorId },
-        size: itemType.hasSizes ? size : null,
-        quantity,
-        minStock: minStock || 10,
-        itemType,
-        createdBy: { id: userId },
-      });
-
-      const savedItem = await itemStockRepo.save(newItem);
-
-      const fullItem = await itemStockRepo.findOne({
-        where: { id: savedItem.id },
-        relations: ["itemType", "color"]
-      });
-      
+      const itemsToProcess = Array.isArray(itemData) ? itemData : [itemData];
+      const savedItems = [];
       const { operation, meta } = await getOpEntity(transactionalEntityManager, "initial_load");
-      
-      await movementRepo.save({
-        type: meta.type,
-        operation,
-        reason: `${meta.reason} (Creación individual)`,
-        quantity: savedItem.quantity,
-        itemStock: savedItem,
-        createdBy: { id: userId },
-        ...createItemSnapshot(fullItem),
-      });
 
-      return [savedItem, null];
+      for (const data of itemsToProcess) {
+        const { itemTypeId, colorId, size, quantity, minStock } = data;
+
+        const itemType = await itemTypeRepo.findOne({ where: { id: itemTypeId, isActive: true } });
+        if (!itemType) {
+          throw new Error(`Tipo de artículo ID ${itemTypeId} no encontrado o inactivo`);
+        }
+
+        const normalizedSize = itemType.hasSizes ? size : null;
+        const existing = await itemStockRepo.findOne({
+          where: { 
+            itemType: { id: itemTypeId }, 
+            color: { id: colorId }, 
+            size: normalizedSize || null 
+          }
+        });
+
+        if (existing) {
+          throw new Error(`Ya existe stock para ${itemType.name} en ese color/talla.`);
+        }
+
+        const newItem = itemStockRepo.create({
+          color: { id: colorId },
+          size: normalizedSize,
+          quantity: quantity || 0,
+          minStock: minStock || 10,
+          itemType,
+          createdBy: { id: userId },
+        });
+
+        const savedItem = await itemStockRepo.save(newItem);
+
+        const fullItem = await itemStockRepo.findOne({
+          where: { id: savedItem.id },
+          relations: ["itemType", "color"]
+        });
+
+        await movementRepo.save({
+          type: meta.type,
+          operation,
+          reason: itemsToProcess.length > 1 ? `${meta.reason} (Carga Masiva)` : `${meta.reason} (Individual)`,
+          quantity: savedItem.quantity,
+          itemStock: savedItem,
+          createdBy: { id: userId },
+          ...createItemSnapshot(fullItem),
+        });
+
+        savedItems.push(fullItem);
+      }
+
+      return [Array.isArray(itemData) ? savedItems : savedItems[0], null];
+    }).catch(err => {
+      console.error("Error en createItemStock:", err.message);
+      return [null, err.message];
     });
   },
 

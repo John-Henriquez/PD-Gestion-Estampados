@@ -1,149 +1,53 @@
-.trash-modal {
-  font-family: var(--font-family);
+.trash-modal-container {
+    height: 65vh;
+    background-color: var(--gray-50);
 }
 
-/* Header */
-.trash-modal__header {
-  background-color: var(--primary-light);
-  color: var(--primary-dark);
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--gray-300);
+.trash-scroll-area {
+    padding: 16px;
+    overflow-y: auto;
 }
 
-.trash-modal__title {
-  font-weight: 600;
-  color: var(--gray-900);
+.trash-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
 }
 
-.trash-modal__close-button {
-  color: var(--gray-700);
-  transition: color var(--transition-fast);
+.trash-item-row:hover {
+    border-color: var(--primary-light);
+    transform: translateX(4px);
 }
 
-.trash-modal__close-button:hover {
-  color: var(--error);
-  background-color: transparent;
+.trash-item-name {
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
 }
 
-/* Content */
-.trash-modal__content {
-  background-color: var(--gray-100);
-  padding: var(--spacing-md);
+.trash-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--gray-400);
 }
 
-.trash-modal__empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: var(--spacing-xl) 0;
-  color: var(--gray-700);
-}
-
-/* List Items */
-.trash-modal__list {
-  padding: 0;
-}
-
-.trash-modal__item {
-  padding: var(--spacing-sm) var(--spacing-md);
-  margin-bottom: var(--spacing-xs);
-  background-color: white;
-  border-radius: var(--border-radius-sm);
-  box-shadow: var(--shadow-sm);
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.trash-modal__item:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.trash-modal__item-text {
-  color: var(--gray-900);
-}
-
-.trash-modal__item-text .MuiListItemText-secondary {
-  color: var(--gray-700);
-  font-size: 0.875rem;
-}
-
-/* Actions */
-.trash-modal__actions {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-/* Buttons */
-.trash-modal__button {
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0.5px;
-  border-radius: var(--border-radius-md);
-  transition: all var(--transition-normal);
-  padding: var(--spacing-sm) var(--spacing-md);
-  min-width: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  font-family: var(--font-family);
-  border-width: 1px;
-  border-style: solid;
-}
-
-.trash-modal__button--restore {
-  background-color: var(--success);
-  color: white;
-  border: 1px solid var(--success);
-}
-
-.trash-modal__button--restore:hover {
-  background-color: var(--success-dark);
-  border-color: var(--success-dark);
-  box-shadow: var(--shadow-sm);
-  color: white;
-}
-
-.trash-modal__button--delete {
-  background-color: white;
-  color: var(--error);
-  border: 1px solid var(--error);
-}
-
-.trash-modal__button--delete:hover {
-  background-color: var(--error-dark);
-  box-shadow: var(--shadow-sm);
-  color: white;
-}
-
-.trash-modal__button--close {
-  background-color: white;
-  color: var(--gray-700);
-  border: 1px solid var(--gray-300);
-}
-
-.trash-modal__button--close:hover {
-  background-color: var(--gray-200);
-}
-
-.trash-modal__button--empty {
-  background-color: var(--error);
-  color: white;
-  border-color: var(--error);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  font-weight: 600;
-}
-
-.trash-modal__button--empty:hover {
-  background-color: var(--error-dark);
-  border-color: var(--error-dark);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Footer */
-.trash-modal__footer {
-  background-color: var(--gray-200);
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--gray-300);
+@media (max-width: 600px) {
+    .trash-item-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .trash-item-actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+    }
 }

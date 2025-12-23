@@ -105,21 +105,21 @@ export const itemStockController = {
     try {
       const { error } = itemStockSchema.validate(req.body);
       if (error) {
-        return handleErrorClient(
-          res,
-          400,
-          "Error de validación",
-          error.details,
-        );
+        return handleErrorClient(res, 400, "Error de validación", error.details);
       }
 
       const [newItem, serviceError] = await itemStockService.createItemStock(
         req.body,
-        req.user.id,
+        req.user.id
       );
 
       if (serviceError) return handleErrorClient(res, 400, serviceError);
-      handleSuccess(res, 201, "Item creado en inventario", newItem);
+
+      const message = Array.isArray(req.body) 
+        ? "Carga masiva de stock realizada" 
+        : "Item creado en inventario";
+
+      handleSuccess(res, 201, message, newItem);
     } catch (error) {
       handleErrorServer(res, 500, error.message);
     }
@@ -348,12 +348,13 @@ export const itemStockController = {
 
   async restockVariants(req, res) {
     try {
-      const restockData = req.body; // Array: [{ id, addedQuantity }, ...]
+      const restockData = req.body; 
       const userId = req.user.id;
 
-      // Validación básica de entrada
-      if (!Array.isArray(restockData) || restockData.length === 0) {
-        return handleErrorClient(res, 400, "Se requiere un listado de variantes para procesar la recarga.");
+      const dataToProcess = Array.isArray(restockData) ? restockData : [restockData];
+
+      if (dataToProcess.length === 0) {
+        return handleErrorClient(res, 400, "Se requiere información para procesar la recarga.");
       }
 
       const [updatedStocks, serviceError] = await itemStockService.restockVariants(
@@ -368,7 +369,7 @@ export const itemStockController = {
       handleSuccess(res, 200, "Recarga de stock procesada exitosamente", updatedStocks);
     } catch (error) {
       console.error("Error en restockVariants controller:", error);
-      handleErrorServer(res, 500, "Error interno al procesar la recarga masiva");
+      handleErrorServer(res, 500, "Error interno al procesar la recarga");
     }
   },
 };

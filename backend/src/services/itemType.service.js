@@ -4,6 +4,7 @@ import ItemStock from "../entity/itemStock.entity.js";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
 import InventoryOperation from "../entity/inventoryOperation.entity.js";
 import { generateInventoryReason, createItemSnapshot } from "../helpers/inventory.helpers.js";
+import { Not } from "typeorm";
 
 const validateStampingLevels = (stampingLevels) => {
   if (!stampingLevels) {
@@ -180,104 +181,89 @@ export const itemTypeService = {
   async updateItemType(id, itemTypeData, userId) {
     try {
       const repo = AppDataSource.getRepository(ItemType);
-      const itemType = await repo.findOne({
-        where: { id: parseInt(id) },
-      });
+      const parsedId = Number(id);
+
+      const itemType = await repo.findOne({ where: { id: parsedId } });
 
       if (!itemType) {
-        return [
-          null,
-          {
-            type: "NOT_FOUND",
-            message: "Tipo de ítem no encontrado o no está activo",
-            id,
-          },
-        ];
+        return [null, { type: "NOT_FOUND", message: "Tipo de ítem no encontrado", id }];
       }
 
       if (itemTypeData.name && itemTypeData.name !== itemType.name) {
-      const existingItemType = await repo.findOne({
-        where: { name: itemTypeData.name },
-      });
-      if (existingItemType && existingItemType.id !== parseInt(id)) {
-        return [
-          null,
-          {
-            type: "DUPLICATE_NAME",
-            message: "Ya existe un tipo de ítem con ese nombre",
-            field: "name",
+        const existingItemType = await repo.findOne({
+          where: { 
+            name: itemTypeData.name,
+            id: Not(parsedId) 
           },
-        ];
+        });
+        if (existingItemType) {
+          return [null, {
+          type: "DUPLICATE_NAME",
+          message: "Ya existe un tipo de ítem con ese nombre",
+          field: "name",
+        }];
       }
     }
-      const newCategory = itemType.category;
 
-      let parsedStampingLevels = itemType.stampingLevels; 
-      if (itemTypeData.stampingLevels !== undefined) {
-        if (itemTypeData.stampingLevels === null) {
-          parsedStampingLevels = null;
-        } else {
-          try {
-            parsedStampingLevels =
-              typeof itemTypeData.stampingLevels === "string" ? JSON.parse(itemTypeData.stampingLevels)
-                : itemTypeData.stampingLevels;
-            
-            validateStampingLevels(parsedStampingLevels); 
-
-          } catch (e) {
-            return [
-              null,
-              {
-                type: "VALIDATION_ERROR",
-                message: e.message || "Error procesando stamping levels.",
-                field: "stampingLevels",
-              },
-            ];
-          }
-        }
+    let parsedStampingLevels = itemType.stampingLevels; 
+    if (itemTypeData.stampingLevels !== undefined) {
+      try {
+        parsedStampingLevels = typeof itemTypeData.stampingLevels === "string" 
+          ? JSON.parse(itemTypeData.stampingLevels)
+          : itemTypeData.stampingLevels;
+        
+        validateStampingLevels(parsedStampingLevels);
+      } catch (e) {
+        return [null, {
+          type: "VALIDATION_ERROR",
+          message: "Error procesando niveles de precio: " + e.message,
+          field: "stampingLevels",
+        }];
       }
+    }
 
-      let sizes = itemType.sizesAvailable;
-      const newHasSizes =
-        itemTypeData.hasSizes !== undefined ? itemTypeData.hasSizes
-          : itemType.hasSizes;
+    const newHasSizes = itemTypeData.hasSizes !== undefined 
+      ? (String(itemTypeData.hasSizes) === "true") 
+      : itemType.hasSizes;
 
-      if (newHasSizes === true && itemTypeData.sizesAvailable !== undefined) {
-        sizes = Array.isArray(itemTypeData.sizesAvailable) ? itemTypeData.sizesAvailable
-          : [];
-      } else if (newHasSizes === false) {
-        sizes = [];
+    let sizes = itemType.sizesAvailable;
+    if (newHasSizes) {
+      if (itemTypeData.sizesAvailable !== undefined) {
+        sizes = Array.isArray(itemTypeData.sizesAvailable) ? itemTypeData.sizesAvailable : [];
       }
+    } else {
+      sizes = [];
+    }
 
-      let newProductImageUrls = itemType.productImageUrls; 
-      if (itemTypeData.productImageUrls !== undefined) {
-         newProductImageUrls = Array.isArray(itemTypeData.productImageUrls) ? itemTypeData.productImageUrls
-           : [];
-      }
+    let newProductImageUrls = itemType.productImageUrls; 
+    if (itemTypeData.productImageUrls !== undefined) {
+       newProductImageUrls = Array.isArray(itemTypeData.productImageUrls) ? itemTypeData.productImageUrls
+         : [];
+    }
 
-      repo.merge(itemType, {
-        name: itemTypeData.name,
-        description: itemTypeData.description,
-        hasSizes: newHasSizes,
-        printingMethods: itemTypeData.printingMethods,
-        sizesAvailable: sizes,
-        stampingLevels: parsedStampingLevels,
-        productImageUrls: newProductImageUrls,
-        updatedBy: { id: userId },
-      });
+    const updateObject = {
+      name: itemTypeData.name ?? itemType.name, 
+      description: itemTypeData.description ?? itemType.description,
+      hasSizes: newHasSizes,
+      sizesAvailable: sizes,
+      stampingLevels: parsedStampingLevels,
+      printingMethods: itemTypeData.printingMethods ?? itemType.printingMethods,
+      productImageUrls: itemTypeData.productImageUrls ?? itemType.productImageUrls,
+      updatedBy: { id: userId },
+    };
 
-      const updatedItemType = await repo.save(itemType);
-      return [updatedItemType, null];
+    repo.merge(itemType, updateObject);
+
+    const updatedItemType = await repo.save(itemType);
+    return [updatedItemType, null];
+
     } catch (error) {
       console.error("Error en updateItemType [itemTypeService]:", error);
-      return [
-        null,
-        {
-          type: "INTERNAL_ERROR",
-          message: "Error inesperado al actualizar el tipo de ítem",
-          details: error.message,
-        },
-      ];
+      return [null, {
+        type: "INTERNAL_ERROR",
+        message: "Error inesperado al actualizar el tipo de ítem",
+        details: error.message,
+      }];
     }
   },
 

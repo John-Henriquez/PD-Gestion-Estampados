@@ -1,6 +1,6 @@
 import { Box, Button, TextField, Typography, Grid, Alert } from '@mui/material';
 
-const StampingLevelsForm = ({ levels, onChange }) => {
+const StampingLevelsForm = ({ levels = [], onChange }) => {
   const handleAddLevel = () => {
     const newLevels = [
       ...levels,

@@ -15,7 +15,6 @@ export async function seedInventoryOperations(dataSource) {
 
   console.log("* => Poblando tabla de operaciones de inventario...");
   
-  // Insertamos las constantes definidas
   await repo.save(INVENTORY_OPERATIONS);
   
   console.log("* => Operaciones de inventario inicializadas con éxito.");

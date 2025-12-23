@@ -76,3 +76,41 @@
   font-style: italic;
   padding: var(--spacing-md);
 }
+
+.stamping-levels-container {
+    background-color: var(--gray-50);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 20px;
+    border: 1px solid var(--gray-200);
+}
+
+.level-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 40px; /* Layout compacto en desktop */
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--gray-100);
+}
+
+@media (max-width: 600px) {
+    .level-row {
+        grid-template-columns: 1fr; 
+        position: relative;
+    }
+
+    .remove-level-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+}
+
+.price-input-highlight {
+    font-weight: 700 !important;
+    color: var(--success-dark);
+}

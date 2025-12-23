@@ -1,21 +1,13 @@
 import { useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  Button,
-  Box,
-  Typography,
-  IconButton,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  Button, Box, Typography, IconButton, Divider
 } from '@mui/material';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import CloseIcon from '@mui/icons-material/Close';
+import InventoryIcon from '@mui/icons-material/Inventory';
+
 import { showSuccessAlert, showErrorAlert, deleteDataAlert } from '../../helpers/sweetAlert';
 import { useEmptyDeletedItemStock } from '../../hooks/itemStock/useEmptyDeletedItemStock.jsx';
 import { useRestoreItemStock } from '../../hooks/itemStock/useRestoreItemStock.jsx';
@@ -102,78 +94,73 @@ const ItemStockTrashModal = ({ open, onClose, trashedItems, onRefresh }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" className="trash-modal">
-      <DialogTitle className="trash-modal__header">
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6" className="trash-modal__title">
-            Papelera de Stock de Inventario
-          </Typography>
-          <IconButton onClick={onClose} className="trash-modal__close-button">
-            <CloseIcon />
-          </IconButton>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" className="trash-dialog">
+      <DialogTitle className="trash-header">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <DeleteSweepIcon color="error" />
+          <Typography variant="h6" fontWeight="800">Papelera de Stock</Typography>
         </Box>
+        <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}><CloseIcon /></IconButton>
       </DialogTitle>
 
-      <DialogContent className="trash-modal__content">
-        {(trashedItems || []).length === 0 ? (
-          <Box className="trash-modal__empty-state">
-            <Typography variant="h6" color="textSecondary" fontStyle="italic">
-              La papelera está vacía 📭
-            </Typography>
-          </Box>
-        ) : (
-          <List className="trash-modal__list">
-            {trashedItems.map((item) => (
-              <ListItem
-                key={item.id}
-                className="trash-modal__item"
-                secondaryAction={
-                  <Box className="trash-modal__actions">
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleRestore(item.id)}
-                      className="trash-modal__button trash-modal__button--restore"
-                      startIcon={<RestoreFromTrashIcon />}
-                      disabled={restoring}
-                    >
-                      Restaurar
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleForceDelete(item.id)}
-                      className="trash-modal__button trash-modal__button--delete"
-                      startIcon={<DeleteForeverIcon />}
-                      disabled={deleting && forceDeletingId === item.id}
-                    >
-                      Eliminar permanentemente
-                    </Button>
+      <DialogContent dividers className="trash-modal-container" sx={{ p: 0 }}>
+        <Box className="trash-scroll-area">
+          {(!trashedItems || trashedItems.length === 0) ? (
+            <Box className="trash-empty-state">
+              <InventoryIcon sx={{ fontSize: 64, mb: 2, opacity: 0.1 }} />
+              <Typography variant="h6" color="textSecondary">Papelera vacía</Typography>
+            </Box>
+          ) : (
+            trashedItems.map((item) => (
+              <Box key={item.id} className="trash-item-row">
+                <Box className="trash-item-info">
+                  <Box 
+                    sx={{ 
+                      width: 14, height: 14, borderRadius: '50%', 
+                      bgcolor: item.color?.hex || item.hexColor || '#ccc',
+                      border: '1px solid rgba(0,0,0,0.1)'
+                    }} 
+                  />
+                  <Box>
+                    <Typography className="trash-item-name">
+                      {item.itemType?.name || 'Producto'}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Talla: {item.size || 'N/A'} • Cant: {item.quantity}
+                    </Typography>
                   </Box>
-                }
-              >
-                <ListItemText
-                  primary={`Producto: ${item.itemType?.name} — ${item.size || 'Talla única'}`}
-                  secondary={`Color: ${getColorNameFromHex(item.hexColor)} • Cantidad: ${item.quantity}`}
-                  className="trash-modal__item-text"
-                />
-              </ListItem>
-            ))}
-          </List>
-        )}
+                </Box>
+                <Box className="trash-item-actions">
+                  <Button 
+                    variant="text" 
+                    startIcon={<RestoreFromTrashIcon />}
+                    onClick={() => handleRestore(item.id)}
+                    disabled={restoring && processingId === item.id}
+                  >
+                    Restaurar
+                  </Button>
+                </Box>
+              </Box>
+            ))
+          )}
+        </Box>
       </DialogContent>
 
-      <DialogActions className="trash-modal__footer">
-        {(trashedItems || []).length > 0 && (
-          <Button
-            onClick={handleEmptyTrash}
-            disabled={emptyingTrash}
-            className="trash-modal__button trash-modal__button--empty"
-            startIcon={<DeleteSweepIcon />}
-          >
-            Vaciar Papelera
-          </Button>
-        )}
+      <DialogActions className="trash-modal-footer">
+        <Typography variant="caption">
+          {trashedItems?.length || 0} elementos
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {trashedItems?.length > 0 && (
+            <Button color="error" onClick={async () => {
+              const res = await deleteDataAlert('¿Vaciar papelera?', 'Esto es irreversible.');
+              if(res.isConfirmed) { await emptyTrash(); onRefresh(); onClose(); }
+            }}>
+              Vaciar
+            </Button>
+          )}
+          <Button onClick={onClose}>Cerrar</Button>
+        </Box>
       </DialogActions>
     </Dialog>
   );

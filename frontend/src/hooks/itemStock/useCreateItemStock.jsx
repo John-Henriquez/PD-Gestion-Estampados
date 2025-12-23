@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createItemStock } from '../../services/itemStock.service';
 
-export const useCreateItemStock = () => {
+export const useCreateItemStock = (fetchData) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -9,10 +9,12 @@ export const useCreateItemStock = () => {
     setLoading(true);
     setError(null);
     try {
-      const createdItem = await createItemStock(itemData);
-      return createdItem;
+      const [res, err] = await createItemStock(itemData);
+      if (err) throw new Error(err);
+      if (fetchData) fetchData(); 
+      return res;
     } catch (err) {
-      setError(err);
+      setError(err.message);
       throw err;
     } finally {
       setLoading(false);

@@ -1,22 +1,13 @@
 import { useState } from 'react';
 import {
-  Box,
-  Button,
-  Grid,
-  TextField,
-  Typography,
-  MenuItem,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Box, Button, Grid, TextField, Typography, MenuItem, 
+  InputAdornment, FormControl, InputLabel, Select,
+  Accordion, AccordionSummary, AccordionDetails, Chip
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListOffIcon from '@mui/icons-material/FilterListOff';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
 
 import '../../styles/components/inventoryFilters.css';
 
@@ -29,150 +20,113 @@ const InventoryFilters = ({
 }) => {
   const [expanded, setExpanded] = useState(true);
 
-  const handleAccordionChange = (event, isExpanded) => {
-    setExpanded(isExpanded);
-  };
-
-  const hasActiveFilters = Object.values(filters).some((value) => value !== '');
+  const activeFiltersCount = Object.values(filters).filter(v => v !== '').length;
 
   return (
     <Accordion
       expanded={expanded}
-      onChange={handleAccordionChange}
-      className="inventory-filters-accordion"
-      sx={{ mb: 3 }}
-      defaultExpanded
-      disableGutters
-      elevation={1}
+      onChange={(e, isExpanded) => setExpanded(isExpanded)}
+      className="inventory-filters-card"
+      elevation={0}
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
-        aria-controls="inventory-filters-content"
-        id="inventory-filters-header"
-        className="inventory-filters-header"
+        className="filters-header"
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="h6">Filtros de Búsqueda</Typography>
-          {!expanded && hasActiveFilters && (
-            <Box component="span" className="active-filters-indicator" title="Filtros activos">
-              🔵
-            </Box>
+      <Box className="header-content">
+          <FilterAltIcon color="primary" />
+          <Typography variant="h6" className="filters-title">Búsqueda Avanzada</Typography>
+          {activeFiltersCount > 0 && (
+            <Chip 
+              label={`${activeFiltersCount} activos`} 
+              size="small" 
+              color="info" 
+              className="active-badge"
+            />
           )}
         </Box>
       </AccordionSummary>
-      <AccordionDetails className="inventory-filters-details">
-        <Grid container spacing={2} alignItems="flex-end">
-          <Grid item xs={12} md={6} lg={4}>
+
+      <AccordionDetails className="filters-body">
+        <Grid container spacing={2}>
+          <Grid item xs={12} lg={4}>
             <TextField
-              label="Buscar por nombre"
+              label="Buscar por nombre o color"
               name="searchTerm"
               value={filters.searchTerm}
               onChange={onFilterChange}
               fullWidth
-              size="small"
+              variant="filled"
+              placeholder="Ej: Polera Roja..."
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
+                    <SearchIcon />
                   </InputAdornment>
                 ),
               }}
-              variant="outlined"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3} lg={2}>
-            <FormControl fullWidth size="small" variant="outlined">
+
+          <Grid item xs={6} md={3} lg={2}>
+            <FormControl fullWidth variant="filled">
               <InputLabel>Tipo</InputLabel>
-              <Select label="Tipo" name="typeId" value={filters.typeId} onChange={onFilterChange}>
-                <MenuItem value="">
-                  <em>Todos</em>
-                </MenuItem>
+              <Select name="typeId" value={filters.typeId} onChange={onFilterChange} label="Tipo">
+                <MenuItem value=""><em>Todos</em></MenuItem>
                 {itemTypes.map((type) => (
-                  <MenuItem key={type.id} value={type.id}>
-                    {type.name}
-                  </MenuItem>
+                  <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={3} lg={2}>
-            <FormControl fullWidth size="small" variant="outlined">
+
+          <Grid item xs={6} md={3} lg={2}>
+            <FormControl fullWidth variant="filled">
               <InputLabel>Color</InputLabel>
-              <Select
-                name="color"
-                value={filters.color}
-                onChange={onFilterChange}
-                label="Color"
-                renderValue={(selectedValue) => {
-                  if (!selectedValue) return <em>Todos</em>;
-                  const selectedColor = colorOptions.find((c) => c.name === selectedValue);
-                  return (
+              <Select name="color" value={filters.color} onChange={onFilterChange} label="Color">
+                <MenuItem value=""><em>Todos</em></MenuItem>
+                {colorOptions.map(({ id, name, hex }) => (
+                  <MenuItem key={id} value={id}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {selectedColor?.hex && (
-                        <Box className="color-swatch-small" sx={{ bgcolor: selectedColor.hex }} />
-                      )}
-                      {selectedValue}
-                    </Box>
-                  );
-                }}
-              >
-                <MenuItem value="">
-                  <em>Todos</em>
-                </MenuItem>
-                {colorOptions.map(({ name, hex }) => (
-                  <MenuItem key={name} value={name}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {hex && <Box className="color-swatch-small" sx={{ bgcolor: hex }} />}
-                      {name.charAt(0).toUpperCase() + name.slice(1)}
+                      <Box className="swatch-indicator" sx={{ bgcolor: hex }} />
+                      {name}
                     </Box>
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
-          {/* Filtro Talla */}
-          <Grid item xs={12} sm={6} md={3} lg={1}>
-            <FormControl fullWidth size="small" variant="outlined">
+
+          <Grid item xs={6} md={3} lg={1.5}>
+            <FormControl fullWidth variant="filled">
               <InputLabel>Talla</InputLabel>
               <Select name="size" value={filters.size} onChange={onFilterChange} label="Talla">
-                <MenuItem value="">
-                  <em>Todas</em>
-                </MenuItem>
-                <MenuItem value="S">S</MenuItem>
-                <MenuItem value="M">M</MenuItem>
-                <MenuItem value="L">L</MenuItem>
-                <MenuItem value="XL">XL</MenuItem>
-                <MenuItem value="XXL">XXL</MenuItem>
+                <MenuItem value=""><em>Todas</em></MenuItem>
+                {['S', 'M', 'L', 'XL', 'XXL'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={3} lg={2}>
-            <FormControl fullWidth size="small" variant="outlined">
+
+          <Grid item xs={6} md={3} lg={2.5}>
+            <FormControl fullWidth variant="filled">
               <InputLabel>Estado Stock</InputLabel>
-              <Select
-                value={filters.stockStatus}
-                onChange={onFilterChange}
-                name="stockStatus"
-                label="Estado Stock"
-              >
-                <MenuItem value="">
-                  <em>Todos</em>
-                </MenuItem>
-                <MenuItem value="low">Bajo stock</MenuItem>
+              <Select name="stockStatus" value={filters.stockStatus} onChange={onFilterChange} label="Estado Stock">
+                <MenuItem value=""><em>Todos</em></MenuItem>
+                <MenuItem value="low" className="text-error">Bajo stock</MenuItem>
                 <MenuItem value="normal">Stock normal</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={3} lg={1}>
+
+          <Grid item xs={12} lg={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button
-              variant="outlined"
+              variant="text"
               onClick={onResetFilters}
-              fullWidth
               startIcon={<FilterListOffIcon />}
-              className="inventory-button inventory-button--outlined inventory-button--small-text"
-              sx={{ height: '40px' }}
+              className="reset-btn"
+              disabled={activeFiltersCount === 0}
             >
-              Limpiar
+              Limpiar todos los filtros
             </Button>
           </Grid>
         </Grid>

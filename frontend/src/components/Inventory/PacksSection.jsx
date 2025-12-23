@@ -1,10 +1,13 @@
 import { useState, useContext } from 'react';
-import { Box, Button, Paper, Typography, Grid, Chip, CircularProgress, Alert } from '@mui/material';
+import { Box, Button, Paper, Typography, Grid, Chip, CircularProgress, Alert, Tooltip } from '@mui/material';
 import {
   Add as AddIcon,
   DeleteSweep as DeleteSweepIcon,
   Edit as EditIcon,
   DeleteOutline as DeleteIcon,
+  Inventory as InventoryIcon,
+  LocalOffer as TagIcon,
+  CheckCircleOutline as CheckIcon
 } from '@mui/icons-material';
 
 import PackModal from './PackModal.jsx';
@@ -12,7 +15,6 @@ import PackTrashModal from './PackTrashModal.jsx';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
 
-// Hooks de Pack
 import usePack from '../../hooks/pack/usePack.jsx';
 import useDeletePack from '../../hooks/pack/useDeletePack.jsx';
 import useDeletedPacks from '../../hooks/pack/useDeletedPacks.jsx';
@@ -22,8 +24,6 @@ import '../../styles/components/packsSection.css';
 
 const PacksSection = ({ itemStock, refetchStock }) => {
   const { user } = useContext(AuthContext);
-
-  // Estado y Hooks para Packs
   const [openPackModal, setOpenPackModal] = useState(false);
   const [openPackTrash, setOpenPackTrash] = useState(false);
   const [editingPack, setEditingPack] = useState(null);
@@ -86,153 +86,143 @@ const PacksSection = ({ itemStock, refetchStock }) => {
     }
   };
 
-  return (
-    <Paper className="inventory-paper">
-      <Box className="packs-section-header">
-        <Typography variant="h5">Packs ({packs.length})</Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+return (
+    <section className="packs-container">
+      <header className="section-header">
+        <Box className="header-title-area">
+          <TagIcon color="primary" />
+          <Typography variant="h5" fontWeight="700">Gestión de Packs</Typography>
+          <Chip label={packs.length} size="small" className="count-chip" />
+        </Box>
+        
+        <Box className="header-actions">
           <Button
             variant="contained"
-            color="success"
             startIcon={<AddIcon />}
-            className="inventory-button"
+            className="action-btn primary-grad"
             onClick={() => handleOpenPackModal()}
           >
             Nuevo Pack
           </Button>
-          <Button
-            variant="outlined"
-            startIcon={<DeleteSweepIcon />}
-            className="inventory-button inventory-button--outlined"
-            onClick={handleOpenPackTrash}
-          >
-            Papelera Packs
-          </Button>
+          <Tooltip title="Ver Papelera de Packs">
+            <Button
+              variant="outlined"
+              onClick={async () => { await fetchDeletedPacks(); setOpenPackTrash(true); }}
+              className="action-btn-icon"
+            >
+              <DeleteSweepIcon />
+            </Button>
+          </Tooltip>
         </Box>
-      </Box>
+      </header>
 
       {packsLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
-        </Box>
+        <Box className="centered-loader"><CircularProgress /></Box>
       ) : packsError ? (
-        <Alert severity="error">Error al cargar packs: {packsError.message || packsError}</Alert>
+        <Alert severity="error">Error: {packsError.message || packsError}</Alert>
       ) : packs.length > 0 ? (
-        <Grid container spacing={2} sx={{ mt: 1 }}>
+        <Grid container spacing={3} className="packs-grid">
           {packs.map((pack) => (
-            <Grid item xs={12} sm={6} md={4} key={pack.id}>
-              <Paper className="pack-card" variant="outlined">
-                <Box className="pack-card-header">
-                  <Typography variant="h6" className="pack-card-title">
-                    {pack.name}
-                  </Typography>
-                  <Chip
-                    label={pack.isActive ? 'Activo' : 'Inactivo'}
+            <Grid item xs={12} sm={6} lg={4} key={pack.id}>
+              <Paper className="pack-card" elevation={0}>
+                <div className="pack-card-head">
+                  <Typography variant="h6" className="pack-title">{pack.name}</Typography>
+                  <Chip 
+                    label={pack.isActive ? 'Público' : 'Oculto'} 
+                    size="small" 
                     color={pack.isActive ? 'success' : 'default'}
-                    size="small"
+                    className="status-chip"
                   />
-                </Box>
-                <Box className="pack-card-content">
-                  <Typography variant="body1" fontWeight="bold" className="pack-card-price">
-                    ${pack.price?.toLocaleString()}
-                  </Typography>
-                  {pack.discount > 0 && (
-                    <Typography
-                      variant="body2"
-                      color="var(--success-dark)"
-                      className="pack-card-discount"
-                    >
-                      {Math.round(pack.discount * 100)}% Dcto.
+                </div>
+
+                <div className="pack-card-body">
+                  <div className="price-tag-area">
+                    <Typography variant="h5" className="pack-price">
+                      ${pack.price?.toLocaleString()}
                     </Typography>
-                  )}
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 1, fontStyle: 'italic' }}
-                  >
-                    {pack.description || 'Sin descripción'}
+                    {pack.discount > 0 && (
+                      <Chip 
+                        label={`${Math.round(pack.discount * 100)}% OFF`} 
+                        size="small" 
+                        className="discount-badge" 
+                      />
+                    )}
+                  </div>
+                  
+                  <Typography variant="body2" className="pack-desc">
+                    {pack.description || 'Sin descripción adicional.'}
                   </Typography>
 
-                  {/* Items del pack */}
-                  <Box sx={{ mt: 1.5 }}>
-                    <Typography variant="caption" color="textSecondary">
-                      Contiene:
-                    </Typography>
-                    <ul className="pack-card-items-list">
-                      {pack.packItems?.slice(0, 3).map((packItem, index) => (
-                        <li key={index}>
-                          {packItem.itemStock?.itemType?.name || 'Item'} ({packItem.quantity}x)
-                          {packItem.itemStock?.size ? ` - ${packItem.itemStock.size}` : ''}
-                          <Box
-                            component="span"
-                            className="pack-card-item-color"
-                            sx={{
-                              backgroundColor: packItem.itemStock?.hexColor || '#ccc',
-                            }}
-                            title={packItem.itemStock?.hexColor}
+                  <div className="items-preview-box">
+                    <Typography variant="overline" className="items-label">Incluye:</Typography>
+                    <ul className="items-list">
+                      {pack.packItems?.map((pItem, idx) => (
+                        <li key={idx} className="item-row">
+                          <CheckIcon className="check-icon" />
+                          <span className="item-text">
+                            <strong>{pItem.quantity}x</strong> {pItem.itemStock?.itemType?.name}
+                            {pItem.itemStock?.size && <span className="size-label">({pItem.itemStock.size})</span>}
+                          </span>
+                          <div 
+                            className="color-dot" 
+                            style={{ backgroundColor: pItem.itemStock?.hexColor || '#ccc' }} 
+                            title={pItem.itemStock?.color?.name}
                           />
                         </li>
                       ))}
-                      {pack.packItems?.length > 3 && <li>...y más</li>}
                     </ul>
-                  </Box>
-                </Box>
-                <Box className="pack-card-actions">
-                  <Button
-                    variant="outlined"
+                  </div>
+                </div>
+
+                <div className="pack-card-footer">
+                  <Button 
+                    variant="text" 
+                    startIcon={<EditIcon />} 
                     size="small"
-                    startIcon={<EditIcon fontSize="small" />}
                     onClick={() => handleOpenPackModal(pack)}
-                    className="inventory-button inventory-button--outlined inventory-button--small"
                   >
                     Editar
                   </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
+                  <Button 
+                    variant="text" 
+                    color="error" 
+                    startIcon={<DeleteIcon />} 
                     size="small"
-                    startIcon={<DeleteIcon fontSize="small" />}
                     onClick={() => handleDelete(pack.id)}
                     disabled={deletingPack}
-                    className="inventory-button inventory-button--error inventory-button--small"
                   >
                     Desactivar
                   </Button>
-                </Box>
+                </div>
               </Paper>
             </Grid>
           ))}
         </Grid>
       ) : (
-        <Typography sx={{ textAlign: 'center', p: 3, color: 'text.secondary' }}>
-          No hay packs activos definidos.
-        </Typography>
+        <Paper className="empty-state">
+          <Typography color="textSecondary">No hay packs configurados actualmente.</Typography>
+        </Paper>
       )}
-
       {/* Modales de Pack */}
       <PackModal
         open={openPackModal}
-        onClose={() => {
-          setOpenPackModal(false);
-          setEditingPack(null);
-        }}
-        onCompleted={handlePackModalCompleted}
+        onClose={() => { setOpenPackModal(false); setEditingPack(null); }}
+        onCompleted={async () => { setOpenPackModal(false); await refetchPacks(); refetchStock?.(); }}
         editingPack={editingPack}
         currentUserRut={user?.rut}
         itemStock={itemStock}
-        refetchStocks={refetchStock}
       />
       <PackTrashModal
         open={openPackTrash}
         onClose={() => setOpenPackTrash(false)}
         deletedPacks={deletedPacks || []}
-        onRestore={handleRestore}
-        onRefresh={async () => {
-          await refetchPacks();
-          await fetchDeletedPacks();
+        onRestore={async (id) => {
+          await restorePackHook(id);
+          showSuccessAlert('Restaurado', 'Pack reactivado.');
+          await Promise.all([refetchPacks(), fetchDeletedPacks()]);
         }}
       />
-    </Paper>
+    </section>
   );
 };
 

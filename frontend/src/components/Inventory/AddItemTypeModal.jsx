@@ -205,12 +205,12 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
 
   const handleSubmit = async () => {
     
-    if (stampingLevels.length === 0) {
+    if (!stampingLevels || stampingLevels.length === 0) {
       showErrorAlert('Campos Incompletos', 'Debe definir al menos un Nivel de Precio.');
       return;
     }
     const hasInvalidLevel = stampingLevels.some(
-      (l) => !l.level?.trim() || l.price < 0 || isNaN(l.price)
+      (l) => !l.level?.trim() || l.price === '' || l.price < 0 || isNaN(parseFloat(l.price))
     );
     if (hasInvalidLevel) {
       showErrorAlert(
@@ -251,9 +251,9 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
       }
 
       const cleanedLevels = stampingLevels.map(({ level, price, description }) => ({
-        level: level,
-        price: price,
-        description: description,
+        level: level.trim(),
+        price: parseFloat(price),
+        description: description || '',
       }));
       formData.append('stampingLevels', JSON.stringify(cleanedLevels));
 
@@ -405,13 +405,13 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
                   Define las variaciones (color/talla) que vas a ingresar ahora mismo.
                 </Typography>
 
-                {form.initialStock.map((row, index) => (
+                {(form.initialStock || []).map((row, index) => (
                   <Grid container spacing={1} key={index} alignItems="center" sx={{ mb: 1.5 }}>
                     <Grid item xs={5}>
                       <Autocomplete
                         size="small"
-                        options={dbColors}
-                        getOptionLabel={(option) => option.name}
+                        options={dbColors || []}
+                        getOptionLabel={(option) => option.name || ''}
                         onChange={(_, val) => updateStockRow(index, 'colorId', val?.id)}
                         renderInput={(params) => <TextField {...params} label="Color" required />}
                       />

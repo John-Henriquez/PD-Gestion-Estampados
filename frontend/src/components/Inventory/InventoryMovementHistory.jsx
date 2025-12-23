@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import {
   Box, Typography, Select, MenuItem, TextField, InputLabel, 
   FormControl, Grid, CircularProgress, Paper, IconButton, 
-  Avatar, Chip, Tooltip, Divider
+  Avatar, Chip, Tooltip, Divider, useMediaQuery, useTheme
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
@@ -12,9 +12,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import PersonIcon from '@mui/icons-material/Person';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import HistoryIcon from '@mui/icons-material/History';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 
 import useInventoryMovements from '../../hooks/inventoryMovement/useInventoryMovements.jsx';
-import '../../styles/components/modal.css';
 import '../../styles/components/inventoryMovementHistory.css';
 
 const MOVEMENT_CONFIG = {
@@ -25,13 +26,15 @@ const MOVEMENT_CONFIG = {
 };
 
 const InventoryMovementHistory = ({ onClose }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { movements, totals, filters, setFilters, loading } = useInventoryMovements();
 
   const handleChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-const groupedMovements = useMemo(() => {
+  const groupedMovements = useMemo(() => {
     const groups = {};
     movements.forEach((mov) => {
       const dateKey = new Date(mov.createdAt).toLocaleDateString('es-CL', {
@@ -45,66 +48,76 @@ const groupedMovements = useMemo(() => {
 
   return (
     <Box className="history-modal-container">
-      {/* Header Fijo */}
+      {/* Header Potenciado */}
       <Box className="history-header">
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <HistoryIcon color="primary" />
-          <Typography variant="h6" fontWeight="bold">Historial de Movimientos de Inventario</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box className="history-icon-circle">
+            <HistoryIcon />
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight="800">Auditoría de Inventario</Typography>
+            <Typography variant="caption" color="textSecondary">Historial completo de movimientos y ajustes</Typography>
+          </Box>
         </Box>
-        <IconButton onClick={onClose}><CloseIcon /></IconButton>
+        <IconButton onClick={onClose} className="close-btn-round"><CloseIcon /></IconButton>
       </Box>
 
-      <Box className="modal-content" sx={{ p: 3 }}>
-        {/* Filtros */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={8}>
-            <Paper variant="outlined" className="filter-panel">
-              <TextField type="date" name="startDate" label="Desde" value={filters.startDate} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
-              <TextField type="date" name="endDate" label="Hasta" value={filters.endDate} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
-              <FormControl size="small" sx={{ minWidth: 150 }}>
+      <Box className="history-scroll-area">
+        {/* Panel de Control Responsivo */}
+        <Grid container spacing={2} sx={{ p: 3, mb: 1 }}>
+          <Grid item xs={12} lg={8}>
+            <Paper className="control-panel-glass">
+              <TextField type="date" name="startDate" label="Desde" value={filters.startDate} onChange={handleChange} size="small" fullWidth={isMobile} InputLabelProps={{ shrink: true }} />
+              <TextField type="date" name="endDate" label="Hasta" value={filters.endDate} onChange={handleChange} size="small" fullWidth={isMobile} InputLabelProps={{ shrink: true }} />
+              <FormControl size="small" sx={{ minWidth: 180 }} fullWidth={isMobile}>
                 <InputLabel>Tipo de Movimiento</InputLabel>
                 <Select name="type" value={filters.type} onChange={handleChange} label="Tipo de Movimiento">
-                  <MenuItem value="">Todos</MenuItem>
-                  <MenuItem value="entrada">Entradas</MenuItem>
-                  <MenuItem value="salida">Salidas</MenuItem>
-                  <MenuItem value="ajuste">Ajustes</MenuItem>
+                  <MenuItem value="">Todos los registros</MenuItem>
+                  <MenuItem value="entrada">Solo Entradas</MenuItem>
+                  <MenuItem value="salida">Solo Salidas</MenuItem>
+                  <MenuItem value="ajuste">Ajustes Manuales</MenuItem>
                 </Select>
               </FormControl>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper variant="outlined" className="summary-panel">
-              <Typography variant="caption" color="textSecondary" gutterBottom>RESUMEN DEL PERIODO</Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'space-around' }}>
+          
+          <Grid item xs={12} lg={4}>
+            <Paper className="summary-panel-modern">
+              <Box className="summary-item">
+                <TrendingUpIcon color="success" />
                 <Box>
-                  <Typography variant="h6" color="success.main">{totals.entrada || 0}</Typography>
-                  <Typography variant="caption">Entradas</Typography>
+                  <Typography variant="h5" className="stat-value text-success">{totals.entrada || 0}</Typography>
+                  <Typography variant="caption">Total Entradas</Typography>
                 </Box>
-                <Divider orientation="vertical" flexItem />
+              </Box>
+              <Divider orientation="vertical" flexItem />
+              <Box className="summary-item">
+                <TrendingDownIcon color="error" />
                 <Box>
-                  <Typography variant="h6" color="error.main">{totals.salida || 0}</Typography>
-                  <Typography variant="caption">Salidas</Typography>
+                  <Typography variant="h5" className="stat-value text-error">{totals.salida || 0}</Typography>
+                  <Typography variant="caption">Total Salidas</Typography>
                 </Box>
               </Box>
             </Paper>
           </Grid>
         </Grid>
-          {/* Resumen de Totales */}
+
+        {/* Timeline de Movimientos */}
+        <Box sx={{ px: 3, pb: 4 }}>
           {loading ? (
-          <Box className="loading-state">
-            <CircularProgress size={40} />
-            <Typography color="textSecondary">Cargando registros de auditoría...</Typography>
-          </Box>
-        ) : Object.keys(groupedMovements).length === 0 ? (
-          <Box className="empty-state">
-            <Inventory2Icon sx={{ fontSize: 80, color: '#e0e0e0', mb: 2 }} />
-            <Typography variant="h6" color="textSecondary">Sin movimientos registrados</Typography>
-          </Box>
-        ) : (
-          <Box className="history-timeline">
-            {Object.entries(groupedMovements).map(([dateLabel, groupMovs]) => (
+            <Box className="centered-state">
+              <CircularProgress size={50} thickness={4} />
+              <Typography color="textSecondary" sx={{ mt: 2 }}>Sincronizando registros...</Typography>
+            </Box>
+          ) : Object.keys(groupedMovements).length === 0 ? (
+            <Box className="centered-state">
+              <Inventory2Icon sx={{ fontSize: 80, opacity: 0.1, mb: 2 }} />
+              <Typography variant="h6" color="textSecondary">Sin actividad en este periodo</Typography>
+            </Box>
+          ) : (
+            Object.entries(groupedMovements).map(([dateLabel, groupMovs]) => (
               <Box key={dateLabel} sx={{ mb: 4 }}>
-                <Typography variant="overline" className="date-separator">
+                <Typography variant="overline" className="history-date-label">
                   {dateLabel}
                 </Typography>
 
@@ -113,67 +126,64 @@ const groupedMovements = useMemo(() => {
                   const hasChanges = mov.changes && Object.keys(mov.changes).length > 0;
 
                   return (
-                    <Paper key={mov.id} className="movement-row" sx={{ p: 2, mb: 1.5, position: 'relative', overflow: 'hidden', borderLeft: `5px solid ${config.color}`, '&:hover': { boxShadow: 3 } }}>
+                    <Paper key={mov.id} className="history-row" sx={{ borderLeft: `6px solid ${config.color}` }}>
                       <Grid container spacing={2} alignItems="center">
-                        {/* Icono y Hora */}
-                        <Grid item xs={12} sm={2} sx={{ textAlign: 'center' }}>
-                          <Avatar sx={{ bgcolor: config.bgColor, color: config.color, mx: 'auto', mb: 0.5 }}>
+                        {/* Icono y Tiempo */}
+                        <Grid item xs={3} sm={1.5} md={1} sx={{ textAlign: 'center' }}>
+                          <Avatar className="type-avatar" sx={{ bgcolor: config.bgColor, color: config.color }}>
                             {config.icon}
                           </Avatar>
-                          <Typography variant="caption" className="movement-time">
+                          <Typography variant="caption" className="timestamp">
                             {new Date(mov.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </Typography>
                         </Grid>
 
-                        {/* Contenido Principal */}
-                        <Grid item xs={12} sm={7}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                            <Typography variant="subtitle2" className="op-name">
-                              {mov.operation?.name || 'Acción del Sistema'}
+                        {/* Detalle del Producto y Acción */}
+                        <Grid item xs={9} sm={7.5} md={8}>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Typography className="op-tag" variant="subtitle2">
+                              {mov.operation?.name || 'Sistema'}
                             </Typography>
                             <Chip 
-                                label={`${mov.snapshotItemName} ${mov.snapshotItemSize ? `(${mov.snapshotItemSize})` : ''}`} 
-                                size="small" 
-                                className="item-chip"
+                              label={mov.snapshotItemName} 
+                              size="small" 
+                              variant="outlined"
+                              className="item-badge"
                             />
-                            {mov.snapshotItemColor && (
-                                <Tooltip title={`Color: ${mov.snapshotItemColor}`}>
-                                    <Box className="color-indicator" sx={{ bgcolor: mov.snapshotItemColor }} />
-                                </Tooltip>
-                            )}
+                            {mov.snapshotItemSize && <Chip label={mov.snapshotItemSize} size="small" className="size-badge-mini" />}
+                            {mov.snapshotItemColor && <Box className="mini-color-indicator" sx={{ bgcolor: mov.snapshotItemColor }} />}
                           </Box>
                           
-                          <Typography variant="body2" className="movement-reason">
+                          <Typography variant="body2" className="reason-text">
                             {mov.reason}
                           </Typography>
 
-                          {/* Visualización de Cambios */}
                           {hasChanges && (
-                            <Box className="changes-log">
+                            <Box className="audit-log-box">
                               {Object.entries(mov.changes).map(([field, data]) => (
-                                <Box key={field} className="change-item">
-                                  <strong className="field-name">{field}:</strong> 
-                                  <span className="old-val">{data.oldValue ?? 'N/A'}</span>
-                                  <span className="arrow">→</span>
-                                  <strong className="new-val">{data.newValue}</strong>
-                                </Box>
+                                <div key={field} className="log-line">
+                                  <span className="field-label">{field}:</span>
+                                  <span className="val-old">{data.oldValue ?? 'ø'}</span>
+                                  <span className="log-arrow">→</span>
+                                  <span className="val-new">{data.newValue}</span>
+                                </div>
                               ))}
                             </Box>
                           )}
                         </Grid>
 
                         {/* Cantidad y Usuario */}
-                        <Grid item xs={12} sm={3} sx={{ textAlign: 'right' }}>
-                          {mov.quantity !== 0 && (
-                            <Typography variant="h5" className="movement-qty" sx={{ color: config.color }}>
-                              {mov.type === 'salida' ? '-' : '+'}{mov.quantity}
-                            </Typography>
-                          )}
-                          <Box className="user-info">
-                            <PersonIcon />
-                            <Typography variant="caption">
-                              {mov.createdBy?.nombreCompleto || 'Automático'}
-                            </Typography>
+                        <Grid item xs={12} sm={3} md={3} sx={{ textAlign: isMobile ? 'left' : 'right' }}>
+                          <Box className="qty-user-area">
+                            {mov.quantity !== 0 && (
+                              <Typography variant="h5" className="qty-display" sx={{ color: config.color }}>
+                                {mov.type === 'salida' ? '−' : '+'}{mov.quantity}
+                              </Typography>
+                            )}
+                            <Box className="executor-box">
+                              <PersonIcon />
+                              <Typography variant="caption">{mov.createdBy?.nombreCompleto || 'Bot PD'}</Typography>
+                            </Box>
                           </Box>
                         </Grid>
                       </Grid>
@@ -181,9 +191,9 @@ const groupedMovements = useMemo(() => {
                   );
                 })}
               </Box>
-            ))}
-          </Box>
-        )}
+            ))
+          )}
+        </Box>
       </Box>
     </Box>
   );
