@@ -3,6 +3,7 @@ import Pack from "../entity/pack.entity.js";
 import PackItem from "../entity/packItem.entity.js";
 import ItemStock from "../entity/itemStock.entity.js";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
+import InventoryOperation from "../entity/inventoryOperation.entity.js";
 import {
   createItemSnapshot,
   generateInventoryReason,
@@ -14,19 +15,14 @@ export const packService = {
     return await AppDataSource.transaction(
       async (transactionalEntityManager) => {
         const {
-          name,
-          description,
-          discount,
-          validFrom,
-          validUntil,
-          items,
-          createdById,
+          name, description, discount, validFrom, validUntil, items, createdById,
         } = packData;
 
         const packRepo = transactionalEntityManager.getRepository(Pack);
         const packItemRepo = transactionalEntityManager.getRepository(PackItem);
         const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
         const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
+        const operationRepo = transactionalEntityManager.getRepository(InventoryOperation);
 
         if (!name || !items || items.length === 0) {
           return [null, "Faltan campos obligatorios"];
@@ -53,16 +49,10 @@ export const packService = {
           }
 
           let unitPrice = Number(item.price);
-
           if (itemData.stampingLevel) {
             const levels = item.itemType.stampingLevels || [];
-            const selectedLevel = levels.find(
-              (l) => l.level === itemData.stampingLevel
-            );
-
-            if (selectedLevel) {
-              unitPrice = Number(selectedLevel.price);
-            }
+            const selectedLevel = levels.find((l) => l.level === itemData.stampingLevel);
+            if (selectedLevel) unitPrice = Number(selectedLevel.price);
           }
 
           const requestedQty = itemData.quantity;
@@ -87,12 +77,12 @@ export const packService = {
             ];
           }
 
-        if (isNaN(unitPrice)) {
-          return [
-            null,
-            `El ítem '${item.itemType?.name || item.id}' tiene un precio inválido (${item.price}).`,
-          ];
-        }
+          if (isNaN(unitPrice)) {
+            return [
+              null,
+              `El ítem '${item.itemType?.name || item.id}' tiene un precio inválido (${item.price}).`,
+            ];
+          }
 
         totalPrice += unitPrice * requestedQty;
         totalQuantity += requestedQty;
@@ -112,12 +102,7 @@ export const packService = {
         const finalPrice = Math.round(totalPrice * (1 - discount));
 
         const newPack = packRepo.create({
-          name,
-          description,
-          price: finalPrice,
-          discount,
-          validFrom,
-          validUntil,
+          name, description, price: finalPrice, discount, validFrom, validUntil,
           createdBy: createdById ? { id: createdById } : null,
         });
 
@@ -133,19 +118,18 @@ export const packService = {
           );
         }
 
+        const meta = generateInventoryReason("pack_assembly"); 
+        const operationEntity = await operationRepo.findOneBy({ slug: meta.operation });
+
         await movementRepo.save({
           type: "entrada",
-          operation: "create_pack",
+          operation: operationEntity,
           reason: `Creación de pack "${name}" con ${items.length} ítems`,
           quantity: totalQuantity,
           pack: savedPack,
           createdBy: { id: createdById },
           changes: {
-            pack: {
-              name,
-              price: finalPrice,
-              discount,
-            },
+            pack: { name, price: finalPrice, discount },
             items: packItemsDetails,
           },
           snapshotPackName: name,
@@ -220,59 +204,35 @@ export const packService = {
       async (transactionalEntityManager) => {
         const repo = transactionalEntityManager.getRepository(Pack);
         const packItemRepo = transactionalEntityManager.getRepository(PackItem);
-        const itemStockRepo =
-          transactionalEntityManager.getRepository(ItemStock);
-        const movementRepo =
-          transactionalEntityManager.getRepository(InventoryMovement);
+        const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
+        const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
+        const operationRepo = transactionalEntityManager.getRepository(InventoryOperation);
 
-        // 1. Obtener pack con relaciones completas
         const pack = await repo.findOne({
           where: { id },
-          relations: [
-            "packItems",
-            "packItems.itemStock",
-            "packItems.itemStock.itemType",
-          ],
+          relations: ["packItems", "packItems.itemStock", "packItems.itemStock.itemType"],
         });
 
         if (!pack) return [null, "Pack no encontrado"];
+
         if (updateData.price !== undefined && updateData.price < 0) {
           return [null, "El precio no puede ser negativo"];
         }
-
-        // 2. Registrar cambios en el pack
         const packChanges = {};
-        const updatableFields = [
-          "name",
-          "description",
-          "price",
-          "discount",
-          "validFrom",
-          "validUntil",
-          "isActive",
-        ];
+        const updatableFields = ["name", "description", "price", "discount", "validFrom", "validUntil", "isActive"];
 
         for (const field of updatableFields) {
-          if (
-            updateData[field] !== undefined &&
-            !deepEqual(updateData[field], pack[field])
-          ) {
-            packChanges[field] = {
-              oldValue: pack[field],
-              newValue: updateData[field],
-            };
+          if (updateData[field] !== undefined && !deepEqual(updateData[field], pack[field])) {
+            packChanges[field] = { oldValue: pack[field], newValue: updateData[field] };
             pack[field] = updateData[field];
           }
         }
 
-        pack.updatedBy = updateData.updatedById ? { id: updateData.updatedById }
-          : null;
-
+        pack.updatedBy = updateData.updatedById ? { id: updateData.updatedById } : null;
         const updatedPack = await repo.save(pack);
-        // 3. Procesar cambios en items si se proporcionan
+
         let itemChanges = null;
         if (Array.isArray(updateData.items)) {
-          // Validar nuevos items
           const itemsValidation = await Promise.all(
             updateData.items.map(async (itemData) => {
               const item = await itemStockRepo.findOne({
@@ -347,30 +307,25 @@ export const packService = {
           }
         }
 
-        // 5. Registrar auditoría consolidada si hay cambios
         if (Object.keys(packChanges).length > 0 || itemChanges) {
-          const { operation, reason } = generateInventoryReason("update");
+          const meta = generateInventoryReason("update_info");
+          const operationEntity = await operationRepo.findOneBy({ slug: meta.operation });
 
           const movementData = {
             type: "ajuste",
-            operation,
-            reason: reason || `Actualización de pack "${updatedPack.name}"`,
+            operation: operationEntity,
+            reason: meta.reason || `Actualización de pack "${updatedPack.name}"`,
             quantity: 0,
             pack: updatedPack,
             createdBy: { id: updateData.updatedById },
-            changes: {
-              pack: packChanges,
-              items: itemChanges,
-            },
+            changes: { pack: packChanges, items: itemChanges },
             snapshotPackName: updatedPack.name,
             snapshotItemName: `Pack: ${updatedPack.name}`,
             snapshotItemSize: "N/A",
             snapshotPrice: updatedPack.price,
           };
-
           await movementRepo.save(movementData);
         }
-
         return [updatedPack, null];
       },
     ).catch((error) => {
@@ -383,6 +338,7 @@ export const packService = {
     try {
       const repo = AppDataSource.getRepository(Pack);
       const movementRepo = AppDataSource.getRepository(InventoryMovement);
+      const operationRepo = AppDataSource.getRepository(InventoryOperation);
 
       const pack = await repo.findOne({
         where: { id },
@@ -395,16 +351,15 @@ export const packService = {
 
       pack.isActive = false;
       pack.deletedAt = new Date();
-
       const updatedPack = await repo.save(pack);
 
       const { operation, reason } = generateInventoryReason("deactivate");
+      const operationEntity = await operationRepo.findOneBy({ slug: operation });
 
-      // ➖ Registrar salida del inventario por cada ítem del pack
       await movementRepo.save({
         type: "ajuste",
         reason,
-        operation,
+        operation: operationEntity,
         quantity: 0,
         pack: updatedPack,
         createdBy: { id: userId },
@@ -427,6 +382,7 @@ export const packService = {
     try {
       const repo = AppDataSource.getRepository(Pack);
       const movementRepo = AppDataSource.getRepository(InventoryMovement);
+      const operationRepo = AppDataSource.getRepository(InventoryOperation);
 
       const pack = await repo.findOne({
         where: { id },
@@ -447,6 +403,7 @@ export const packService = {
       const restoredPack = await repo.save(pack);
 
       const { operation, reason } = generateInventoryReason("reactivate");
+    const operationEntity = await operationRepo.findOneBy({ slug: operation });
 
       const totalQty = pack.packItems.reduce(
         (sum, pi) => sum + (pi.quantity || 1),
@@ -455,7 +412,7 @@ export const packService = {
 
       await movementRepo.save({
         type: "ajuste",
-        operation,
+        operation: operationEntity,
         reason,
         quantity: totalQty,
         pack: restoredPack,
@@ -477,6 +434,7 @@ export const packService = {
       const repo = AppDataSource.getRepository(Pack);
       const movementRepo = AppDataSource.getRepository(InventoryMovement);
       const packItemRepo = AppDataSource.getRepository(PackItem);
+      const operationRepo = AppDataSource.getRepository(InventoryOperation);
 
       const pack = await repo.findOne({
         where: { id },
@@ -487,7 +445,8 @@ export const packService = {
         return [null, "Pack no encontrado"];
       }
 
-      const { operation, reason } = generateInventoryReason("delete");
+      const { operation, reason } = generateInventoryReason("purge");
+      const operationEntity = await operationRepo.findOneBy({ slug: operation });
 
       const totalQuantity = pack.packItems.reduce(
         (sum, pi) => sum + (pi.quantity || 0),
@@ -506,7 +465,7 @@ export const packService = {
 
       await movementRepo.save({
         type: "ajuste",
-        operation,
+        operation: operationEntity,
         reason,
         quantity: totalQuantity,
         pack: pack,

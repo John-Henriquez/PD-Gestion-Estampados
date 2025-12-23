@@ -80,6 +80,10 @@ export const itemTypeService = {
         const meta = generateInventoryReason("initial_load");
         const operationEntity = await operationRepo.findOneBy({ slug: meta.operation });
 
+        if (!operationEntity) {
+          console.warn(`Operación '${meta.operation}' no encontrada en DB. Usando ajuste genérico.`);
+        }
+
         for (const stockVar of initialStock) {
           const newStock = stockRepo.create({
             itemType: savedItemType,
@@ -92,10 +96,12 @@ export const itemTypeService = {
 
           const savedStock = await stockRepo.save(newStock);
           
-          const fullStock = await queryRunner.manager.findOne(ItemStock, { 
+          const fullStockForSnapshot = await queryRunner.manager.findOne(ItemStock, { 
             where: { id: savedStock.id }, 
             relations: ["itemType", "color"] 
           });
+
+          const snapshot = createItemSnapshot(fullStockForSnapshot);
 
           await movementRepo.save({
             type: "entrada",
@@ -104,7 +110,7 @@ export const itemTypeService = {
             quantity: savedStock.quantity,
             itemStock: savedStock,
             createdBy: { id: userId },
-            ...createItemSnapshot(fullStock)
+            ...snapshot
           });
         }
       }
