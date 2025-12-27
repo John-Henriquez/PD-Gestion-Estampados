@@ -148,3 +148,56 @@ export const generateOrderReceipt = (order) => {
   // Descargar
   doc.save(`Boleta_Pedido_${order.id}.pdf`);
 };
+
+export const generateInventoryAuditSheet = (stockData) => {
+  const doc = new jsPDF();
+  const dateStr = new Date().toLocaleDateString('es-CL');
+
+  doc.setFontSize(18);
+  doc.setTextColor(123, 44, 191);
+  doc.text('Vibra Estampados - Planilla de Cubicación', 14, 20);
+
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Fecha de Auditoría: ${dateStr}`, 14, 28);
+  doc.text('Instrucciones: Complete la columna "Conteo Real" físicamente en bodega.', 14, 33);
+
+  const tableColumn = ['ID', 'Producto', 'Color/Talla', 'Stock Sistema', 'Conteo Real', 'Diferencia'];
+  const tableRows = [];
+
+  stockData.forEach((item) => {
+    const itemName = item.itemType?.name || 'N/A';
+    const variant = `${item.color?.name || ''} ${item.size ? `/ ${item.size}` : ''}`;
+    
+    const rowData = [
+      item.id,
+      itemName,
+      variant,
+      item.quantity, 
+      '',  
+      ''   
+    ];
+    tableRows.push(rowData);
+  });
+
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 40,
+    theme: 'grid',
+    headStyles: { fillColor: [123, 44, 191], textColor: 255 },
+    styles: { fontSize: 8, cellPadding: 2 },
+    columnStyles: {
+      0: { cellWidth: 10 },
+      1: { cellWidth: 60 },
+      4: { cellWidth: 30, halign: 'center' },
+      5: { cellWidth: 30, halign: 'center' }
+    }
+  });
+
+  const pageHeight = doc.internal.pageSize.height;
+  doc.setFontSize(8);
+  doc.text(`Documento de control interno - Generado el ${dateStr}`, 105, pageHeight - 10, { align: 'center' });
+
+  doc.save(`Planilla_Cubicacion_${dateStr.replace(/\//g, '-')}.pdf`);
+};

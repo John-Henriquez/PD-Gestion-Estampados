@@ -4,48 +4,49 @@ import { FRONTEND_URL, MP_ACCESS_TOKEN } from "../config/configEnv.js";
 const client = new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
 
 export const paymentService = {
-  async createPreference(order) {
+async createPreference(order) {
     try {
-      const baseUrl = FRONTEND_URL || "http://localhost:5173";
-
-      console.log("💰 Creando preferencia MP. Retorno a:", baseUrl);
-
       const preference = new Preference(client);
-
-      const items = order.orderItems.map((item) => ({
-        id: item.id.toString(),
-        title: item.itemNameSnapshot,
-        quantity: item.quantity,
-        unit_price: Number(item.priceAtTime), 
-        currency_id: "CLP",
-      }));
-
-      const result = await preference.create({
-        body: {
-          items: items,
-          external_reference: order.id.toString(),
-          payer: {
-            name: order.customerName || order.user?.nombreCompleto || "Cliente",
-            email: order.guestEmail || order.user?.email || "test_user@test.com",
-          },
-          back_urls: {
-            success: `${FRONTEND_URL}/order-confirmation/${order.id}`,
-            failure: `${FRONTEND_URL}/order-confirmation/${order.id}`,
-            pending: `${FRONTEND_URL}/order-confirmation/${order.id}`,
-          },
-          binary_mode: true,
+      const tunnelUrl = "https://uncomplacent-sheena-entomologically.ngrok-free.dev";
+      const returnUrl = `${tunnelUrl}/order-confirmation/${order.id}`;
+      
+      const body = {
+        items: order.orderItems.map((item) => ({
+          id: String(item.id),
+          title: String(item.itemNameSnapshot).substring(0, 250), 
+          quantity: Number(item.quantity),
+          unit_price: Math.round(Number(item.priceAtTime)),
+          currency_id: "CLP",
+        })),
+        external_reference: String(order.id),
+        notification_url: "https://uncomplacent-sheena-entomologically.ngrok-free.dev/api/payments/webhook",
+        back_urls: {
+          success: returnUrl,
+          failure: returnUrl,
+          pending: returnUrl,
         },
-      });
+        auto_return: "approved",
+      };
 
-      return { id: result.id, init_point: result.init_point, sandbox_init_point: result.sandbox_init_point };
+      const result = await preference.create({ body });
+
+      return { 
+        id: result.id, 
+        init_point: result.init_point, 
+        sandbox_init_point: result.sandbox_init_point 
+      };
+
     } catch (error) {
-      console.error("Error al crear preferencia MP:", error);
-      throw new Error("No se pudo generar el pago");
+      if (error.response && error.response.data) {
+        console.error("ERROR DETALLADO DE MERCADO PAGO:", JSON.stringify(error.response.data, null, 2));
+      } else {
+        console.error("Error al crear preferencia:", error.message);
+      }
+      throw error;
     }
   },
 
-  // 2. Verificar el estado del pago 
-  async checkPaymentStatus(paymentId) {
+async checkPaymentStatus(paymentId) {
     try {
       const payment = new Payment(client);
       const paymentData = await payment.get({ id: paymentId });

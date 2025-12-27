@@ -11,6 +11,7 @@ import uploadRoutes from "./upload.routes.js";
 import fileRoutes from "./file.routes.js";
 import paymentRoutes from "./payment.routes.js";
 import colorRoutes from "./color.routes.js";
+import reportRoutes from "./report.routes.js";
 
 const router = Router();
 
@@ -29,5 +30,6 @@ router.use("/files", fileRoutes);
 
 router.use("/payments", paymentRoutes);
 router.use("/colors", colorRoutes);
+router.use("/reports", reportRoutes);
 
 export default router;

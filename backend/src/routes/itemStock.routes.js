@@ -24,6 +24,7 @@ router.post("/", isAdmin, itemStockController.createItemStock);
 router.patch("/:id", isAdmin, itemStockController.updateItemStock);
 router.delete("/:id", isAdmin, itemStockController.deleteItemStock);
 
+router.patch("/:id/adjust", isAdmin, itemStockController.adjustStock);
 router.patch("/adjust/:id/add", isAdmin, itemStockController.addStock);
 router.patch("/adjust/:id/remove", isAdmin, itemStockController.removeStock);
 

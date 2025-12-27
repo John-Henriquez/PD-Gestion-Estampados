@@ -10,8 +10,11 @@ export default defineConfig({
   plugins: [react()],
   preview: { port: 443, host: true },
   server: {
+    host: true,
+    strictPort: true,
     allowedHosts: [
-      "rehabilitation-bracelets-photos-lightbox.trycloudflare.com"
+      ".trycloudflare.com",
+      "localhost"
     ],
     proxy: {
       '/api': {
@@ -21,6 +24,7 @@ export default defineConfig({
       },
     },
   },
+
   resolve: {
     alias: {
       '@components': path.resolve(__dirname, './src/components'),

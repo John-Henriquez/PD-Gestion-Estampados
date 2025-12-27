@@ -318,7 +318,7 @@ export const itemStockService = {
     });
   },
 
-async emptyTrash(userId) {
+  async emptyTrash(userId) {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
       const repo = transactionalEntityManager.getRepository(ItemStock);
       const packItemRepo = transactionalEntityManager.getRepository(PackItem);

@@ -5,6 +5,7 @@ import ItemStock from "../entity/itemStock.entity.js";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
 import Pack from "../entity/pack.entity.js";
 import OrderStatus from "../entity/orderStatus.entity.js";
+import Operation from "../entity/inventoryOperation.entity.js";
 import {
 createItemSnapshot,
   generateInventoryReason,
@@ -22,9 +23,11 @@ export const orderService = {
     return await AppDataSource.transaction(
       async (transactionalEntityManager) => {
         const orderRepo = transactionalEntityManager.getRepository(Order);
+        const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
+        const operationRepo = transactionalEntityManager.getRepository(Operation);
+        
         const orderItemRepo = transactionalEntityManager.getRepository(OrderItem);
         const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
-        const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
         const packRepo = transactionalEntityManager.getRepository(Pack);
         const statusRepo = transactionalEntityManager.getRepository(OrderStatus);
 
@@ -146,14 +149,19 @@ export const orderService = {
           await itemStockRepo.decrement({ id: stockId }, "quantity", qty);
 
           const stockItemForSnapshot = await itemStockRepo.findOne({
-            where: { id: stockId }, relations: ["itemType", "color"]
+            where: { id: stockId }, 
+            relations: ["itemType", "color"]
           });
 
-          const { operation, reason } = generateInventoryReason("sale");
+          const operationEntity = await operationRepo.findOneBy({ slug: "sale" });
+          if (!operationEntity) throw new Error("Operación 'sale' no encontrada.");
+
+          const { reason: helperReason } = generateInventoryReason("sale");
+
           await movementRepo.save({
             type: "salida",
-            operation,
-            reason: `${reason} (Pedido #${savedOrder.id})`,
+            operation: operationEntity,
+            reason: `${helperReason} (Pedido #${savedOrder.id})`,
             quantity: qty,
             itemStock: { id: stockId },
             createdBy: userId ? { id: userId } : null,
@@ -283,6 +291,7 @@ export const orderService = {
         const orderRepo = transactionalEntityManager.getRepository(Order);
         const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
         const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
+        const operationRepo = transactionalEntityManager.getRepository(Operation);
 
         const order = await orderRepo.findOne({
           where: { id: orderId },
@@ -323,16 +332,16 @@ export const orderService = {
           };
 
           if (newStatus === "cancelado" && order.status !== "cancelado") {
+            const returnOp = await operationRepo.findOneBy({ slug: "return" });
+            if (!returnOp) throw new Error("Operación 'return' no encontrada.");
             for (const item of order.orderItems) {
               if (item.itemStock) {
                 await itemStockRepo.increment({ id: item.itemStock.id }, "quantity", item.quantity);
-
-                // Registrar movimiento de "Entrada por Devolución"
-                const { operation, reason } = generateInventoryReason("return");
+                const { reason: helperReason } = generateInventoryReason("return");
                 await movementRepo.save({
                   type: "entrada",
-                  operation,
-                  reason: `${reason} (Cancelación Pedido #${order.id})`,
+                  operation: returnOp,
+                  reason: `${helperReason} (Cancelación Pedido #${order.id})`,
                   quantity: item.quantity,
                   itemStock: item.itemStock,
                   createdBy: { id: adminUserId },
@@ -341,16 +350,15 @@ export const orderService = {
                 });
               } 
               else if (item.pack) {
-                // Iteramos sobre los items que componen ese pack
                 for (const packItem of item.pack.packItems) {
                   const quantityToRestore = item.quantity * packItem.quantity;
                   
                   await itemStockRepo.increment({ id: packItem.itemStock.id }, "quantity", quantityToRestore);
-                  const { operation, reason } = generateInventoryReason("return");
+                  const { reason: helperReason } = generateInventoryReason("return");
                   await movementRepo.save({
                     type: "entrada",
-                    operation,
-                    reason: `${reason} (Cancelación Pack en Pedido #${order.id})`,
+                    operation: returnOp,
+                    reason: `${helperReason} (Cancelación Pack en Pedido #${order.id})`,
                     quantity: quantityToRestore,
                     itemStock: packItem.itemStock,
                     createdBy: { id: adminUserId },
@@ -381,12 +389,13 @@ export const orderService = {
         order.updatedAt = new Date();
         const updatedOrder = await orderRepo.save(order);
 
+        const operation = await operationRepo.findOneBy({ slug: "update" });
         if (requiresAuditLog) {
-          const { operation, reason } = generateInventoryReason("update");
+          const { reason: helperReason } = generateInventoryReason("update");
           await movementRepo.save({
             type: "modificacion",
             operation: operation,
-            reason: reason,
+            reason: helperReason,
             quantity: 0,
             order: updatedOrder,
             createdBy: { id: adminUserId },

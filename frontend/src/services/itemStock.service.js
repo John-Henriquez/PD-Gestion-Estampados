@@ -172,3 +172,19 @@ export async function restockVariants(restockData) {
     ];
   }
 }
+
+export async function adjustStock(id, amount, reason) {
+  try {
+    const response = await axios.patch(`/item-stocks/${id}/adjust`, {
+      amount,
+      reason
+    });
+    return [response.data.data, null];
+  } catch (error) {
+    console.error('Error en ajuste de stock:', error);
+    return [
+      null,
+      error.response?.data?.message || 'Error al procesar el ajuste de inventario'
+    ];
+  }
+}

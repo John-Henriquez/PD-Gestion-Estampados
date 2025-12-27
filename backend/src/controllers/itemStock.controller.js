@@ -372,4 +372,35 @@ export const itemStockController = {
       handleErrorServer(res, 500, "Error interno al procesar la recarga");
     }
   },
+
+  async adjustStock(req, res) {
+  try {
+    const { id } = req.params;
+    const { amount, reason } = req.body;
+    const userId = req.user?.id;
+
+    if (!id || isNaN(parseInt(id))) {
+      return handleErrorClient(res, 400, "ID debe ser un número");
+    }
+
+    if (amount === undefined || typeof amount !== "number") {
+      return handleErrorClient(res, 400, "La cantidad (amount) es requerida y debe ser un número");
+    }
+
+    const [updatedItem, error] = await itemStockService.adjustStock(
+      parseInt(id),
+      amount,
+      userId,
+      reason
+    );
+
+    if (error) return handleErrorClient(res, 400, error);
+
+    handleSuccess(res, 200, "Ajuste de stock procesado", updatedItem);
+  } catch (error) {
+    console.error("Error en adjustStock controller:", error);
+    handleErrorServer(res, 500, "Error interno del servidor");
+  }
+},
 };
+

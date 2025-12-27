@@ -11,7 +11,7 @@ import { iconMap } from '../../data/iconCategories';
 import '../../styles/components/itemStockTable.css';
 
 
-const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) => {
+const ItemStockTable = ({ stockItems = [], onDelete, loading = false }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -83,15 +83,8 @@ const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) 
       field: 'actions',
       type: 'actions',
       headerName: 'Acciones',
-      width: 100,
+      width: 80,
       getActions: (params) => [
-        <GridActionsCellItem
-          key="edit"
-          icon={<EditIcon />}
-          label="Editar"
-          onClick={() => onEdit(params.row._original)}
-          color="primary"
-        />,
         <GridActionsCellItem
           key="delete"
           icon={<DeleteIcon />}
@@ -133,9 +126,6 @@ const ItemStockTable = ({ stockItems = [], onEdit, onDelete, loading = false }) 
               </Box>
             </div>
             <div className="card-footer">
-              <IconButton size="small" onClick={() => onEdit(row._original)} color="primary">
-                <EditIcon fontSize="small" />
-              </IconButton>
               <IconButton size="small" onClick={() => onDelete(row.id)} color="error">
                 <DeleteIcon fontSize="small" />
               </IconButton>

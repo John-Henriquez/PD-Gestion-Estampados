@@ -31,3 +31,27 @@ export const verifyPayment = async (req, res) => {
     res.status(500).json({ message: "Error al verificar pago" });
   }
 };
+
+export const receiveWebhook = async (req, res) => {
+  try {
+    const { query } = req;
+    const topic = query.topic || query.type;
+    const paymentId = query.id || query['data.id'];
+
+    if (topic === "payment" && paymentId) {
+      const paymentData = await paymentService.checkPaymentStatus(paymentId);
+
+      if (paymentData && paymentData.status === "approved") {
+        const orderId = paymentData.external_reference;
+        console.log(`=> Pago aprobado para Orden #${orderId}. Actualizando stock...`);
+        
+        await orderService.updateOrderStatus(orderId, "en_proceso", 1); 
+      }
+    }
+
+    res.status(200).send("OK");
+  } catch (error) {
+    console.error("Error en Webhook:", error.message);
+    res.status(500).send("Error al procesar Webhook");
+  }
+};

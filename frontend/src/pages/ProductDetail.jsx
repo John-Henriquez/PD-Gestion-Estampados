@@ -1,23 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Typography,
-  Button,
-  CircularProgress,
-  Alert,
-  Chip,
-  TextField,
-  IconButton,
-  Divider,
-  Grid,
-  FormControl,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  ToggleButtonGroup,
-  ToggleButton,
-  Paper,
+  Box, Typography, Button, CircularProgress, Alert, Chip,
+  TextField, IconButton, Divider, Grid, FormControl,
+  RadioGroup, FormControlLabel, Radio, ToggleButtonGroup, ToggleButton, Paper,
 } from '@mui/material';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -27,6 +13,7 @@ import { getPublicItemStock } from '../services/itemStock.service';
 import ImageUploader from '../components/UI/ImageUploader.jsx';
 import { iconMap } from '../data/iconCategories';
 import { useCart } from '../hooks/cart/useCart.jsx';
+import { formatCLP } from '../helpers/formatData';
 import { showSuccessAlert, showErrorAlert } from '../helpers/sweetAlert';
 
 import '../styles/pages/productDetail.css';
@@ -213,8 +200,6 @@ const ProductDetail = () => {
       return;
     }
 
-    const calculatedPrice = calculateDynamicPrice();
-
     const itemToAdd = {
       itemStockId: selectedStock.id,
       quantity: quantity,
@@ -232,7 +217,7 @@ const ProductDetail = () => {
     addToCart(itemToAdd);
     showSuccessAlert(
       '¡Añadido!',
-      `${itemToAdd.name}, ${getColorName(itemToAdd.hexColor)}) fue añadido al carrito.`
+      `${itemToAdd.name} (${itemToAdd.colorName}) fue añadido al carrito.`
     );
     navigate('/checkout');
   };

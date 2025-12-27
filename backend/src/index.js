@@ -23,26 +23,21 @@ async function setupServer() {
     app.use(
       cors({
         credentials: true,
-        origin: true,
+        origin: 'http://localhost:5173',
       }),
     );
 
-    app.use(
-      urlencoded({
-        extended: true,
-        limit: "1mb",
-      }),
-    );
-
-    app.use(
-      json({
-        limit: "1mb",
-      }),
-    );
-
+    app.use(urlencoded({extended: true, limit: "1mb"}));
+    app.use(json({limit: "1mb"}));
     app.use(cookieParser());
-
     app.use(morgan("dev"));
+
+    app.get("/order-confirmation/:id", (req, res) => {
+      const { id } = req.params;
+      const { payment_id, status } = req.query;
+      console.log(`🚀 Redirigiendo Orden #${id} al Frontend local...`);
+      res.redirect(`http://localhost:5173/order-confirmation/${id}?payment_id=${payment_id}&status=${status}`);
+    });
 
     app.use(
       session({
@@ -50,9 +45,9 @@ async function setupServer() {
         resave: false,
         saveUninitialized: false,
         cookie: {
-          secure: false,
+          secure: true,
           httpOnly: true,
-          sameSite: "strict",
+          sameSite: "none",
         },
       }),
     );
@@ -63,7 +58,7 @@ async function setupServer() {
     passportJwtSetup();
 
     app.use("/uploads", express.static("uploads"));
-    app.use("/", indexRoutes);
+    app.use("/api", indexRoutes);
 
     app.listen(PORT, () => {
       console.log(`=> Servidor corriendo en ${HOST}:${PORT}`);

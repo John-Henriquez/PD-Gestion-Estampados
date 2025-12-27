@@ -36,7 +36,6 @@ const Inventario = () => {
   const [openInventoryModal, setOpenInventoryModal] = useState(false);
   const [openStockTrash, setOpenStockTrash] = useState(false);
   const [openHistory, setOpenHistory] = useState(false);
-  const [editingStock, setEditingStock] = useState(null);
 
   const { isAuthenticated, user } = useContext(AuthContext);
   const { colors: dbColors } = useColors();
@@ -94,11 +93,6 @@ const Inventario = () => {
     } else {
       showErrorAlert('Error', err?.message || 'No se pudo eliminar');
     }
-  };
-
-  const handleEditStock = (item) => {
-    setEditingStock(item);
-    console.log("Editando item:", item);
   };
 
   if (!isAuthenticated || user?.rol !== 'administrador') return <Navigate to="/auth" />;
@@ -190,7 +184,7 @@ const Inventario = () => {
 
           <ItemStockTable 
             stockItems={filteredStock} 
-            onDelete={handleDeleteStock} 
+            onDelete={handleDeleteStock}
             loading={stockLoading} 
           />
         </Paper>
