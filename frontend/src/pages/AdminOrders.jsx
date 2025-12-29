@@ -1,49 +1,20 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  Typography,
-  CircularProgress,
-  Alert,
-  Chip,
-  Card,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Grid,
+import { 
+  Box, Button, Typography, CircularProgress, Alert, InputAdornment,
+  Card, Select, MenuItem, FormControl, InputLabel, Grid,
 } from '@mui/material';
+import { Search, Filter, RefreshCcw, Package } from 'lucide-react';
 import { getAllOrders } from '../services/order.service';
 import OrderItemDisplay from '../components/Order/OrderItemDisplay.jsx';
 
-import './../styles/pages/myOrders.css';
+import './../styles/pages/adminOrders.css';
 
 const STATUS_CONFIG = {
-  pendiente_de_pago: {
-    color: '#ffffff',
-    bgColor: 'var(--warning)',
-    label: 'Pendiente de Pago',
-  },
-  en_proceso: {
-    color: '#ffffff',
-    bgColor: 'var(--info)',
-    label: 'En Proceso',
-  },
-  enviado: {
-    color: '#ffffff',
-    bgColor: 'var(--secondary)',
-    label: 'Enviado',
-  },
-  completado: {
-    color: '#ffffff',
-    bgColor: 'var(--success)',
-    label: 'Completado',
-  },
-  cancelado: {
-    color: '#ffffff',
-    bgColor: 'var(--error)',
-    label: 'Cancelado',
-  },
+  pendiente_de_pago: { color: '#ffffff', bgColor: 'var(--warning)', label: 'Pendiente' },
+  en_proceso: { color: '#ffffff', bgColor: 'var(--info)', label: 'En Proceso' },
+  enviado: { color: '#ffffff', bgColor: 'var(--secondary)', label: 'Enviado' },
+  completado: { color: '#ffffff', bgColor: 'var(--success)', label: 'Completado' },
+  cancelado: { color: '#ffffff', bgColor: 'var(--error)', label: 'Cancelado' },
 };
 
 const AdminOrders = () => {
@@ -59,7 +30,6 @@ const AdminOrders = () => {
       const fetchedOrders = await getAllOrders();
       setOrders(fetchedOrders || []);
     } catch (err) {
-      console.error('Error al obtener todos los pedidos (Admin):', err);
       setError(err.message || 'No se pudieron cargar los pedidos.');
     } finally {
       setLoading(false);
@@ -71,117 +41,92 @@ const AdminOrders = () => {
   }, []);
 
   const filteredOrders = statusFilter
-    ? orders.filter((order) => order.status === statusFilter)
+    ? orders.filter((order) => order.status?.name === statusFilter)
     : orders;
 
-  const statusOptions = Object.keys(STATUS_CONFIG);
-
   return (
-    <Box className="myorders-container">
-      {/* Header Mejorado */}
-      <Box className="admin-orders-header">
-        <Typography variant="h4" component="h1" className="admin-orders-title">
-          Gestión de Pedidos
-        </Typography>
-      </Box>
-
-      {/* Panel de Filtros Mejorado */}
-      <Card className="filters-panel" elevation={1}>
-        <Box className="filters-header">
-          <Typography variant="h6" className="filters-title">
-            Filtros y Búsqueda
+   <Box className="admin-container">
+      {/* HEADER TIPO DASHBOARD */}
+      <Box className="admin-header">
+        <Box>
+          <Typography variant="h4" className="admin-title">
+            Gestión de Pedidos
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            Supervisión y control de pedidos del sistema
           </Typography>
         </Box>
-        <Box className="filters-content">
-          <FormControl fullWidth size="small" className="filter-select">
-            <InputLabel>Estado del Pedido</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Estado del Pedido"
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="">
-                <em>Todos los estados</em>
-              </MenuItem>
-              {statusOptions.map((status) => (
-                <MenuItem key={status} value={status}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Chip
-                      label={STATUS_CONFIG[status].label}
-                      size="small"
-                      sx={{
-                        backgroundColor: STATUS_CONFIG[status].bgColor,
-                        color: STATUS_CONFIG[status].color,
-                        fontWeight: 600,
-                      }}
-                    />
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Contador de resultados */}
-          <Box className="results-count">
-            <Typography variant="body2" color="textSecondary">
-              {filteredOrders.length} de {orders.length} pedidos
+        <Button 
+          variant="outlined" 
+          startIcon={<RefreshCcw size={18} />} 
+          onClick={fetchAllOrders}
+          disabled={loading}
+        >
+          Actualizar
+        </Button>
+      </Box>
+      {/* Panel de Filtros*/}
+      <Card className="filters-card">
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Filtrar por Estado</InputLabel>
+              <Select
+                value={statusFilter}
+                label="Filtrar por Estado"
+                onChange={(e) => setStatusFilter(e.target.value)}
+                startAdornment={
+                  <InputAdornment position="start">
+                    <Filter size={18} />
+                  </InputAdornment>
+                }
+              >
+                <MenuItem value=""><em>Todos los estados</em></MenuItem>
+                {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                  <MenuItem key={key} value={key}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: config.bgColor }} />
+                      {config.label}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={6} sx={{ textAlign: 'right' }}>
+            <Typography variant="body2" fontWeight="500" color="var(--gray-600)">
+              Mostrando {filteredOrders.length} de {orders.length} pedidos totales
             </Typography>
-          </Box>
-        </Box>
+          </Grid>
+        </Grid>
       </Card>
 
       {/* Estados de Carga y Error */}
-      {loading && (
-        <Box className="loading-container">
-          <CircularProgress size={60} thickness={4} className="loading-spinner" />
-          <Typography variant="h6" className="loading-text">
-            Cargando pedidos...
-          </Typography>
+      {loading ? (
+        <Box className="admin-loading">
+          <CircularProgress color="primary" />
+          <Typography sx={{ mt: 2 }}>Sincronizando con el servidor...</Typography>
         </Box>
-      )}
-
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 2 }}
-          className="error-alert"
-          action={
-            <Button color="inherit" size="small" onClick={fetchAllOrders}>
-              Reintentar
-            </Button>
-          }
-        >
+      ) : error ? (
+        <Alert severity="error" variant="filled" sx={{ borderRadius: 2 }}>
           {error}
         </Alert>
-      )}
-
-      {/* Lista de Pedidos */}
-      {!loading && !error && filteredOrders.length === 0 && (
-        <Card className="empty-state">
-          <Box className="empty-state-content">
-            <Typography variant="h6" className="empty-state-title">
-              {statusFilter ? 'No hay pedidos con este estado' : 'No hay pedidos registrados'}
-            </Typography>
-            <Typography variant="body2" color="textSecondary" className="empty-state-description">
-              {statusFilter
-                ? `No se encontraron pedidos con estado "${STATUS_CONFIG[statusFilter]?.label}".`
-                : 'Cuando los clientes realicen pedidos, aparecerán aquí.'}
-            </Typography>
-          </Box>
-        </Card>
-      )}
-
-      {/* Lista de Pedidos */}
-      {!loading && !error && filteredOrders.length > 0 && (
-        // 2. Cambiamos Box por Grid Container
-        <Grid container spacing={5}>
-          {filteredOrders.map((order) => (
-            // 3. Cada item es un Grid Item (1 col móvil, 2 tablet, 3 escritorio)
-            <Grid item xs={12} sm={6} md={4} key={order.id}>
-              <OrderItemDisplay order={order} isAdminView={true} onStatusChange={fetchAllOrders} />
-            </Grid>
-          ))}
-        </Grid>
+      ) : filteredOrders.length === 0 ? (
+        <Box className="admin-empty">
+          <Package size={64} color="var(--gray-300)" />
+          <Typography variant="h6">No hay pedidos para mostrar</Typography>
+          <Typography variant="body2" color="textSecondary">
+            Intenta cambiar el filtro o esperar a nuevas compras.
+          </Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+        {filteredOrders.map((order) => (
+          <Grid item xs={12} sm={6} md={4} key={order.id}> 
+            <OrderItemDisplay order={order} isAdminView={true} />
+          </Grid>
+        ))}
+      </Grid>
       )}
     </Box>
   );

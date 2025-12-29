@@ -53,9 +53,9 @@ const MyOrders = () => {
       )}
 
       {!loading && !error && orders.length > 0 && (
-        <Grid container spacing={5}>
+        <Grid container spacing={3}>
           {orders.map((order) => (
-            <Grid item xs={12} sm={6} md={4} key={order.id}>
+            <Grid item xs={12} sm={6} lg={4} key={order.id}>
               <OrderItemDisplay order={order} />
             </Grid>
           ))}

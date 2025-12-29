@@ -8,11 +8,7 @@ import {
   Button,
   Divider,
   CircularProgress,
-  Alert,
-  Chip,
-  Stepper,
-  Step,
-  StepLabel,
+  Alert, Chip, Stepper, Step, StepLabel,
 } from '@mui/material';
 import { ArrowLeft, Receipt, User, MapPin, Phone } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -74,20 +70,28 @@ const OrderDetail = () => {
     fetchOrder();
   }, [id]);
 
-  const getCurrentStepIndex = (status) => {
-    if (status === 'cancelado' || status === 'fallido') return -1;
+  const currentStatusName = order?.status?.name;
 
-    let normalizedStatus = status;
-    if (status === 'pendiente') normalizedStatus = 'pendiente_de_pago';
-    if (status === 'procesando') normalizedStatus = 'en_proceso';
-    if (status === 'entregado') normalizedStatus = 'completado';
+  const activeStep = order 
+    ? ORDER_STEPS.findIndex((s) => s.value === currentStatusName) 
+    : 0;
+  const isCancelled = currentStatusName === 'cancelado' || currentStatusName === 'fallido';
 
-    const index = ORDER_STEPS.findIndex((s) => s.value === normalizedStatus);
-    return index !== -1 ? index : 0;
+  const changeStatus = async (newStatusName) => {
+    setUpdatingStatus(true);
+    try {
+      await updateOrderStatus(order.id, newStatusName);
+      showSuccessAlert(
+        'Estado Actualizado',
+        `El pedido ahora está: ${newStatusName.replace(/_/g, ' ')}`
+      );
+      await fetchOrder();
+    } catch (err) {
+      showErrorAlert('Error', err.message || 'No se pudo actualizar el estado');
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
-
-  const activeStep = order ? getCurrentStepIndex(order.status) : 0;
-  const isCancelled = order?.status === 'cancelado' || order?.status === 'fallido';
 
   const handleAdvanceStep = async () => {
     if (activeStep >= ORDER_STEPS.length - 1) return;
@@ -109,7 +113,7 @@ const OrderDetail = () => {
       await changeStatus(nextStatus);
     }
   };
-
+  
   const handleCancelOrder = async () => {
     const result = await deleteDataAlert(
       '¿Cancelar este pedido?',
@@ -118,22 +122,6 @@ const OrderDetail = () => {
 
     if (result.isConfirmed) {
       await changeStatus('cancelado');
-    }
-  };
-
-  const changeStatus = async (newStatus) => {
-    setUpdatingStatus(true);
-    try {
-      await updateOrderStatus(order.id, newStatus);
-      showSuccessAlert(
-        'Estado Actualizado',
-        `El pedido ahora está: ${newStatus.replace(/_/g, ' ')}`
-      );
-      fetchOrder();
-    } catch (err) {
-      showErrorAlert('Error', err.message || 'No se pudo actualizar el estado');
-    } finally {
-      setUpdatingStatus(false);
     }
   };
 
@@ -209,25 +197,16 @@ const OrderDetail = () => {
       </Button>
 
       <Grid container spacing={3}>
-        {/* --- Columna Izquierda: Detalles del Pedido --- */}
         <Grid item xs={12} md={8}>
           <Paper className="detail-paper">
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 1,
-                flexWrap: 'wrap',
-                gap: 1,
-              }}
-            >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1, }}>
               <Typography variant="h5" component="h1" fontWeight="700" color="primary">
                 Pedido #{order.id}
               </Typography>
+
               <Chip
-                label={order.status.replace(/_/g, ' ').toUpperCase()}
-                className={`status-chip status-${order.status}`}
+                label={order.status?.displayName?.toUpperCase() || 'DESCONOCIDO'}
+                className={`status-chip status-${order.status?.name}`}
               />
             </Box>
 
@@ -237,14 +216,13 @@ const OrderDetail = () => {
 
             <Divider sx={{ my: 3 }} />
 
-            {/* --- SECCIÓN DE SEGUIMIENTO (STEPPER) --- */}
             <Typography variant="h6" gutterBottom>
               Estado del pedido
             </Typography>
 
             {isCancelled ? (
               <Alert severity="error" sx={{ mb: 3 }}>
-                Este pedido ha sido cancelado.
+                Este pedido se encuentra en estado: {order.status?.displayName}
               </Alert>
             ) : (
               <Box sx={{ width: '100%', mb: 4, mt: 2 }}>
@@ -258,18 +236,10 @@ const OrderDetail = () => {
               </Box>
             )}
 
-            {/* --- CONTROLES DE ADMINISTRADOR --- */}
+            {/* CONTROLES DE ADMINISTRADOR */}
 
             {isAdmin && !isCancelled && activeStep < ORDER_STEPS.length - 1 && (
-              <Box
-                sx={{
-                  p: 2,
-                  bgcolor: 'var(--gray-100)',
-                  borderRadius: 2,
-                  mb: 3,
-                  border: '1px dashed var(--gray-300)',
-                }}
-              >
+              <Box sx={{ p: 2, bgcolor: 'var(--gray-100)', borderRadius: 2, mb: 3, border: '1px dashed var(--gray-300)', }}>
                 <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
                   Zona de Administración
                 </Typography>
@@ -323,14 +293,7 @@ const OrderDetail = () => {
                     )}
 
                     {item.pack && item.pack.packItems && (
-                      <Box
-                        sx={{
-                          mt: 1,
-                          padding: 1,
-                          backgroundColor: 'var(--gray-100)',
-                          borderRadius: 1,
-                        }}
-                      >
+                      <Box sx={{ mt: 1, padding: 1, backgroundColor: 'var(--gray-100)', borderRadius: 1, }}>
                         <Typography variant="caption" fontWeight="bold" color="text.secondary">
                           Contenido del Pack:
                         </Typography>

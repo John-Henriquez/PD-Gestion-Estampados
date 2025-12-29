@@ -7,7 +7,7 @@ import Pack from "../entity/pack.entity.js";
 import OrderStatus from "../entity/orderStatus.entity.js";
 import Operation from "../entity/inventoryOperation.entity.js";
 import {
-createItemSnapshot,
+  createItemSnapshot,
   generateInventoryReason,
 } from "../helpers/inventory.helpers.js";
 import {
@@ -25,7 +25,6 @@ export const orderService = {
         const orderRepo = transactionalEntityManager.getRepository(Order);
         const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
         const operationRepo = transactionalEntityManager.getRepository(Operation);
-        
         const orderItemRepo = transactionalEntityManager.getRepository(OrderItem);
         const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
         const packRepo = transactionalEntityManager.getRepository(Pack);
@@ -33,9 +32,8 @@ export const orderService = {
 
         const { items, customerData, shippingData } = orderData;
 
-        if (!items || items.length === 0) {
-          return [null, "El pedido debe contener al menos un artículo."];
-        }
+        if (!items || items.length === 0) return [null, "El pedido debe contener al menos un artículo."];
+        
         const initialStatus = await statusRepo.findOne({ where: { name: "pendiente_de_pago" } });
         if (!initialStatus) throw new Error("Estado inicial 'pendiente_de_pago' no configurado.");
 
@@ -45,6 +43,7 @@ export const orderService = {
 
         for (const itemInput of items) {
           const selectedLevelObject = itemInput.stampOptionsSnapshot || null;
+          
           let itemNameSnapshot = "Artículo Desconocido";
           let sizeSnapshot = null;
           let colorHexSnapshot = null;
@@ -145,6 +144,9 @@ export const orderService = {
         const itemEntities = orderItemsData.map(d => orderItemRepo.create({ ...d, order: savedOrder }));
         await orderItemRepo.save(itemEntities);
 
+        const operationEntity = await operationRepo.findOneBy({ slug: "sale" });
+        if (!operationEntity) throw new Error("Operación 'sale' no encontrada.");
+
         for (const [stockId, qty] of itemsToUpdateStock.entries()) {
           await itemStockRepo.decrement({ id: stockId }, "quantity", qty);
 
@@ -152,9 +154,6 @@ export const orderService = {
             where: { id: stockId }, 
             relations: ["itemType", "color"]
           });
-
-          const operationEntity = await operationRepo.findOneBy({ slug: "sale" });
-          if (!operationEntity) throw new Error("Operación 'sale' no encontrada.");
 
           const { reason: helperReason } = generateInventoryReason("sale");
 
@@ -173,6 +172,7 @@ export const orderService = {
         const finalOrder = await orderRepo.findOne({
           where: { id: savedOrder.id },
           relations: [
+            "status",
             "user",
             "orderItems",
             "orderItems.itemStock",
@@ -216,6 +216,7 @@ export const orderService = {
       const orders = await orderRepo.find({
         where: whereClause,
         relations: [
+          "status",
           "user",
           "orderItems",
           "orderItems.itemStock",
@@ -243,6 +244,7 @@ export const orderService = {
       const order = await orderRepo.findOne({
         where: { id: orderId },
         relations: [
+          "status",
           "user",
           "orderItems",
           "orderItems.itemStock",
@@ -285,17 +287,19 @@ export const orderService = {
     }
   },
 
-  async updateOrderStatus(orderId, newStatus, adminUserId) {
+  async updateOrderStatus(orderId, newStatusName, adminUserId) {
     return await AppDataSource.transaction(
       async (transactionalEntityManager) => {
         const orderRepo = transactionalEntityManager.getRepository(Order);
         const movementRepo = transactionalEntityManager.getRepository(InventoryMovement);
         const itemStockRepo = transactionalEntityManager.getRepository(ItemStock);
         const operationRepo = transactionalEntityManager.getRepository(Operation);
+        const statusRepo = transactionalEntityManager.getRepository(OrderStatus);
 
         const order = await orderRepo.findOne({
           where: { id: orderId },
           relations: [
+            "status",
             "user", 
             "orderItems", 
             "orderItems.itemStock",
@@ -307,33 +311,28 @@ export const orderService = {
           ]
         });
 
-        if (!order) {
-          throw new Error("Pedido no encontrado.");
+        if (!order) throw new Error("Pedido no encontrado.");
+
+        const targetStatus = await statusRepo.findOneBy({ name: newStatusName });
+        if (!targetStatus) throw new Error(`Estado inválido: ${newStatusName}`);
+
+        if (order.status?.id === targetStatus.id) {
+          return [order, null];
         }
 
         const changes = {};
         let requiresAuditLog = false;
+        
+       changes.status = {
+          oldValue: order.status.name,
+          newValue: targetStatus.name,
+        };
 
-        if (newStatus && newStatus !== order.status) {
-          const allowedStatus = [
-            "pendiente_de_pago",
-            "en_proceso",
-            "enviado",
-            "completado",
-            "cancelado"
-          ];
-
-          if (!allowedStatus.includes(newStatus)) {
-            throw new Error(`Estado inválido: ${newStatus}`);
-          }
-          changes.status = {
-            oldValue: order.status,
-            newValue: newStatus,
-          };
-
-          if (newStatus === "cancelado" && order.status !== "cancelado") {
+        
+        if (newStatusName === "cancelado" && order.status.name !== "cancelado") {
             const returnOp = await operationRepo.findOneBy({ slug: "return" });
             if (!returnOp) throw new Error("Operación 'return' no encontrada.");
+
             for (const item of order.orderItems) {
               if (item.itemStock) {
                 await itemStockRepo.increment({ id: item.itemStock.id }, "quantity", item.quantity);
@@ -350,50 +349,44 @@ export const orderService = {
                 });
               } 
               else if (item.pack) {
-                for (const packItem of item.pack.packItems) {
-                  const quantityToRestore = item.quantity * packItem.quantity;
-                  
-                  await itemStockRepo.increment({ id: packItem.itemStock.id }, "quantity", quantityToRestore);
-                  const { reason: helperReason } = generateInventoryReason("return");
-                  await movementRepo.save({
-                    type: "entrada",
-                    operation: returnOp,
-                    reason: `${helperReason} (Cancelación Pack en Pedido #${order.id})`,
-                    quantity: quantityToRestore,
-                    itemStock: packItem.itemStock,
-                    createdBy: { id: adminUserId },
-                    order: { id: order.id },
-                    ...createItemSnapshot(packItem.itemStock)
-                  });
-                }
+              for (const packItem of item.pack.packItems) {
+                const quantityToRestore = item.quantity * packItem.quantity;
+                await itemStockRepo.increment({ id: packItem.itemStock.id }, "quantity", quantityToRestore);
+                const { reason: helperReason } = generateInventoryReason("return");
+                await movementRepo.save({
+                  type: "entrada",
+                  operation: returnOp,
+                  reason: `${helperReason} (Cancelación Pack en Pedido #${order.id})`,
+                  quantity: quantityToRestore,
+                  itemStock: packItem.itemStock,
+                  createdBy: adminUserId ? { id: adminUserId } : null,
+                  order: { id: order.id },
+                  ...createItemSnapshot(packItem.itemStock)
+                });
               }
             }
           }
+        }
 
-          if (newStatus === "en_proceso" && !order.paymentDate) {
+        if (newStatusName === "en_proceso" && !order.paymentDate) {
             order.paymentDate = new Date();
             changes.paymentDate = { oldValue: null, newValue: order.paymentDate };
             if (!order.paymentMethod) {
-              order.paymentMethod = "Confirmado por Admin";
+              order.paymentMethod = "Confirmado por Sistema";
             }
           }
 
-          order.status = newStatus;
-          requiresAuditLog = true;
-        }
-
-        if (Object.keys(changes).length === 0) {
-          return [order, null];
-        }
-
+        order.status = targetStatus;
+        requiresAuditLog = true;
         order.updatedAt = new Date();
+
         const updatedOrder = await orderRepo.save(order);
 
-        const operation = await operationRepo.findOneBy({ slug: "update" });
-        if (requiresAuditLog) {
-          const { reason: helperReason } = generateInventoryReason("update");
+        const operation = await operationRepo.findOneBy({ slug: "update_info" });
+        if (requiresAuditLog && operation) {
+          const { reason: helperReason } = generateInventoryReason("update_info");
           await movementRepo.save({
-            type: "modificacion",
+            type: "ajuste",
             operation: operation,
             reason: helperReason,
             quantity: 0,
@@ -403,27 +396,20 @@ export const orderService = {
             snapshotItemName: `Pedido #${orderId}`,
           });
         }
-
         
         try {
-          switch (newStatus) {
-            case "en_proceso":
-              await sendOrderPaidEmail(updatedOrder);
-              break;
-            case "enviado":
-              await sendOrderShippedEmail(updatedOrder);
-              break;
-            case "completado":
-              await sendOrderCompletedEmail(updatedOrder);
-              break;
-            case "cancelado":
-              await sendOrderCancelledEmail(updatedOrder);
-              break;
-            default:
-              break;
+          const emailMap = {
+            en_proceso: sendOrderPaidEmail,
+            enviado: sendOrderShippedEmail,
+            completado: sendOrderCompletedEmail,
+            cancelado: sendOrderCancelledEmail
+          };
+
+          if (emailMap[newStatusName]) {
+            await emailMap[newStatusName](updatedOrder);
           }
         } catch (emailErr) {
-          console.error(`⚠️ Error enviando correo para estado ${newStatus}:`, emailErr);
+          console.error(`⚠️ Error enviando correo para ${newStatusName}:`, emailErr);
         }
 
         return [updatedOrder, null];

@@ -1,4 +1,3 @@
-// backend/src/entity/orderStatus.entity.js
 import { EntitySchema } from "typeorm";
 
 const OrderStatusSchema = new EntitySchema({

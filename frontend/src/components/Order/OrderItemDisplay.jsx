@@ -1,96 +1,85 @@
-import { Box, Typography, Divider, Button } from '@mui/material';
+import { Box, Typography, Divider, Button, Tooltip } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { format as formatTempo } from '@formkit/tempo';
+import { Package, Clock, ChevronRight } from 'lucide-react';
 
 import '../../styles/components/orderItemDisplay.css';
 
-const formatStatus = (status) => {
-  const statusMap = {
-    pendiente_de_pago: 'Pendiente de Pago',
-    en_proceso: 'En Proceso',
-    enviado: 'Enviado',
-    completado: 'Completado',
-    cancelado: 'Cancelado',
-  };
-  return statusMap[status] || status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-};
-
 const OrderItemDisplay = ({ order, isAdminView = false }) => {
-  const statusClassName = `status-${order.status || 'default'}`;
-  const chipClassName = `chip-${order.status || 'default'}`;
+  const statusSlug = order.status?.name || 'default';
+  const statusLabel = order.status?.displayName || 'Desconocido';
 
-  return (
-    <div className={`order-item-paper ${statusClassName}`}>
-      <Box className="order-item-content-wrapper">
-        <Box className="order-item-details">
-          <Box>
-            <Typography variant="body1">
-              Pedido <strong>#{order.id}</strong>
-            </Typography>
-            {isAdminView && (
-              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                {order.user
-                  ? order.user.nombreCompleto
-                  : order.guestEmail || order.customerName || 'Invitado'}
-              </Typography>
-            )}
-          </Box>
+  const statusClassName = `status-${statusSlug}`;
+  const chipClassName = `chip-${statusSlug}`;
 
-          <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-            <Typography variant="body2" color="textSecondary">
-              {formatTempo(order.createdAt, 'DD/MM/YYYY')}
-            </Typography>
-            <Typography variant="caption" color="textSecondary">
-              {formatTempo(order.createdAt, 'HH:mm')}
+return (
+    <div className={`order-card ${statusClassName}`}>
+      <Box className="order-card-header">
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Package size={16} className="order-icon" />
+            <Typography variant="subtitle1" fontWeight="800" className="order-number">
+              ORDEN #{order.id}
             </Typography>
           </Box>
+          {isAdminView && (
+            <Typography variant="caption" className="order-customer-name">
+              {order.user ? order.user.nombreCompleto : order.customerName || 'Invitado'}
+            </Typography>
+          )}
         </Box>
-
-        {/* Chip de estado alineado */}
-        <Box sx={{ mb: 2, mt: 1 }}>
-          <Typography
-            variant="body1"
-            component="span"
-            className={`order-item-status-chip ${chipClassName}`}
-            sx={{ display: 'inline-block' }}
-          >
-            {formatStatus(order.status)}
+        <Box className="order-date-box">
+          <Typography variant="caption" fontWeight="600">
+            {formatTempo(order.createdAt, 'DD MMM, YYYY')}
           </Typography>
-        </Box>
-
-        <Divider sx={{ my: 1 }} />
-
-        <Box className="order-item-summary">
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            {order.orderItems?.length} {order.orderItems?.length === 1 ? 'artículo' : 'artículos'}
-            &nbsp;•&nbsp; Total: <strong>${order.total?.toLocaleString('es-CL')}</strong>
-          </Typography>
-          <ul>
-            {order.orderItems?.slice(0, 3).map((item) => (
-              <li key={item.id}>
-                {item.itemNameSnapshot}
-                {item.quantity > 1 && (
-                  <span style={{ fontWeight: 600, marginLeft: 4 }}> (x{item.quantity})</span>
-                )}
-              </li>
-            ))}
-            {order.orderItems?.length > 3 && (
-              <li style={{ fontStyle: 'italic', color: '#888' }}>
-                ...y {order.orderItems.length - 3} más
-              </li>
-            )}
-          </ul>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end' }}>
+            <Clock size={12} />
+            <Typography variant="caption">{formatTempo(order.createdAt, 'HH:mm')}</Typography>
+          </Box>
         </Box>
       </Box>
-      <Box sx={{ mt: 2 }}>
+
+      <Box sx={{ mt: 1.5, mb: 2 }}>
+        <span className={`status-badge ${chipClassName}`}>
+          {statusLabel}
+        </span>
+      </Box>
+
+      <Divider sx={{ borderStyle: 'dashed' }} />
+
+      <Box className="order-card-body">
+        <Typography variant="body2" className="items-count">
+          {order.orderItems?.length} {order.orderItems?.length === 1 ? 'Producto' : 'Productos'}
+        </Typography>
+        
+        <ul className="items-preview-list">
+          {order.orderItems?.slice(0, 2).map((item) => (
+            <li key={item.id} className="item-preview">
+              {item.itemNameSnapshot} <span>x{item.quantity}</span>
+            </li>
+          ))}
+          {order.orderItems?.length > 2 && (
+            <li className="more-items">+{order.orderItems.length - 2} productos más...</li>
+          )}
+        </ul>
+      </Box>
+
+      <Box className="order-card-footer">
+        <Box>
+          <Typography variant="caption" color="text.secondary" display="block">Total Pagado</Typography>
+          <Typography variant="h6" fontWeight="800" color="primary.main">
+            ${order.total?.toLocaleString('es-CL')}
+          </Typography>
+        </Box>
         <Button
-          fullWidth
-          variant="outlined"
+          variant="contained"
           size="small"
           component={RouterLink}
           to={`/order-details/${order.id}`}
+          endIcon={<ChevronRight size={16} />}
+          className="view-details-btn"
         >
-          Ver Detalles
+          Ver
         </Button>
       </Box>
     </div>
