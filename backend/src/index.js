@@ -20,12 +20,26 @@ async function setupServer() {
 
     app.disable("x-powered-by");
 
-    app.use(
-      cors({
-        credentials: true,
-        origin: 'http://localhost:5173',
-      }),
-    );
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://uncomplacent-sheena-entomologically.ngrok-free.dev',
+      ];
+
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  })
+);
 
     app.use(urlencoded({extended: true, limit: "1mb"}));
     app.use(json({limit: "1mb"}));
@@ -45,10 +59,9 @@ async function setupServer() {
         resave: false,
         saveUninitialized: false,
         cookie: {
-          secure: true,
-          httpOnly: true,
-          sameSite: "none",
-        },
+          secure: false,
+          sameSite: 'lax',
+        }
       }),
     );
 

@@ -1,14 +1,20 @@
 export const regionesYComunas = [
   {
     region: 'Arica y Parinacota',
+    ordinal: 'XV',
+    zone: 'NORTE_EXTREMO',
     comunas: ['Arica', 'Camarones', 'Putre', 'General Lagos'],
   },
   {
     region: 'Tarapacá',
+    ordinal: 'I',
+    zone: 'NORTE_EXTREMO',
     comunas: ['Iquique', 'Alto Hospicio', 'Pozo Almonte', 'Camiña', 'Colchane', 'Huara', 'Pica'],
   },
   {
     region: 'Antofagasta',
+    ordinal: 'II',
+    zone: 'NORTE_EXTREMO',
     comunas: [
       'Antofagasta',
       'Mejillones',
@@ -23,6 +29,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Atacama',
+    ordinal: 'III',
+    zone: 'NORTE_EXTREMO',
     comunas: [
       'Copiapó',
       'Caldera',
@@ -37,6 +45,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Coquimbo',
+    ordinal: 'IV',
+    zone: 'NORTE',
     comunas: [
       'La Serena',
       'Coquimbo',
@@ -57,6 +67,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Valparaíso',
+    ordinal: 'V',
+    zone: 'CENTRO',
     comunas: [
       'Valparaíso',
       'Casablanca',
@@ -100,6 +112,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Metropolitana de Santiago',
+    ordinal: 'RM',
+    zone: 'CENTRO',
     comunas: [
       'Cerrillos',
       'Cerro Navia',
@@ -157,6 +171,8 @@ export const regionesYComunas = [
   },
   {
     region: "Libertador Gral. Bernardo O'Higgins",
+    ordinal: 'VI',
+    zone: 'CENTRO',
     comunas: [
       'Rancagua',
       'Codegua',
@@ -195,6 +211,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Maule',
+    ordinal: 'VII',
+    zone: 'SUR_CERCANO',
     comunas: [
       'Talca',
       'Constitución',
@@ -230,6 +248,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Ñuble',
+    ordinal: 'XVI',
+    zone: 'LOCAL',
     comunas: [
       'Cobquecura',
       'Coelemu',
@@ -256,6 +276,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Biobío',
+    ordinal: 'VIII',
+    zone: 'SUR_CERCANO',
     comunas: [
       'Concepción',
       'Coronel',
@@ -294,6 +316,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Araucanía',
+    ordinal: 'IX',
+    zone: 'SUR',
     comunas: [
       'Temuco',
       'Carahue',
@@ -331,6 +355,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Los Ríos',
+    ordinal: 'XIV',
+    zone: 'SUR',
     comunas: [
       'Valdivia',
       'Corral',
@@ -348,6 +374,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Los Lagos',
+    ordinal: 'X',
+    zone: 'SUR',
     comunas: [
       'Puerto Montt',
       'Calbuco',
@@ -383,6 +411,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Aysén',
+    ordinal: 'XI',
+    zone: 'SUR_EXTREMO',
     comunas: [
       'Coyhaique',
       'Lago Verde',
@@ -398,6 +428,8 @@ export const regionesYComunas = [
   },
   {
     region: 'Magallanes',
+    ordinal: 'XII',
+    zone: 'SUR_EXTREMO',
     comunas: [
       'Punta Arenas',
       'Laguna Blanca',

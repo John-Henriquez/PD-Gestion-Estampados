@@ -1,29 +1,16 @@
 import React, { useState, useContext, useEffect } from 'react';
 import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  CircularProgress,
-  Paper,
-  Alert,
-  Grid,
-  Divider,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  IconButton,
-  Tooltip,
+  Box, Typography, TextField, Button, CircularProgress, Paper, Alert,
+  Grid, Divider, MenuItem, Select, FormControl, InputLabel, IconButton, Tooltip,
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useCart } from '../hooks/cart/useCart.jsx';
 import { createOrder } from '../services/order.service';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { showErrorAlert, deleteDataAlert } from '../helpers/sweetAlert';
-import { Trash2 } from 'lucide-react';
-import { regionesYComunas } from '../data/chileData';
+import { Trash2, Truck, Info }from 'lucide-react';
 import { createPaymentPreference } from '../services/payment.service';
+import { useGeography } from '../hooks/useGeography';
 
 const getFullImageUrl = (url) => {
   if (!url) return '';
@@ -33,20 +20,31 @@ const getFullImageUrl = (url) => {
 };
 
 const Checkout = () => {
+  const { 
+    regions, 
+    comunas, 
+    loadingComunas, 
+    fetchComunas, 
+    error: geoError 
+  } = useGeography();
+
   const navigate = useNavigate();
   const { cartItems, removeFromCart, clearCart } = useCart();
   const { isAuthenticated, user } = useContext(AuthContext);
 
   const [customerData, setCustomerData] = useState({ name: '', email: '' });
   const [addressDetails, setAddressDetails] = useState({
-    region: '',
-    comuna: '',
+    regionId: '',
+    comunaId: '',
     street: '',
     phone: '',
   });
 
+  const [selectedComunaData, setSelectedComunaData] = useState(null);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -71,14 +69,29 @@ const Checkout = () => {
       [event.target.name]: event.target.value,
     }));
   };
-  const handleAddressChange = (event) => {
-    const { name, value } = event.target;
-    if (name === 'region') {
-      setAddressDetails((prev) => ({ ...prev, region: value, comuna: '' }));
-    } else {
-      setAddressDetails((prev) => ({ ...prev, [name]: value }));
-    }
-  };
+
+const handleRegionChange = (event) => {
+  const regionId = Number(event.target.value);
+
+  setAddressDetails(prev => ({
+    ...prev,
+    regionId,
+    comunaId: ''
+  }));
+
+  setSelectedComunaData(null);
+  fetchComunas(regionId);
+};
+
+const handleComunaChange = (event) => {
+  const comunaId = Number(event.target.value);
+
+  const comunaData = comunas.find(c => c.id === comunaId);
+
+  setAddressDetails(prev => ({ ...prev, comunaId }));
+  setSelectedComunaData(comunaData);
+};
+
 
   const handleRemoveItem = async (itemId) => {
     const result = await deleteDataAlert(
@@ -98,17 +111,16 @@ const Checkout = () => {
       return;
     }
     if (
-      !addressDetails.region ||
-      !addressDetails.comuna ||
+      !addressDetails.regionId ||
+      !addressDetails.comunaId ||
       !addressDetails.street ||
       !addressDetails.phone
     ) {
-      setError(
-        'Por favor, completa todos los datos de envío (Región, Comuna, Dirección y Teléfono).'
-      );
+      setError('Por favor, completa todos los datos de envío.');
       showErrorAlert('Datos faltantes', 'Completa la dirección de envío.');
       return;
     }
+
     if (cartItems.length === 0) {
       setError('Tu carrito está vacío.');
       showErrorAlert(
@@ -119,7 +131,6 @@ const Checkout = () => {
     }
 
     setIsProcessing(true);
-    const fullAddress = `${addressDetails.street}, ${addressDetails.comuna}, ${addressDetails.region}`;
 
     const orderPayload = {
       items: cartItems.map((item) => ({
@@ -133,7 +144,9 @@ const Checkout = () => {
       customerData: isAuthenticated ? null : customerData,
       shippingData: {
         phone: addressDetails.phone,
-        address: fullAddress,
+        street: addressDetails.street,
+        comunaId: addressDetails.comunaId,
+        regionId: addressDetails.regionId,
       },
     };
 
@@ -142,9 +155,7 @@ const Checkout = () => {
       const preference = await createPaymentPreference(createdOrder.id);
 
       if (preference && preference.init_point) {
-        // Limpiamos el carro antes de irnos
         clearCart();
-        // REDIRECCIÓN A MERCADO PAGO
         window.location.href = preference.init_point;
       } else {
         throw new Error('No se recibió el link de pago.');
@@ -164,8 +175,8 @@ const Checkout = () => {
     );
   };
 
-  const selectedRegionData = regionesYComunas.find((r) => r.region === addressDetails.region);
-  const availableComunas = selectedRegionData ? selectedRegionData.comunas : [];
+  console.log("Regiones en Checkout:", regions);
+  console.log("Comunas en Checkout:", comunas);
 
   return (
     <Box
@@ -176,36 +187,13 @@ const Checkout = () => {
         paddingTop: '4.5rem',
       }}
     >
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          color: 'var(--primary-dark)',
-          textAlign: 'center',
-          mb: 'var(--spacing-lg)',
-        }}
-      >
+      <Typography variant="h4" gutterBottom sx={{ color: 'var(--primary-dark)', textAlign: 'center', mb: 'var(--spacing-lg)' }}>
         Revisión del Pedido
       </Typography>
 
       {/* Resumen */}
-      <Paper
-        elevation={2}
-        sx={{
-          padding: 'var(--spacing-md)',
-          marginBottom: 'var(--spacing-lg)',
-          backgroundColor: 'var(--gray-100)',
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{
-            color: 'var(--primary)',
-            pb: 1,
-            mb: 2,
-            borderBottom: '1px solid var(--gray-300)',
-          }}
-        >
+      <Paper elevation={2} sx={{ padding: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', backgroundColor: 'var(--gray-100)' }}>
+        <Typography variant="h6" sx={{ color: 'var(--primary)', pb: 1, mb: 2, borderBottom: '1px solid var(--gray-300)' }}>
           Tu Pedido ({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})
         </Typography>
 
@@ -290,24 +278,8 @@ const Checkout = () => {
         </Typography>
       </Paper>
 
-      <Paper
-        elevation={2}
-        sx={{
-          padding: 'var(--spacing-md)',
-          marginBottom: 'var(--spacing-lg)',
-          backgroundColor: 'var(--gray-100)',
-        }}
-      >
-        <Typography
-          variant="h6"
-          gutterBottom
-          sx={{
-            color: 'var(--primary)',
-            pb: 1,
-            mb: 1,
-            borderBottom: '1px solid var(--gray-300)',
-          }}
-        >
+      <Paper elevation={2} sx={{ padding: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', backgroundColor: 'var(--gray-100)' }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'var(--primary)', pb: 1, mb: 1, borderBottom: '1px solid var(--gray-300)' }}>
           Datos de Envío y Contacto
         </Typography>
 
@@ -315,29 +287,10 @@ const Checkout = () => {
           {!isAuthenticated && (
             <>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Nombre Completo"
-                  name="name"
-                  value={customerData.name}
-                  onChange={handleCustomerDataChange}
-                  fullWidth
-                  margin="normal"
-                  variant="outlined"
-                />
+                <TextField label="Nombre Completo" name="name" value={customerData.name} onChange={handleCustomerDataChange} fullWidth margin="normal" variant="outlined" />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Correo Electrónico"
-                  name="email"
-                  type="email"
-                  value={customerData.email}
-                  onChange={handleCustomerDataChange}
-                  required
-                  fullWidth
-                  margin="normal"
-                  variant="outlined"
-                  helperText="Para enviarte el comprobante."
-                />
+                <TextField label="Correo Electrónico" name="email" type="email" value={customerData.email} onChange={handleCustomerDataChange} required fullWidth margin="normal" variant="outlined" />
               </Grid>
             </>
           )}
@@ -345,14 +298,13 @@ const Checkout = () => {
             <FormControl fullWidth required>
               <InputLabel>Región</InputLabel>
               <Select
-                name="region"
-                value={addressDetails.region}
+                value={addressDetails.regionId || ''}
+                onChange={handleRegionChange}
                 label="Región"
-                onChange={handleAddressChange}
               >
-                {regionesYComunas.map((reg) => (
-                  <MenuItem key={reg.region} value={reg.region}>
-                    {reg.region}
+                {regions.map((reg) => (
+                  <MenuItem key={reg.id} value={reg.id}>
+                    {reg.ordinal ? `${reg.ordinal} - ` : ''}{reg.name}
                   </MenuItem>
                 ))}
               </Select>
@@ -360,46 +312,55 @@ const Checkout = () => {
           </Grid>
 
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required disabled={!addressDetails.region}>
+            <FormControl fullWidth required disabled={!addressDetails.regionId}>
               <InputLabel>Comuna</InputLabel>
               <Select
-                name="comuna"
-                value={addressDetails.comuna}
+                value={addressDetails.comunaId}
                 label="Comuna"
-                onChange={handleAddressChange}
+                onChange={handleComunaChange}
               >
-                {availableComunas.map((com) => (
-                  <MenuItem key={com} value={com}>
-                    {com}
-                  </MenuItem>
+                {comunas.map((com) => (
+                  <MenuItem key={com.id} value={com.id}>{com.name}</MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
+
+          {selectedComunaData && (
+            <Grid item xs={12}>
+              <Alert 
+                icon={<Truck size={20} />} 
+                severity="info"
+                sx={{ backgroundColor: 'white', border: '1px solid var(--info)', borderRadius: '12px' }}
+              >
+                <Typography variant="subtitle2" fontWeight="bold">Información de Envío (Por Pagar):</Typography>
+                <Typography variant="body2">
+                  El costo estimado hacia <strong>{selectedComunaData.name}</strong> es de aproximadamente <strong>${selectedComunaData.baseShippingPrice.toLocaleString()}</strong>.
+                </Typography>
+                <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                  <Info size={14} style={{ marginRight: 4 }} /> 
+                  El valor final es determinado por la empresa de transporte al momento del despacho.
+                </Typography>
+              </Alert>
+            </Grid>
+          )}
 
           <Grid item xs={12} sm={8}>
             <TextField
               label="Calle, Número, Depto"
-              name="street"
               value={addressDetails.street}
-              onChange={handleAddressChange}
-              required
-              fullWidth
-              variant="outlined"
+              onChange={(e) => setAddressDetails(prev => ({...prev, street: e.target.value}))}
+              required fullWidth variant="outlined" 
               placeholder="Ej: Av. Siempre Viva 742"
             />
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={4}>
             <TextField
               label="Teléfono / Celular"
-              name="phone"
               value={addressDetails.phone}
-              onChange={handleAddressChange}
-              required
-              fullWidth
-              margin="normal"
-              variant="outlined"
+              onChange={(e) => setAddressDetails(prev => ({...prev, phone: e.target.value}))}
+              required fullWidth variant="outlined" 
               placeholder="+569..."
             />
           </Grid>
@@ -442,7 +403,7 @@ const Checkout = () => {
           }}
           startIcon={isProcessing ? <CircularProgress size={24} color="inherit" /> : null}
         >
-          {isProcessing ? 'Procesando...' : 'Confirmar y Realizar Pedido'}
+          {isProcessing ? 'Procesando...' : 'Confirmar y Pagar'}
         </Button>
       </Box>
     </Box>

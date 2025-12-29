@@ -12,6 +12,7 @@ import fileRoutes from "./file.routes.js";
 import paymentRoutes from "./payment.routes.js";
 import colorRoutes from "./color.routes.js";
 import reportRoutes from "./report.routes.js";
+import geographyRoutes from "./geography.routes.js";
 
 const router = Router();
 
@@ -31,5 +32,6 @@ router.use("/files", fileRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/colors", colorRoutes);
 router.use("/reports", reportRoutes);
+router.use("/geography", geographyRoutes);
 
 export default router;

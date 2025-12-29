@@ -1,10 +1,13 @@
 "use strict";
 import User from "../entity/user.entity.js";
 import Color from "../entity/color.entity.js";
+import Region from "../entity/region.entity.js";
+import Comuna from "../entity/comuna.entity.js";
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
 import { COLOR_DICTIONARY } from "../constants/colorData.js";
 import { INVENTORY_OPERATIONS } from "../constants/inventoryOperations.js";
+import { regionesYComunas } from "../constants/chileData.js";
 import InventoryOperation from "../entity/inventoryOperation.entity.js";
 
 export async function seedInventoryOperations(dataSource) {
@@ -85,9 +88,57 @@ async function seedOrderStatuses() {
   }
 }
 
+async function seedGeography() {
+  try {
+    const regionRepo = AppDataSource.getRepository(Region);
+    const comunaRepo = AppDataSource.getRepository(Comuna);
+
+    const count = await regionRepo.count();
+    if (count > 0) return;
+
+    console.log("* => Poblando geografía de Chile y tarifas referenciales...");
+
+    const ZONE_PRICES = {
+      'LOCAL': 2000,
+      'SUR_CERCANO': 5500,
+      'CENTRO': 7500,
+      'NORTE': 8500,
+      'SUR': 9500,
+      'NORTE_EXTREMO': 12500,
+      'SUR_EXTREMO': 15000
+    };
+    for (const item of regionesYComunas) {
+      const region = regionRepo.create({ 
+        name: item.region, 
+        ordinal: item.ordinal 
+      });
+      const savedRegion = await regionRepo.save(region);
+
+      const priceRef = ZONE_PRICES[item.zone] || 7500;
+
+      const comunasEntities = item.comunas.map((nombreComuna) => {
+        return comunaRepo.create({
+          name: nombreComuna,
+          region: savedRegion,
+          zone: item.zone,
+          baseShippingPrice: priceRef,
+          hasDelivery: true
+        });
+      });
+
+      await comunaRepo.save(comunasEntities);
+    }
+
+    console.log("* => Geografía y logística inicializada con éxito.");
+  } catch (error) {
+    console.error("Error al inicializar geografía:", error);
+  }
+}
+
 export async function initialSetup() {
   await createUsers();
   await seedColors();
   await seedOrderStatuses();
   await seedInventoryOperations(AppDataSource);
+  await seedGeography();
 }
