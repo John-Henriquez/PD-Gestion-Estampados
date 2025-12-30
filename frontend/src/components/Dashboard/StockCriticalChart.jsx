@@ -1,55 +1,70 @@
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { Paper, Typography, Box } from '@mui/material';
 
-const StockCriticalChart = ({ data = [] }) => {
-  // Si no hay data real aún, Recharts simplemente no renderizará barras, 
-  // pero podemos poner un mensaje amigable.
-  if (!data || data.length === 0) {
-    return (
-      <Paper sx={{ p: 3, height: '400px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} elevation={0}>
-        <Typography color="textSecondary">No hay alertas de stock crítico hoy ✅</Typography>
-      </Paper>
-    );
-  }
+const StockCriticalChart = ({ data }) => {
+  const chartData = (data || [])
+    .map(item => ({
+      label: `${item.itemType?.name ?? 'Producto'} - ${item.size}`,
+      quantity: item.quantity,
+      minStock: item.minStock ?? 5
+    }))
+    .sort((a, b) => a.quantity - b.quantity);
 
   return (
-    <Paper sx={{ p: 3, height: '400px', borderRadius: '16px' }} elevation={0}>
+    <Paper sx={{ p: 3, height: '400px', borderRadius: '16px' }} elevation={1}>
       <Typography variant="h6" fontWeight="700" gutterBottom>
-        Prioridad de Reposición
+        Estado del Inventario
       </Typography>
-      <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-        Productos por debajo del stock mínimo configurado.
-      </Typography>
-      
-      <Box sx={{ width: '100%', height: 280 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ left: 30, right: 30 }}>
+      {chartData.length > 0 ? (
+        <ResponsiveContainer width="100%" height="90%">
+          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <XAxis type="number" hide />
             <YAxis 
-              dataKey="name" 
+              dataKey="label" 
               type="category" 
               width={100} 
-              tick={{ fontSize: 11, fill: '#64748b' }}
+              style={{ fontSize: '10px', fontWeight: 600 }}
+              tick={{ fill: 'var(--gray-700)' }}
             />
-            <Tooltip 
-              cursor={{ fill: '#f8fafc' }}
-              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-              formatter={(value, name) => [value, name === 'quantity' ? 'Stock Actual' : 'Mínimo']}
+          <Tooltip 
+            cursor={{ fill: 'transparent' }}
+            formatter={(value, name, props) => {
+                const isCritical = value <= (props.payload.minStock || 5);
+                return [
+                  `${value} unidades ${isCritical ? '⚠️' : '✅'}`, 
+                  'Stock actual'
+                ];
+              }}
+              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             />
-            {/* Barra de Stock Actual */}
-            <Bar dataKey="quantity" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20}>
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.quantity <= (entry.minStock / 2) ? '#b91c1c' : '#ef4444'} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </Box>
+          <Bar dataKey="quantity" radius={[0, 4, 4, 0]} barSize={chartData.length > 10 ? 15 : 25}>
+              {chartData.map((entry, index) => {
+                let barColor = '#3b82f6';
+                const min = entry.minStock || 5;
 
-      <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between' }}>
-         <Typography variant="caption" color="error">🔴 Crítico (≤ 50% del min)</Typography>
-         <Typography variant="caption" color="warning.main">🟠 Bajo</Typography>
-      </Box>
+                if (entry.quantity <= 0) {
+                  barColor = '#7f1d1d';
+                } else if (entry.quantity <= min) {
+                  barColor = '#ef4444';
+                } else if (entry.quantity <= min * 2) {
+                  barColor = '#f59e0b';
+                }
+
+                return (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={barColor}
+                  />
+                );
+              })}
+            </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+      ) : (
+        <Box sx={{ height: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Typography color="textSecondary">Cargando datos de inventario...</Typography>
+        </Box>
+      )}
     </Paper>
   );
 };

@@ -38,9 +38,17 @@ const shippingDataSchema = Joi.object({
     "string.empty": "El teléfono es obligatorio.",
     "any.required": "El teléfono es requerido.",
   }),
-  address: Joi.string().min(5).required().messages({
-    "string.empty": "La dirección es obligatoria.",
-    "any.required": "La dirección es requerida.",
+  street: Joi.string().min(5).required().messages({
+    "string.empty": "La calle y número son obligatorios.",
+    "any.required": "La calle es requerida.",
+  }),
+  comunaId: Joi.number().integer().positive().required().messages({
+    "number.base": "La comuna es requerida.",
+    "any.required": "El ID de la comuna es obligatorio.",
+  }),
+  regionId: Joi.number().integer().positive().required().messages({
+    "number.base": "La región es requerida.",
+    "any.required": "El ID de la región es obligatorio.",
   }),
 });
 

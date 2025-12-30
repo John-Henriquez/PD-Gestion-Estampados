@@ -14,12 +14,13 @@ import { getItemStock } from '../services/itemStock.service';
 import '../styles/pages/dashboard.css';
 
 const Dashboard = () => {
+  
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [inventoryData, setInventoryData] = useState([])
-
+  
   const loadData = async () => {
     setLoading(true);
     const [data, err] = await getDashboardStats();
@@ -27,9 +28,13 @@ const Dashboard = () => {
     else setStats(data);
     setLoading(false);
   };
+  
+  useEffect(() => {
+    loadData();
+    loadInventory();
+  }, []);
 
-  useEffect(() => { loadData(); }, []);
-
+  
   const handleLogicalAudit = async () => {
     try {
       const data = await getItemStock();
@@ -39,7 +44,11 @@ const Dashboard = () => {
       console.error("Error al obtener stock para auditoría:", err);
     }
   };
-
+  const loadInventory = async () => {
+    const data = await getItemStock();
+    setInventoryData([...data]);
+  };
+  
   const handleDownloadAuditSheet = async () => {
     try {
       const stockData = await getItemStock();
@@ -52,15 +61,16 @@ const Dashboard = () => {
       console.error("Error al generar la planilla:", error);
     }
   };
-
+  
   if (loading) return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh' }}>
       <CircularProgress size={60} thickness={4} />
       <Typography sx={{ mt: 2 }} color="textSecondary">Cargando métricas en tiempo real...</Typography>
     </Box>
   );
-
-return (
+  
+  console.log("📊 stats.salesHistory:", stats?.salesHistory);
+  return (
     <Box className="dashboard-wrapper animate--fadeIn" sx={{ pt: 11, pb: 5 }}>
       <Container maxWidth="xl">
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -69,7 +79,16 @@ return (
             <Typography variant="body1" color="textSecondary">Bienvenido al centro de gestión de <b>Vibra Estampados</b></Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button variant="outlined" startIcon={<IconRefresh />} onClick={loadData}>Actualizar</Button>
+            <Button
+              variant="outlined"
+              startIcon={<IconRefresh />}
+              onClick={() => {
+                loadData();
+                loadInventory();
+              }}
+            >
+              Actualizar
+            </Button>
             <Button variant="contained" startIcon={<IconClipboardCheck />} onClick={handleLogicalAudit}>Reporte Mensual</Button>
           </Box>
         </Box>
@@ -80,10 +99,10 @@ return (
 
         <Grid container spacing={3} sx={{ mt: 2 }}>
           <Grid item xs={12} lg={8}>
-            <SalesChart data={stats?.salesHistory} />
+            <SalesChart data={stats?.salesHistoryTransactions}/>
           </Grid>
           <Grid item xs={12} lg={4}>
-            <StockCriticalChart data={stats?.criticalStock} />
+            <StockCriticalChart data={inventoryData} />
           </Grid>
         </Grid>
 
@@ -118,7 +137,10 @@ return (
           open={isAuditModalOpen} 
           onClose={() => setIsAuditModalOpen(false)} 
           stockData={inventoryData} 
-          onFinish={loadData}
+          onFinish={() => {
+            loadData();
+            loadInventory();
+          }}
         />
       </Container>
     </Box>

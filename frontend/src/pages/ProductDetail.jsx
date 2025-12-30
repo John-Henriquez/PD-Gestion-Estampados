@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Button, CircularProgress, Alert, Chip,
   TextField, IconButton, Divider, Grid, FormControl,
   RadioGroup, FormControlLabel, Radio, ToggleButtonGroup, ToggleButton, Paper,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import { getItemTypeById } from '../services/itemType.service';
 import { getPublicItemStock } from '../services/itemStock.service';
@@ -28,7 +28,7 @@ const getFullImageUrl = (url) => {
 const ProductDetail = () => {
   const { itemTypeId } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, removeFromCart } = useCart();
 
   const [itemType, setItemType] = useState(null);
   const [allStockVariations, setAllStockVariations] = useState([]);
@@ -48,6 +48,10 @@ const ProductDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [stampImageUrl, setStampImageUrl] = useState(null);
   const [stampInstructions, setStampInstructions] = useState('');
+
+  const location = useLocation();
+
+  const editItem = location.state?.editItem || null;
 
  const realAvailableSizes = useMemo(() => {
   if (allStockVariations.length === 0) return [];
@@ -75,6 +79,14 @@ const ProductDetail = () => {
           setSelectedSize(firstAvailableSize);
         }
 
+        if (!editItem) {
+          const firstAvailableSize = stockVariations.find(s => s.quantity > 0)?.size;
+          setSelectedSize(firstAvailableSize || (typeInfo?.hasSizes ? typeInfo.sizesAvailable[0] : null));
+          setQuantity(1);
+          setStampImageUrl(null);
+          setStampInstructions('');
+        }
+
         setError(null);
 
         if (!typeInfo) {
@@ -91,14 +103,13 @@ const ProductDetail = () => {
         setStampInstructions('');
         setQuantity(1);
       } catch (err) {
-        console.error('Error al cargar detalle del producto:', err);
         setError(err.message || 'No se pudo cargar el producto.');
       } finally {
         setLoading(false);
       }
     };
     fetchProductData();
-  }, [itemTypeId]);
+  }, [itemTypeId, editItem]);
 
   // EFECTO 2: Actualizar colores disponibles cuando cambia la talla seleccionada
   useEffect(() => {
@@ -117,12 +128,11 @@ const ProductDetail = () => {
     
     setAvailableColors(uniqueColors);
 
-    if (uniqueColors.length > 0) {
-      setSelectedColorObj(uniqueColors[0]);
-    } else {
-      setSelectedColorObj(null);
+    if (!editItem || (editItem && selectedSize !== editItem.size)) {
+      if (uniqueColors.length > 0) setSelectedColorObj(uniqueColors[0]);
     }
-  }, [selectedSize, allStockVariations]);
+    
+  }, [selectedSize, allStockVariations, editItem]);
 
   // EFECTO 3: Encontrar el stock exacto cuando cambia la talla O el color
   useEffect(() => {
@@ -139,6 +149,24 @@ const ProductDetail = () => {
     setQuantity(1);
   }, [selectedColorObj, selectedSize, allStockVariations]);
 
+  // EFECTO 4: Inyectar datos si es una edición
+  useEffect(() => {
+    if (editItem && itemType && allStockVariations.length > 0) {
+      setSelectedSize(editItem.size);
+      
+      const matchingStock = allStockVariations.find(s => s.id === editItem.itemStockId);
+      if (matchingStock) {
+        setSelectedColorObj(matchingStock.color);
+      }
+      if (editItem.stampOptionsSnapshot) {
+        setSelectedLevelName(editItem.stampOptionsSnapshot.level);
+      }
+      setStampImageUrl(editItem.stampImageUrl);
+      setStampInstructions(editItem.stampInstructions || '');
+      setQuantity(editItem.quantity);
+    }
+  }, [editItem, itemType, allStockVariations]);
+
   const selectedLevelObject = useMemo(() => {
     return itemType?.stampingLevels?.find((l) => l.level === selectedLevelName);
   }, [itemType, selectedLevelName]);
@@ -147,6 +175,10 @@ const ProductDetail = () => {
     return selectedLevelObject?.price || 0;
   }, [selectedLevelObject]);
 
+  const handleRemoveStampImage = () => {
+    setStampImageUrl(null);
+  };
+  
   const totalItemPrice = useMemo(() => {
     return calculateDynamicPrice() * quantity;
   }, [calculateDynamicPrice, quantity]);
@@ -202,6 +234,7 @@ const ProductDetail = () => {
 
     const itemToAdd = {
       itemStockId: selectedStock.id,
+      itemTypeId: itemTypeId,
       quantity: quantity,
       name: itemType?.name || 'Producto',
       price: calculateDynamicPrice(),
@@ -213,11 +246,14 @@ const ProductDetail = () => {
       size: selectedStock.size,
       productImageUrls: itemType.productImageUrls,
     };
+    if (editItem) {
+      removeFromCart(editItem.cartItemId);
+    }
 
     addToCart(itemToAdd);
     showSuccessAlert(
-      '¡Añadido!',
-      `${itemToAdd.name} (${itemToAdd.colorName}) fue añadido al carrito.`
+      editItem ? '¡Actualizado!' : '¡Añadido!',
+      `${itemToAdd.name} fue ${editItem ? 'actualizado' : 'añadido'} al carrito.`
     );
     navigate('/checkout');
   };
@@ -257,24 +293,20 @@ const ProductDetail = () => {
   }
 
   // Info del ItemType
-  const {
-    name,
-    description,
-    iconName,
-    productImageUrls = [],
-    sizesAvailable = [],
-    stampingLevels = [],
-  } = itemType;
+  const { name, description, iconName, productImageUrls = [], stampingLevels = [] } = itemType;
   const IconComponent = iconName ? iconMap[iconName] : null;
-  const currentImageUrl =
-    productImageUrls.length > 0 ? getFullImageUrl(productImageUrls[currentImageIndex]) : null;
+const currentImageUrl = productImageUrls.length > 0 ? getFullImageUrl(productImageUrls[currentImageIndex]) : null;
   const hasMultipleImages = productImageUrls.length > 1;
   const isStampable = itemType?.category === 'clothing' || itemType?.category === 'object';
-
   const currentStockQuantity = selectedStock?.quantity || 0;
 
   return (
     <div className="product-detail-container">
+      {editItem && (
+        <Alert severity="info" sx={{ mb: 2, borderRadius: 'var(--border-radius-md)' }}>
+          Estás editando un producto de tu carrito.
+        </Alert>
+      )}
       <div className="product-detail-grid">
         <div className="product-image-column">
           <section className="product-image-section">
@@ -448,6 +480,7 @@ const ProductDetail = () => {
               <Typography variant="h6" gutterBottom sx={{ color: 'var(--secondary-dark)' }}>
                 Personaliza tu Estampado
               </Typography>
+              
               <FormControl component="fieldset" sx={{ mb: 2, width: '100%' }}>
                 <Typography variant="subtitle2" gutterBottom component="legend">
                   Nivel de Estampado:
@@ -520,7 +553,39 @@ const ProductDetail = () => {
                   <Typography variant="subtitle2" gutterBottom>
                     Tu Imagen:
                   </Typography>
-                  <ImageUploader onUploadSuccess={handleStampImageUploadSuccess} />
+                  {stampImageUrl ? (
+                    <Box sx={{ 
+                      position: 'relative', 
+                      width: 'fit-content', 
+                      border: '2px solid var(--primary)', 
+                      borderRadius: '8px', 
+                      p: 0.5,
+                      backgroundColor: 'white'
+                    }}>
+                      <img 
+                        src={getFullImageUrl(stampImageUrl)} 
+                        alt="Diseño a estampar" 
+                        style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: '4px', display: 'block' }} 
+                      />
+                      <IconButton 
+                        size="small" 
+                        onClick={handleRemoveStampImage}
+                        sx={{ 
+                          position: 'absolute', 
+                          top: -12, 
+                          right: -12, 
+                          bgcolor: 'var(--error)', 
+                          color: 'white',
+                          boxShadow: 2,
+                          '&:hover': { bgcolor: 'var(--error-dark)' } 
+                        }}
+                      >
+                        <X size={16} />
+                      </IconButton>
+                    </Box>
+                  ) : (
+                    <ImageUploader onUploadSuccess={handleStampImageUploadSuccess} />
+                  )}
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" gutterBottom>
@@ -581,7 +646,7 @@ const ProductDetail = () => {
               disabled={!selectedStock || currentStockQuantity === 0}
               className="add-to-cart-button animate--pulse"
             >
-              {isStampable ? 'Añadir Personalización y Comprar' : 'Añadir al Carrito y Comprar'}
+              {editItem ? 'Guardar Cambios y Volver' : (isStampable ? 'Añadir Personalización y Comprar' : 'Añadir al Carrito y Comprar')}
             </Button>
           </div>
         </section>

@@ -47,6 +47,7 @@ export const orderService = {
           let itemNameSnapshot = "Artículo Desconocido";
           let sizeSnapshot = null;
           let colorHexSnapshot = null;
+          let colorNameSnapshot = null;
 
           if (itemInput.itemStockId) {
             const stockItem = await itemStockRepo.findOne({
@@ -63,6 +64,7 @@ export const orderService = {
 
             sizeSnapshot = stockItem.size;
             colorHexSnapshot = stockItem.color?.hex || stockItem.hexColor;
+            colorNameSnapshot = stockItem.color?.name || stockItem.colorName;
             itemNameSnapshot = stockItem.itemType?.name;
 
             const isStampable =
@@ -92,6 +94,7 @@ export const orderService = {
               itemNameSnapshot,
               sizeSnapshot,
               colorHexSnapshot,
+              colorNameSnapshot,
               stampOptionsSnapshot: selectedLevelObject,
               stampImageUrl: itemInput.stampImageUrl || null,
               stampInstructions: itemInput.stampInstructions || null,

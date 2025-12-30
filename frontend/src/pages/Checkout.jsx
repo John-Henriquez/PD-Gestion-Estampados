@@ -1,16 +1,18 @@
 import React, { useState, useContext, useEffect } from 'react';
 import {
   Box, Typography, TextField, Button, CircularProgress, Paper, Alert,
-  Grid, Divider, MenuItem, Select, FormControl, InputLabel, IconButton, Tooltip,
+  Grid, Divider, MenuItem, Select, FormControl, 
+  InputLabel, IconButton, Tooltip, Chip,
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useCart } from '../hooks/cart/useCart.jsx';
 import { createOrder } from '../services/order.service';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { showErrorAlert, deleteDataAlert } from '../helpers/sweetAlert';
-import { Trash2, Truck, Info }from 'lucide-react';
+import { Trash2, Truck, Info, Eye }from 'lucide-react';
 import { createPaymentPreference } from '../services/payment.service';
 import { useGeography } from '../hooks/useGeography';
+import '../styles/pages/checkout.css';
 
 const getFullImageUrl = (url) => {
   if (!url) return '';
@@ -175,25 +177,21 @@ const handleComunaChange = (event) => {
     );
   };
 
-  console.log("Regiones en Checkout:", regions);
-  console.log("Comunas en Checkout:", comunas);
+  const handleViewDetails = (e, item) => {
+    e.stopPropagation();
+    const path = item.packId ? `/pack/${item.packId}` : `/product/${item.itemTypeId}`;
+    navigate(path, { state: { editItem: item } });
+  };
 
   return (
-    <Box
-      sx={{
-        maxWidth: '900px',
-        margin: 'var(--spacing-xl) auto',
-        padding: 'var(--spacing-md)',
-        paddingTop: '4.5rem',
-      }}
-    >
-      <Typography variant="h4" gutterBottom sx={{ color: 'var(--primary-dark)', textAlign: 'center', mb: 'var(--spacing-lg)' }}>
+    <Box className="checkout-container">
+      <Typography variant="h4" className="checkout-title">
         Revisión del Pedido
       </Typography>
 
       {/* Resumen */}
-      <Paper elevation={2} sx={{ padding: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', backgroundColor: 'var(--gray-100)' }}>
-        <Typography variant="h6" sx={{ color: 'var(--primary)', pb: 1, mb: 2, borderBottom: '1px solid var(--gray-300)' }}>
+      <Paper elevation={2} className="checkout-paper">
+        <Typography variant="h6" className="checkout-section-title">
           Tu Pedido ({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})
         </Typography>
 
@@ -202,28 +200,30 @@ const handleComunaChange = (event) => {
             <Grid
               container
               spacing={3}
-              sx={{ marginBottom: 'var(--spacing-md)', position: 'relative' }}
+              className="cart-item-row"
+              onDoubleClick={(e) => handleViewDetails(e, item)}
             >
-              <Tooltip title="Eliminar del carrito">
-                <IconButton
-                  size="small"
-                  onClick={() => handleRemoveItem(item.cartItemId)}
-                  sx={{
-                    position: 'absolute',
-                    top: -5,
-                    right: -5,
-                    backgroundColor: 'white',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    color: 'var(--error)',
-                    zIndex: 2,
-                    '&:hover': {
-                      backgroundColor: '#ffebee',
-                    },
-                  }}
-                >
-                  <Trash2 size={18} />
-                </IconButton>
-              </Tooltip>
+              <Box className="cart-item-actions">
+                <Tooltip title="Ver detalles">
+                  <IconButton
+                    size="small"
+                    className="action-button action-button--view"
+                    onClick={(e) => handleViewDetails(e, item)}
+                  >
+                    <Eye size={18} />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Eliminar del carrito">
+                  <IconButton
+                    size="small"
+                    className="action-button action-button--delete"
+                    onClick={() => handleRemoveItem(item.cartItemId)}
+                  >
+                    <Trash2 size={18} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
               {/* Columna Imagen Estampado */}
               {item.stampImageUrl && (
                 <Grid item xs={12} sm={3} md={2} sx={{ textAlign: 'center' }}>
@@ -233,6 +233,7 @@ const handleComunaChange = (event) => {
                   <img
                     src={getFullImageUrl(item.stampImageUrl)}
                     alt="Estampado"
+                    className="cart-item-image"
                     style={{
                       maxWidth: '100%',
                       maxHeight: '100px',
@@ -248,6 +249,37 @@ const handleComunaChange = (event) => {
                 <Typography variant="subtitle1" fontWeight="bold">
                   {item.name || `ID: ${item.itemStockId || item.packId}`}
                 </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', my: 0.5 }}>
+                  {/* Mostrar Color */}
+                  {item.colorName && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" color="var(--gray-700)">Color:</Typography>
+                      <Box 
+                        sx={{ 
+                          width: 14, 
+                          height: 14, 
+                          borderRadius: '50%', 
+                          bgcolor: item.hexColor, 
+                          border: '1px solid #ccc' 
+                        }} 
+                      />
+                      <Typography variant="body2" fontWeight="500">{item.colorName}</Typography>
+                    </Box>
+                  )}
+
+                  {/* Mostrar Talla (solo si existe) */}
+                  {item.size && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" color="var(--gray-700)">Talla:</Typography>
+                      <Chip 
+                        label={item.size} 
+                        size="small" 
+                        variant="outlined" 
+                        sx={{ fontWeight: 'bold', height: '20px' }} 
+                      />
+                    </Box>
+                  )}
+                </Box>
                 <Typography variant="body2" color="var(--gray-700)">
                   Cantidad: {item.quantity}
                 </Typography>

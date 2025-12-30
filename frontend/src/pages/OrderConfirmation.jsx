@@ -4,16 +4,19 @@ import { Box, Typography, Button, CircularProgress, Alert, Paper, Divider } from
 import { CheckCircle, XCircle, Clock, ArrowRight, ShoppingBag } from 'lucide-react';
 import { getOrderById } from '../services/order.service';
 import { createPaymentPreference, verifyPaymentStatus } from '../services/payment.service';
+import { useCart } from '../hooks/cart/useCart';
 
 const OrderConfirmation = () => {
   const { orderId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { clearCart } = useCart();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [verificationStatus, setVerificationStatus] = useState('idle');
   const [retryLoading, setRetryLoading] = useState(false);
+
+  //const [verificationStatus, setVerificationStatus] = useState('idle');
 
   const paymentId = searchParams.get('payment_id');
   const statusMP = searchParams.get('status');
@@ -23,17 +26,14 @@ const OrderConfirmation = () => {
       try {
         setLoading(true);
         if (paymentId && statusMP === 'approved') {
-          setVerificationStatus('verifying');
           try {
             await verifyPaymentStatus(paymentId, orderId);
-            setVerificationStatus('success');
+            clearCart();
           } catch (err) {
             console.error('Error verificando pago:', err);
-            setVerificationStatus('error');
           }
-        } else if (statusMP === 'failure') {
-          setVerificationStatus('rejected');
         }
+
         const orderData = await getOrderById(orderId);
         setOrder(orderData);
       } catch (error) {
@@ -74,57 +74,70 @@ const OrderConfirmation = () => {
     No se encontró el pedido.
   </Alert>;
 
-  const isPaid =
-    order.status === 'en_proceso' || order.status === 'completado' || order.status === 'enviado';
-  const isRejected = statusMP === 'failure';
+  const isApprovedByMP = statusMP === 'approved';
+  const isPaidInDB = ['en_proceso', 'completado', 'enviado'].includes(order.status?.name || order.status);
 
-  return (
+  let viewMode = 'pending';
+  if (isApprovedByMP || isPaidInDB) viewMode = 'success';
+  if (statusMP === 'failure' || statusMP === 'rejected') viewMode = 'error';
+
+return (
     <Box sx={{ maxWidth: 700, margin: '2rem auto', p: 2 }}>
       <Paper elevation={3} sx={{ p: { xs: 3, md: 5 }, borderRadius: 4, textAlign: 'center' }}>
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-          {isPaid ? (
-            <CheckCircle size={80} color="var(--success)" fill="#e8f5e9" />
-          ) : isRejected ? (
-            <XCircle size={80} color="var(--error)" fill="#ffebee" />
-          ) : (
-            <Clock size={80} color="var(--warning)" fill="#fff3e0" />
-          )}
-        </Box>
-        <Typography
-          variant="h3"
-          fontWeight="800"
-          gutterBottom
-          sx={{ color: 'var(--primary-dark)' }}
-        >
-          {isPaid ? '¡Pago Exitoso!' : isRejected ? 'Pago Rechazado' : 'Pedido Registrado'}
-        </Typography>
-
-        <Typography variant="body1" color="text.secondary" paragraph sx={{ fontSize: '1.1rem' }}>
-          Referencia de Pedido: <strong>#{order.id}</strong>
-        </Typography>
-
-        {verificationStatus === 'success' && (
-          <Alert severity="success" sx={{ mb: 3, justifyContent: 'center' }}>
-            Tu pago se acreditó correctamente. Hemos enviado un correo con los detalles.
-          </Alert>
+        
+        {/* MODO ÉXITO */}
+        {viewMode === 'success' && (
+          <Box>
+            <CheckCircle size={80} color="var(--success)" fill="#e8f5e9" style={{ marginBottom: '1.5rem' }} />
+            <Typography variant="h3" fontWeight="800" gutterBottom sx={{ color: 'var(--success)' }}>
+              ¡Pago Exitoso!
+            </Typography>
+            <Typography variant="body1" color="text.secondary" paragraph sx={{ fontSize: '1.1rem' }}>
+              Referencia de Pedido: <strong>#{order.id}</strong>
+            </Typography>
+            <Alert severity="success" sx={{ mb: 3, justifyContent: 'center', borderRadius: 2 }}>
+              Tu pago se acreditó correctamente. Hemos enviado un correo con los detalles.
+            </Alert>
+          </Box>
         )}
 
-        {isRejected && (
-          <Alert severity="error" sx={{ mb: 3, justifyContent: 'center' }}>
-            Hubo un problema con tu tarjeta. Por favor intenta nuevamente.
-          </Alert>
+        {/* MODO ERROR */}
+        {viewMode === 'error' && (
+          <Box>
+            <XCircle size={80} color="var(--error)" fill="#ffebee" style={{ marginBottom: '1.5rem' }} />
+            <Typography variant="h3" fontWeight="800" gutterBottom sx={{ color: 'var(--error)' }}>
+              Pago Rechazado
+            </Typography>
+            <Typography variant="body1" color="text.secondary" paragraph sx={{ fontSize: '1.1rem' }}>
+              Referencia de Pedido: <strong>#{order.id}</strong>
+            </Typography>
+            <Alert severity="error" sx={{ mb: 3, justifyContent: 'center', borderRadius: 2 }}>
+              Hubo un problema con tu tarjeta. Por favor intenta nuevamente.
+            </Alert>
+          </Box>
         )}
 
-        {!isPaid && !isRejected && (
-          <Alert severity="info" sx={{ mb: 3, justifyContent: 'center' }}>
-            Tu pedido está guardado pero pendiente de pago.
-          </Alert>
+        {/* MODO PENDIENTE (Solo si no es éxito ni error) */}
+        {viewMode === 'pending' && (
+          <Box>
+            <Clock size={80} color="var(--warning)" fill="#fff3e0" style={{ marginBottom: '1.5rem' }} />
+            <Typography variant="h3" fontWeight="800" gutterBottom sx={{ color: 'var(--warning)' }}>
+              Pedido Registrado
+            </Typography>
+            <Typography variant="body1" color="text.secondary" paragraph sx={{ fontSize: '1.1rem' }}>
+              Referencia de Pedido: <strong>#{order.id}</strong>
+            </Typography>
+            <Alert severity="info" sx={{ mb: 3, justifyContent: 'center', borderRadius: 2 }}>
+              Tu pedido está guardado pero pendiente de pago.
+            </Alert>
+          </Box>
         )}
 
         <Divider sx={{ my: 4 }} />
 
+        {/* BOTONES DINÁMICOS SEGÚN EL MODO */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
-          {!isPaid && (
+          {viewMode !== 'success' && (
             <Button
               variant="contained"
               size="large"
@@ -136,23 +149,23 @@ const OrderConfirmation = () => {
                 py: 1.5,
                 maxWidth: 400,
                 fontSize: '1rem',
-                boxShadow: '0 4px 14px 0 rgba(0,118,255,0.39)',
+                fontWeight: 'bold'
               }}
             >
-              {retryLoading ? <CircularProgress size={24} color="inherit" /> : 'Pagar Ahora'}
+              {retryLoading ? <CircularProgress size={24} color="inherit" /> : 'Reintentar Pago'}
             </Button>
           )}
 
           <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Button
-              startIcon={<ShoppingBag />}
+              startIcon={<ShoppingBag size={18} />}
               onClick={() => navigate('/shop')}
               sx={{ color: 'text.secondary' }}
             >
               Volver a la Tienda
             </Button>
             <Button
-              endIcon={<ArrowRight />}
+              endIcon={<ArrowRight size={18} />}
               onClick={() => navigate('/my-orders')}
               variant="outlined"
             >

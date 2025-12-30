@@ -3,7 +3,6 @@ import { AppDataSource } from "../config/configDb.js";
 import Order from "../entity/order.entity.js";
 import ItemStock from "../entity/itemStock.entity.js";
 import User from "../entity/user.entity.js";
-import InventoryMovement from "../entity/InventoryMovementSchema.js";
 import { Between, LessThanOrEqual } from "typeorm";
 
 export const reportService = {
@@ -38,19 +37,31 @@ export const reportService = {
         where: { rol: "cliente" }
       });
 
-      const salesHistoryRaw = await orderRepository
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      const salesHistoryDailyRaw = await orderRepository
         .createQueryBuilder("order")
         .select("DATE(order.createdAt)", "date")
         .addSelect("SUM(order.total)", "amount")
-        .where("order.createdAt >= :sevenDaysAgo", { 
-          sevenDaysAgo: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) 
-        })
+        .where("order.createdAt >= :sevenDaysAgo", { sevenDaysAgo })
         .groupBy("DATE(order.createdAt)")
         .orderBy("date", "ASC")
         .getRawMany();
 
-      const salesHistory = salesHistoryRaw.map(item => ({
-        // Formato amigable para Recharts
+      const salesHistoryDaily = salesHistoryDailyRaw.map(item => ({
+        date: new Date(item.date).toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric' }),
+        amount: parseFloat(item.amount || 0)
+      }));
+
+      const salesHistoryTransactionsRaw = await orderRepository
+        .createQueryBuilder("order")
+        .select("order.createdAt", "date")
+        .addSelect("order.total", "amount")
+        .where("order.createdAt >= :sevenDaysAgo", { sevenDaysAgo })
+        .orderBy("order.createdAt", "ASC")
+        .getRawMany();
+
+      const salesHistoryTransactions = salesHistoryTransactionsRaw.map(item => ({
         date: new Date(item.date).toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric' }),
         amount: parseFloat(item.amount || 0)
       }));
@@ -74,7 +85,8 @@ export const reportService = {
           lowStockCount,
           totalCustomers
         },
-        salesHistory,
+        salesHistoryDaily,
+        salesHistoryTransactions,
         criticalStock
       }, null];
     } catch (error) {
