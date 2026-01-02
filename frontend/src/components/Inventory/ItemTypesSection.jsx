@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Button, Paper, Typography, Chip, IconButton, Tooltip, Grid } from '@mui/material';
+import { 
+  Box, Button, Paper, Typography, Chip,
+  IconButton, Tooltip, Grid
+} from '@mui/material';
 import {
   Add as AddIcon,
   DeleteOutline as DeleteIcon,
@@ -10,12 +13,18 @@ import {
 
 import AddItemTypeModal from './AddItemTypeModal.jsx';
 import ItemTypeTrashModal from './ItemTypeTrashModal.jsx';
+
 import { iconMap } from '../../data/iconCategories';
-import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '../../helpers/sweetAlert';
+import { 
+  deleteDataAlert,
+  showSuccessAlert,
+  showErrorAlert
+} from '../../helpers/sweetAlert';
 
 import { useDeleteItemType } from '../../hooks/itemType/useDeleteItemType.jsx';
 import { useDeletedItemTypes } from '../../hooks/itemType/useDeletedItemType.jsx';
 import { useRestoreItemType } from '../../hooks/itemType/useRestoreItemType.jsx';
+
 import '../../styles/components/itemTypesSection.css';
 
 const ItemTypesSection = ({ itemTypes = [], fetchTypes, refetchStock }) => {
@@ -83,26 +92,29 @@ const ItemTypesSection = ({ itemTypes = [], fetchTypes, refetchStock }) => {
 
   return (
     <section className="item-types-container">
-      <header className="section-header">
-        <Box className="header-title-area">
+      <header className="item-types-header">
+        <Box className="title-area">
           <CategoryIcon color="primary" />
           <Typography variant="h5" fontWeight="700">
             Tipos de productos
           </Typography>
-          <Chip label={itemTypes.length} size="small" className="count-chip" />
+          <Chip label={itemTypes.length} size="small" />
         </Box>
 
-        <Box className="header-actions">
+        <Box className="actions-area">
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            className="action-btn primary-grad"
             onClick={() => handleOpenAddModal()}
           >
             Nuevo Tipo
           </Button>
-          <Tooltip title="Ver Papelera">
-            <IconButton onClick={handleOpenTrash} className="trash-icon-btn">
+
+          <Tooltip title="Papelera">
+            <IconButton onClick={async () => {
+              await fetchDeletedTypes();
+              setOpenTrashModal(true);
+            }}>
               <DeleteSweepIcon />
             </IconButton>
           </Tooltip>
@@ -110,63 +122,61 @@ const ItemTypesSection = ({ itemTypes = [], fetchTypes, refetchStock }) => {
       </header>
 
       {itemTypes.length > 0 ? (
-        <Grid container spacing={2} className="types-grid">
-          {itemTypes.map((type) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={type.id}>
-              <Paper className="type-card" elevation={0}>
-                <Box className="type-card-main">
-                  <div className="icon-wrapper">
-                    {type.iconName && iconMap[type.iconName] ? (
-                      React.createElement(iconMap[type.iconName], { size: 28 })
-                    ) : (
-                      <CategoryIcon size={28} />
-                    )}
-                  </div>
-                  
-                  <div className="type-info">
-                    <Typography className="type-name" variant="subtitle1">
-                      {type.name}
-                    </Typography>
-                    <Box className="type-badges">
-                      {type.hasSizes ? (
-                        <Chip label="Con Tallas" size="small" variant="outlined" className="badge-size" />
-                      ) : (
-                        <Chip label="Talla Única" size="small" variant="outlined" />
-                      )}
-                      {type.stocks?.length > 0 && (
-                        <Chip 
-                          label={`${type.stocks.length} SKU`} 
-                          size="small" 
-                          className="badge-stock"
-                        />
-                      )}
-                    </Box>
-                  </div>
-                </Box>
-
-                <div className="type-card-actions">
-                  <Button 
-                    startIcon={<EditIcon />} 
-                    size="small" 
-                    onClick={() => handleOpenAddModal(type)}
-                  >
-                    Editar
-                  </Button>
-                  <IconButton 
-                    size="small" 
-                    color="error" 
-                    onClick={() => handleDelete(type.id)}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
+        <div className="types-grid">
+          {itemTypes.map((type, index) => (
+            <Paper className="type-card" elevation={0} key={index}>
+              <div className="type-main">
+                <div className="icon-wrapper">
+                  {type.iconName && iconMap[type.iconName]
+                    ? React.createElement(iconMap[type.iconName], { size: 26 })
+                    : <CategoryIcon />}
                 </div>
-              </Paper>
-            </Grid>
+
+                <div className="type-info">
+                  <Typography className="type-name">
+                    {type.name}
+                  </Typography>
+
+                  <div className="badges">
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={type.hasSizes ? 'Con tallas' : 'Talla única'}
+                    />
+                    {type.stocks?.length > 0 && (
+                      <Chip size="small" label={`${type.stocks.length} SKU`} />
+                    )}
+                  
+                  </div>
+                </div>
+              </div>
+
+              <div className="type-actions">
+                <Button 
+                  size="small" 
+                  startIcon={<EditIcon />} 
+                  onClick={() => {
+                    setEditingType(type);
+                    setOpenAddTypeModal(true);
+                  }}
+                >
+                  Editar
+                </Button>
+
+                <IconButton 
+                  size="small" 
+                  color="error" 
+                  onClick={() => handleDelete(type.id)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </div>
+            </Paper>
           ))}
-        </Grid>
+        </div>
       ) : (
-        <Paper className="empty-types-state">
-          <Typography color="textSecondary">No hay tipos de producto registrados.</Typography>
+        <Paper className="empty-types">
+          <Typography>No hay tipos de producto</Typography>
         </Paper>
       )}
 
@@ -176,9 +186,13 @@ const ItemTypesSection = ({ itemTypes = [], fetchTypes, refetchStock }) => {
           setOpenAddTypeModal(false);
           setEditingType(null);
         }}
-        onCreated={handleCreatedOrUpdated}
+        onCreated={async () => {
+          await Promise.all([fetchTypes(), refetchStock?.()]);
+          setOpenAddTypeModal(false);
+        }}
         editingType={editingType}
       />
+
       <ItemTypeTrashModal
         open={openTrashModal}
         onClose={() => setOpenTrashModal(false)}

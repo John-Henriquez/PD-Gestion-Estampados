@@ -4,6 +4,7 @@ import {
   InputAdornment, FormControl, InputLabel, Select,
   Accordion, AccordionSummary, AccordionDetails, Chip
 } from '@mui/material';
+
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListOffIcon from '@mui/icons-material/FilterListOff';
@@ -25,9 +26,9 @@ const InventoryFilters = ({
   return (
     <Accordion
       expanded={expanded}
-      onChange={(e, isExpanded) => setExpanded(isExpanded)}
+      onChange={(_, isExpanded) => setExpanded(isExpanded)}
       className="inventory-filters-card"
-      elevation={0}
+      disableGutters
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
@@ -35,7 +36,10 @@ const InventoryFilters = ({
       >
       <Box className="header-content">
           <FilterAltIcon color="primary" />
-          <Typography variant="h6" className="filters-title">Búsqueda Avanzada</Typography>
+          <Typography className="filters-title">
+            Búsqueda Avanzada
+          </Typography>
+
           {activeFiltersCount > 0 && (
             <Chip 
               label={`${activeFiltersCount} activos`} 
@@ -51,12 +55,12 @@ const InventoryFilters = ({
         <Grid container spacing={2}>
           <Grid item xs={12} lg={4}>
             <TextField
+              fullWidth
+              variant="filled"
               label="Buscar por nombre o color"
               name="searchTerm"
               value={filters.searchTerm}
               onChange={onFilterChange}
-              fullWidth
-              variant="filled"
               placeholder="Ej: Polera Roja..."
               InputProps={{
                 startAdornment: (
@@ -68,27 +72,40 @@ const InventoryFilters = ({
             />
           </Grid>
 
-          <Grid item xs={6} md={3} lg={2}>
+          <Grid item xs={12} sm={6} md={3} lg={2}>
             <FormControl fullWidth variant="filled">
               <InputLabel>Tipo</InputLabel>
-              <Select name="typeId" value={filters.typeId} onChange={onFilterChange} label="Tipo">
+              <Select 
+                name="typeId" 
+                value={filters.typeId}
+                onChange={onFilterChange}
+              >
                 <MenuItem value=""><em>Todos</em></MenuItem>
-                {itemTypes.map((type) => (
-                  <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>
+                {itemTypes.map(type => (
+                  <MenuItem key={type.id} value={type.id}>
+                    {type.name}
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
 
-          <Grid item xs={6} md={3} lg={2}>
+          <Grid item xs={12} sm={6} md={3} lg={2}>
             <FormControl fullWidth variant="filled">
               <InputLabel>Color</InputLabel>
-              <Select name="color" value={filters.color} onChange={onFilterChange} label="Color">
+              <Select
+                name="color"
+                value={filters.color}
+                onChange={onFilterChange}
+              >
                 <MenuItem value=""><em>Todos</em></MenuItem>
                 {colorOptions.map(({ id, name, hex }) => (
                   <MenuItem key={id} value={id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box className="swatch-indicator" sx={{ bgcolor: hex }} />
+                    <Box className="color-option">
+                      <span
+                        className="swatch-indicator"
+                        style={{ backgroundColor: hex }}
+                      />
                       {name}
                     </Box>
                   </MenuItem>
@@ -97,20 +114,30 @@ const InventoryFilters = ({
             </FormControl>
           </Grid>
 
-          <Grid item xs={6} md={3} lg={1.5}>
+          <Grid item xs={12} sm={6} md={3} lg={1.5}>
             <FormControl fullWidth variant="filled">
               <InputLabel>Talla</InputLabel>
-              <Select name="size" value={filters.size} onChange={onFilterChange} label="Talla">
+              <Select
+                name="size"
+                value={filters.size}
+                onChange={onFilterChange}
+              >
                 <MenuItem value=""><em>Todas</em></MenuItem>
-                {['S', 'M', 'L', 'XL', 'XXL'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                {['S', 'M', 'L', 'XL', 'XXL'].map(size => (
+                  <MenuItem key={size} value={size}>{size}</MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>
 
-          <Grid item xs={6} md={3} lg={2.5}>
+          <Grid item xs={12} sm={6} md={3} lg={2.5}>
             <FormControl fullWidth variant="filled">
               <InputLabel>Estado Stock</InputLabel>
-              <Select name="stockStatus" value={filters.stockStatus} onChange={onFilterChange} label="Estado Stock">
+              <Select
+                name="stockStatus"
+                value={filters.stockStatus}
+                onChange={onFilterChange}
+              >
                 <MenuItem value=""><em>Todos</em></MenuItem>
                 <MenuItem value="low" className="text-error">Bajo stock</MenuItem>
                 <MenuItem value="normal">Stock normal</MenuItem>
@@ -118,7 +145,7 @@ const InventoryFilters = ({
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} lg={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Grid item xs={12} className="filters-actions">
             <Button
               variant="text"
               onClick={onResetFilters}

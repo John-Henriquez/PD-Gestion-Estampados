@@ -1,86 +1,76 @@
-
-.stock-table-container {
-    height: 650px;
-    width: 100%;
-    margin-top: 20px;
+.stock-table-wrapper {
+  width: 100%;
 }
 
 .custom-data-grid {
-    border: 1px solid var(--gray-300) !important;
-    border-radius: 12px !important;
-    background-color: white;
+  border: 1px solid var(--gray-300);
+  border-radius: 12px;
 }
 
-.custom-data-grid .MuiDataGrid-columnHeaders {
-    background-color: var(--gray-50);
-    color: var(--gray-900);
-    font-weight: 800;
+.table-type-cell,
+.table-variant-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
 }
 
-.stock-cell-low {
-    color: var(--error-dark) !important;
-    font-weight: 700 !important;
-    background-color: #fff5f5;
+.table-type-cell svg {
+  flex-shrink: 0;
 }
 
-.stock-cell-warning {
-    color: #af6400 !important;
-    font-weight: 600 !important;
-    background-color: #fff9eb;
-}
-
-.stock-mobile-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
-    padding: 10px 0;
+.stock-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .stock-mobile-card {
-    background: white;
-    border: 1px solid var(--gray-200);
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease;
-}
-
-.stock-mobile-card:active {
-    transform: scale(0.98);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 
 .card-body {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-body .variant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.card-body .stock {
+  text-align: right;
 }
 
 .card-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    border-top: 1px solid var(--gray-100);
-    padding-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--gray-100);
+  padding-top: 8px;
 }
 
 .color-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 1px solid rgba(0,0,0,0.1);
-}
-
-@media (max-width: 768px) {
-    .stock-table-container {
-        height: auto !important;
-    }
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
 }

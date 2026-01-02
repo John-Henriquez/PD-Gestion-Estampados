@@ -1,10 +1,28 @@
 .packs-container {
     margin-top: var(--spacing-xl);
-    animation: fadeIn 0.5s ease;
 }
 
 .packs-grid {
     margin-top: 10px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.title-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.actions-area {
+  display: flex;
+  gap: 8px;
 }
 
 /* Tarjeta Estilizada */
@@ -110,9 +128,12 @@
     margin-left: 4px;
 }
 
+.pack-title,
+.pack-desc,
 .item-text {
-    flex-grow: 1;
-    color: var(--gray-800);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
 }
 
 .pack-card-footer {
@@ -123,6 +144,20 @@
     border-top: 1px solid var(--gray-100);
 }
 
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.centered-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
 /* Responsividad */
 @media (max-width: 600px) {
     .section-header {
@@ -130,7 +165,7 @@
         align-items: flex-start;
     }
     
-    .header-actions {
+    .actions-area {
         width: 100%;
         justify-content: space-between;
     }

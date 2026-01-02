@@ -3,6 +3,7 @@
   --primary: #7b2cbf;
   --primary-dark: #5a189a;
   --primary-light: #e0aaff;
+
   --secondary: #ff7900;
   --secondary-dark: #e65c00;
   --secondary-light: #ffd6b0;
@@ -16,12 +17,43 @@
 
   /* Estados */
   --success: #2ecc71;
-  --error: #e74c3c;
-  --warning: #f39c12;
-  --info: #3498db;
   --success-dark: #27ae60;
+
+  --error: #e74c3c;
   --error-dark: #c0392b;
   --error-light: #fadbd8;
+
+  --warning: #f39c12;
+  --info: #3498db;
+
+  /* Brand */
+  --color-brand-primary: var(--primary);
+  --color-brand-primary-dark: var(--primary-dark);
+  --color-brand-primary-light: var(--primary-light);
+
+  --color-brand-secondary: var(--secondary);
+  --color-brand-secondary-dark: var(--secondary-dark);
+  --color-brand-secondary-light: var(--secondary-light);
+
+  /* Texto */
+  --color-text-primary: var(--gray-900);
+  --color-text-secondary: var(--gray-700);
+  --color-text-muted: var(--gray-300);
+  --color-text-inverse: #ffffff;
+
+  /* Fondos */
+  --color-bg-page: var(--gray-100);
+  --color-bg-surface: #ffffff;
+  --color-bg-muted: var(--gray-200);
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Estados */
+  --color-success: var(--success);
+  --color-success-dark: var(--success-dark);
+  --color-error: var(--error);
+  --color-error-dark: var(--error-dark);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
 
   /* Espaciados */
   --spacing-xs: 0.25rem;
@@ -29,12 +61,14 @@
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
 
   /* Bordes */
   --border-radius-sm: 4px;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
   --border-radius-xl: 16px;
+  --border-radius-round: 9999px;
 
   /* Sombras */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
@@ -48,5 +82,26 @@
 
   /* Fuentes */
   --font-family:
-    "Montserrat", Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    "Montserrat",
+    Inter,
+    system-ui,
+    Avenir,
+    Helvetica,
+    Arial,
+    sans-serif;
+
+    /* Dimensiones */
+  --header-height: 64px;
+  --footer-height: 48px;
+  --sidebar-width: 280px;
+
+  /* Z-index */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-header: 300;
+  --z-overlay: 800;
+  --z-modal-backdrop: 900;
+  --z-modal: 1000;
+  --z-toast: 1100;
 }

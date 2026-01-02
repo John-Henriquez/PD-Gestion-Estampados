@@ -27,7 +27,7 @@
 @keyframes fadeIn {
   0% {
     opacity: 0;
-    transform: translateZ(0); /* Mejora el rendimiento en algunos navegadores */
+    transform: translateZ(0);
   }
   100% {
     opacity: 1;
@@ -45,7 +45,6 @@
   }
 }
 
-/* Animaciones adicionales recomendadas */
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -74,18 +73,22 @@
   }
 }
 
-/* Clases de aplicación */
+
 .animate {
-  animation-duration: 0.5s;
+  will-change: transform, opacity;
   animation-fill-mode: both;
 }
 
 .animate--fast {
-  animation-duration: 0.3s;
+  animation-duration: var(--transition-fast);
+}
+
+.animate--normal {
+  animation-duration: var(--transition-normal);
 }
 
 .animate--slow {
-  animation-duration: 0.7s;
+  animation-duration: var(--transition-slow);
 }
 
 .animate--infinite {
@@ -111,4 +114,11 @@
 
 .animate--bounce {
   animation-name: bounce;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate {
+    animation: none !important;
+    transition: none !important;
+  }
 }

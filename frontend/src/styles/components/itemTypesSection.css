@@ -1,141 +1,126 @@
 .item-types-container {
   margin-bottom: 32px;
-  animation: fadeIn 0.5s ease;
 }
 
-.section-header {
+/* HEADER */
+
+.item-types-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+}
+
+.title-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.actions-area {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* GRID */
+
+.types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
 }
 
-.header-title-area {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+/* CARD */
 
-.count-chip {
-  background-color: var(--primary-light) !important;
-  color: var(--primary-dark) !important;
-  font-weight: 800 !important;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Tarjeta Estilizada */
 .type-card {
-  border: 1px solid var(--gray-200) !important;
-  border-radius: 16px !important;
+  border: 1px solid var(--gray-200);
+  border-radius: 14px;
   padding: 16px;
-  height: 100%;
+  background: white;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  transition: all 0.3s ease !important;
-  background-color: white !important;
+  gap: 14px;
 }
 
-.type-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md) !important;
-  border-color: var(--primary-light) !important;
-}
-
-.type-card-main {
+.type-main {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 14px;
 }
 
 .icon-wrapper {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
-  background-color: var(--gray-50);
+  background: var(--gray-100);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary);
-  flex-shrink: 0;
 }
 
 .type-info {
   overflow: hidden;
+  flex: 1;
 }
 
 .type-name {
-  font-weight: 700 !important;
-  color: var(--gray-900);
-  margin-bottom: 8px !important;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.type-badges {
+.badges {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  margin-top: 4px;
 }
 
-.badge-size {
-  border-color: var(--info) !important;
-  color: var(--info-dark) !important;
-}
+/* ACTIONS */
 
-.badge-stock {
-  background-color: var(--gray-100) !important;
-  font-size: 0.7rem !important;
-  font-weight: 600 !important;
-}
-
-.type-card-actions {
+.type-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 12px;
   border-top: 1px solid var(--gray-100);
+  padding-top: 10px;
+  gap: 8px;
 }
 
-.trash-icon-btn {
-  color: var(--gray-500) !important;
-}
+/* EMPTY */
 
-.trash-icon-btn:hover {
-  color: var(--error) !important;
-  background-color: #fff5f5 !important;
-}
-
-/* Estado Vacío */
-.empty-types-state {
-  padding: 40px;
+.empty-types {
+  padding: 32px;
   text-align: center;
-  border: 2px dashed var(--gray-300) !important;
-  border-radius: 16px !important;
-  background-color: transparent !important;
+  border: 2px dashed var(--gray-300);
+  border-radius: 16px;
 }
 
-/* Responsividad */
+/* MOBILE */
+
 @media (max-width: 600px) {
-  .section-header {
+  .item-types-header {
     flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: space-between;
+    align-items: stretch;
   }
 
-  .action-btn {
-    flex-grow: 1;
+  .actions-area {
+    width: 100%;
+  }
+
+  .actions-area button {
+    flex: 1;
+  }
+
+  .type-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .types-grid {
+    grid-template-columns: 1fr;
   }
 }

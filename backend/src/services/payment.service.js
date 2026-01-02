@@ -11,13 +11,16 @@ async createPreference(order) {
       const returnUrl = `${tunnelUrl}/order-confirmation/${order.id}`;
       
       const body = {
-        items: order.orderItems.map((item) => ({
+        items: order.orderItems.map((item) => {
+        const price = Math.round(Number(item.priceAtTime));
+        return {
           id: String(item.id),
-          title: String(item.itemNameSnapshot).substring(0, 250), 
+          title: String(item.itemNameSnapshot || "Producto Vibra").substring(0, 250), 
           quantity: Number(item.quantity),
-          unit_price: Math.round(Number(item.priceAtTime)),
+          unit_price: price > 0 ? price : 1, // MP no acepta 0, aseguramos al menos 1 o manejamos el error
           currency_id: "CLP",
-        })),
+        };
+      }),
         external_reference: String(order.id),
         notification_url: "https://uncomplacent-sheena-entomologically.ngrok-free.dev/api/payments/webhook",
         back_urls: {

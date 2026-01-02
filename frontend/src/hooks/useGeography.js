@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { getRegions, getComunas } from '../services/geography.service';
 
 export const useGeography = () => {
-  console.log("!!! EL HOOK ESTÁ VIVO !!!");
   const [regions, setRegions] = useState([]);
   const [comunas, setComunas] = useState([]);
   const [loadingRegions, setLoadingRegions] = useState(false);

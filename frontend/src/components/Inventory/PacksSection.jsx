@@ -1,5 +1,8 @@
 import { useState, useContext } from 'react';
-import { Box, Button, Paper, Typography, Grid, Chip, CircularProgress, Alert, Tooltip } from '@mui/material';
+import { 
+  Box, Button, Paper, Typography, Grid, Chip,
+  CircularProgress, Alert, Tooltip, IconButton
+} from '@mui/material';
 import {
   Add as AddIcon,
   DeleteSweep as DeleteSweepIcon,
@@ -89,29 +92,27 @@ const PacksSection = ({ itemStock, refetchStock }) => {
 return (
     <section className="packs-container">
       <header className="section-header">
-        <Box className="header-title-area">
+        <Box className="title-area">
           <TagIcon color="primary" />
-          <Typography variant="h5" fontWeight="700">Gestión de Packs</Typography>
-          <Chip label={packs.length} size="small" className="count-chip" />
+          <Typography variant="h5" fontWeight="700">
+            Gestión de Packs
+          </Typography>
+          <Chip label={packs.length} size="small" />
         </Box>
         
-        <Box className="header-actions">
+        <Box className="actions-area">
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            className="action-btn primary-grad"
             onClick={() => handleOpenPackModal()}
           >
             Nuevo Pack
           </Button>
-          <Tooltip title="Ver Papelera de Packs">
-            <Button
-              variant="outlined"
-              onClick={async () => { await fetchDeletedPacks(); setOpenPackTrash(true); }}
-              className="action-btn-icon"
-            >
+
+          <Tooltip title="Papelera">
+            <IconButton onClick={handleOpenPackTrash}>
               <DeleteSweepIcon />
-            </Button>
+            </IconButton>
           </Tooltip>
         </Box>
       </header>
@@ -157,7 +158,10 @@ return (
                     <Typography variant="overline" className="items-label">Incluye:</Typography>
                     <ul className="items-list">
                       {pack.packItems?.map((pItem, idx) => (
-                        <li key={idx} className="item-row">
+                        <li
+                          key={`${pack.id}-${pItem.itemStock?.id}-${pItem.itemStock?.size || 'nosize'}`}
+                          className="item-row"
+                        >
                           <CheckIcon className="check-icon" />
                           <span className="item-text">
                             <strong>{pItem.quantity}x</strong> {pItem.itemStock?.itemType?.name}

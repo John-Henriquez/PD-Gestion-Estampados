@@ -1,19 +1,17 @@
 .inventory-filters-card {
-    background: white !important;
-    border: 1px solid var(--gray-200) !important;
-    border-radius: 16px !important;
-    overflow: hidden;
-    margin-bottom: 24px !important;
-    transition: box-shadow 0.3s ease !important;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 16px;
+  margin-bottom: 24px;
 }
 
 .inventory-filters-card:hover {
-    box-shadow: var(--shadow-md) !important;
+    box-shadow: var(--shadow-md);
 }
 
 .filters-header {
-    background-color: var(--gray-50);
-    min-height: 60px !important;
+    background-color: var(--gray-100);
+    min-height: 60px;
 }
 
 .header-content {
@@ -25,51 +23,59 @@
 
 .filters-title {
     color: var(--primary-dark);
-    font-weight: 700 !important;
-    font-size: 1.1rem !important;
+    font-weight: 700;
+    font-size: 1.1rem;
 }
 
 .active-badge {
-    font-weight: 700 !important;
-    font-size: 0.75rem !important;
-    animation: fadeIn 0.4s ease;
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 0.75rem;
 }
 
 .filters-body {
-    padding: 24px !important;
-    background-color: white;
+    padding: 24px;
+}
+
+.color-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .swatch-indicator {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 4px;
-    border: 1px solid rgba(0,0,0,0.1);
+    border: 1px solid rgba(0,0,0,0.15);
+}
+
+.filters-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .reset-btn {
-    text-transform: none !important;
-    color: var(--gray-500) !important;
-    font-weight: 600 !important;
+  text-transform: none;
+  font-weight: 600;
+  color: var(--gray-700);
 }
 
 .reset-btn:hover {
-    color: var(--error) !important;
-    background-color: #fff5f5 !important;
-}
-
-@media (max-width: 900px) {
-    .filters-body {
-        padding: 16px !important;
-    }
-    
-    .MuiGrid-item {
-        margin-bottom: 8px;
-    }
+    color: var(--error);
+    background-color: #fff5f5;
 }
 
 @media (max-width: 600px) {
-    .filters-title {
-        font-size: 0.95rem !important;
-    }
+  .filters-body {
+    padding: 16px;
+  }
+
+  .filters-title {
+    font-size: 1rem;
+  }
+
+  .filters-actions {
+    justify-content: center;
+  }
 }
