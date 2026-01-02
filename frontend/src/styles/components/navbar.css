@@ -2,15 +2,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 40px;
+    padding: 0 24px;
     height: 70px;
     background: var(--primary);
-    z-index: 2000 !important;
+    z-index: 2000;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 .navbar__actions {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
+    flex-shrink: 0;
 }
 .navbar__user-tag {
     color: white;
@@ -21,18 +25,22 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    text-overflow: ellipsis;
 }
+
 .navbar__desktop-menu {
-    flex: 1;
-    display: flex;
-    justify-content: center;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .navbar__brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  cursor: pointer;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .navbar__logo {
@@ -44,17 +52,23 @@
   color: white;
   font-weight: 700 !important;
   font-size: 1.2rem !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* DESKTOP MENU */
 .navbar__list {
   display: flex;
-  list-style: none;
-  gap: 10px;
   align-items: center;
+  gap: 8px;
   margin: 0;
   padding: 0;
+  list-style: none;
+  min-width: 0;
+  white-space: nowrap;
 }
+
 
 .navbar__link {
   color: #e0e0e0;

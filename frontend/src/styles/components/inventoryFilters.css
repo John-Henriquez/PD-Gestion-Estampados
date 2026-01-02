@@ -3,10 +3,12 @@
   border: 1px solid var(--gray-200);
   border-radius: 16px;
   margin-bottom: 24px;
+  min-width: 0;
 }
 
 .inventory-filters-card:hover {
     box-shadow: var(--shadow-md);
+    min-width: 0;
 }
 
 .filters-header {
@@ -73,6 +75,14 @@
 
   .filters-title {
     font-size: 1rem;
+  }
+
+  .header-content {
+    flex-wrap: wrap;
+  }
+
+  .active-badge {
+    margin-left: 0;
   }
 
   .filters-actions {

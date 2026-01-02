@@ -61,7 +61,7 @@ const InventoryFilters = ({
               name="searchTerm"
               value={filters.searchTerm}
               onChange={onFilterChange}
-              placeholder="Ej: Polera Roja..."
+              placeholder="Ej: Polera..."
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -114,7 +114,7 @@ const InventoryFilters = ({
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3} lg={1.5}>
+          <Grid item xs={12} sm={6} md={3} lg={2}>
             <FormControl fullWidth variant="filled">
               <InputLabel>Talla</InputLabel>
               <Select
@@ -130,7 +130,7 @@ const InventoryFilters = ({
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3} lg={2.5}>
+          <Grid item xs={12} sm={6} md={3} lg={2}>
             <FormControl fullWidth variant="filled">
               <InputLabel>Estado Stock</InputLabel>
               <Select

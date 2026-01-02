@@ -5,11 +5,8 @@
 html,
 body {
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  place-items: center;
-  min-width: 100%;
-  min-height: 100vh;
+  width: 100%;
+  min-height: 100%;
   overflow-x: hidden;
   font-family: var(--font-family);
   background-color: var(--background);
@@ -25,17 +22,14 @@ body {
 }
 
 .main-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  min-height: 100vh;
   width: 100%;
-  overflow-y: auto;
+  max-width: 1440px;
+  margin: 0 auto;
+
   padding-top: 150px;
   box-sizing: border-box;
-  background-color: var(--background);
 }
+
 
 a {
   font-weight: 500;
@@ -102,3 +96,11 @@ button:focus-visible {
 .swal2-container {
   z-index: 1400 !important;
 }
+
+.MuiGrid-container {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+

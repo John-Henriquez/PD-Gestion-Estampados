@@ -29,7 +29,7 @@
 
 .types-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
 }
 
@@ -48,6 +48,7 @@
 .type-main {
   display: flex;
   gap: 14px;
+  min-width: 0;
 }
 
 .icon-wrapper {
@@ -63,11 +64,12 @@
 .type-info {
   overflow: hidden;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .type-name {
   font-weight: 700;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -84,10 +86,11 @@
 .type-actions {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid var(--gray-100);
-  padding-top: 10px;
   gap: 8px;
+  border-top: 1px solid var(--gray-100);
+  align-items: center;
+  padding-top: 10px;
+  flex-wrap: wrap;
 }
 
 /* EMPTY */
@@ -122,5 +125,9 @@
 
   .types-grid {
     grid-template-columns: 1fr;
+  }
+
+  .type-name {
+    white-space: normal;
   }
 }

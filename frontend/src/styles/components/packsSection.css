@@ -44,23 +44,25 @@
 }
 
 .pack-card-head {
-    padding: 20px;
-    background-color: var(--gray-50);
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    border-bottom: 1px solid var(--gray-100);
+    gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
 }
 
 .pack-title {
     font-weight: 800 !important;
-    color: var(--primary-dark);
     font-size: 1.15rem !important;
+    min-width: 0;
+    overflow-wrap: break-word;
 }
 
 .pack-card-body {
     padding: 20px;
     flex-grow: 1;
+    min-width: 0;
 }
 
 .price-tag-area {
@@ -111,10 +113,10 @@
 
 .item-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-    margin-bottom: 6px;
-    font-size: 0.85rem;
+    min-width: 0;
+    flex-wrap: wrap;
 }
 
 .check-icon {
@@ -131,10 +133,13 @@
 .pack-title,
 .pack-desc,
 .item-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: block;
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: break-word;
   word-break: break-word;
 }
+
 
 .pack-card-footer {
     padding: 12px 20px;

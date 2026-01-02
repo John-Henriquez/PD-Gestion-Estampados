@@ -154,7 +154,12 @@ const ItemTypesSection = ({ itemTypes = [], fetchTypes, refetchStock }) => {
               <div className="type-actions">
                 <Button 
                   size="small" 
-                  startIcon={<EditIcon />} 
+                  startIcon={<EditIcon />}
+                  sx={{
+                    flexShrink: 1,
+                    minWidth: 0,
+                    whiteSpace: 'nowrap',
+                  }} 
                   onClick={() => {
                     setEditingType(type);
                     setOpenAddTypeModal(true);
