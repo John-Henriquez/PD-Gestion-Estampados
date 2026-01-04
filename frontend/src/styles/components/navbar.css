@@ -8,7 +8,6 @@
     z-index: 2000;
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
 }
 .navbar__actions {
     display: flex;

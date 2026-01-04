@@ -113,14 +113,26 @@ const InventoryManagementModal = ({ open, onClose, onCreated, itemTypes = [] }) 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xl" className="modal">
       <DialogTitle className="modal-title">
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            mb: 1,
+            gap: 1,
+            flexWrap: 'wrap'
+          }}
+        >
           <InventoryIcon color="primary" />
-          <Typography variant="h6">Gestión de Inventario (Recarga y Creación)</Typography>
+          <Typography
+            variant="body2"
+            sx={{ flex: 1, minWidth: 0 }}
+            noWrap
+          >Gestión de Inventario (Recarga y Creación)</Typography>
         </Box>
         <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}><CloseIcon /></IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ bgcolor: '#f0f2f5', p: 0 }}>
+      <DialogContent dividers sx={{ bgcolor: '#f0f2f5', p: 0, overflowX: 'hidden' }}>
         <Grid container sx={{ minHeight: '60vh' }}>
           
           {/* SECCIÓN IZQUIERDA: RECARGA */}
@@ -177,7 +189,7 @@ const InventoryManagementModal = ({ open, onClose, onCreated, itemTypes = [] }) 
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={c.hasSizes ? 4 : 8}>
+                  <Grid item xs={12} sm={c.hasSizes ? 4 : 8}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Color</InputLabel>
                       <Select value={c.colorId} label="Color" onChange={(e) => handleCreationChange(c.id, 'colorId', e.target.value)}>
@@ -186,11 +198,11 @@ const InventoryManagementModal = ({ open, onClose, onCreated, itemTypes = [] }) 
                     </FormControl>
                   </Grid>
                   {c.hasSizes && (
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={4}>
                       <TextField fullWidth size="small" label="Talla" value={c.size} onChange={(e) => handleCreationChange(c.id, 'size', e.target.value)} />
                     </Grid>
                   )}
-                  <Grid item xs={4}>
+                  <Grid item xs={12} sm={4}>
                     <TextField fullWidth size="small" type="number" label="Cant. Inicial" value={c.quantity} onChange={(e) => handleCreationChange(c.id, 'quantity', e.target.value)} />
                   </Grid>
                 </Grid>

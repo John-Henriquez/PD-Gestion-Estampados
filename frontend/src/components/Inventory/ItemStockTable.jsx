@@ -163,8 +163,7 @@ const ItemStockTable = ({ stockItems = [], onDelete, loading = false }) => {
       rowHeight={64}
       autoHeight
       sx={{
-        minWidth: '100%',
-        minWidth: 680,
+        minWidth: { xs: '100%', md: 680 },
         borderRadius: 2,
         borderColor: 'divider',
       }}
