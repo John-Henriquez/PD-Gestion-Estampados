@@ -96,3 +96,13 @@ export async function emptyTrash() {
     throw error.response?.data?.message || 'Error al vaciar la papelera';
   }
 }
+
+export async function getGlobalStampingLevels() {
+  try {
+    const { data } = await axios.get('/item-types/stamping-levels/list');
+    return data.data || [];
+  } catch (error) {
+    console.error('Error al obtener niveles globales:', error);
+    throw error.response?.data?.message || 'Error al obtener niveles de estampado';
+  }
+}

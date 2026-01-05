@@ -42,10 +42,6 @@ const ItemTypeSchema = new EntitySchema({
       type: "simple-array",
       nullable: true,
     },
-    stampingLevels: {
-      type: "json",
-      nullable: true,
-    },
     isActive: {
       type: "boolean",
       default: true,
@@ -60,6 +56,16 @@ const ItemTypeSchema = new EntitySchema({
     },
   },
   relations: {
+    stampingLevels: {
+      type: "many-to-many",
+      target: "StampingLevel",
+      joinTable: {
+        name: "item_type_stamping_levels",
+        joinColumn: { name: "item_type_id" },
+        inverseJoinColumn: { name: "stamping_level_id" }
+      },
+      cascade: true,
+    },
     stocks: {
       type: "one-to-many",
       target: "ItemStock",

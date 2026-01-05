@@ -1,37 +1,36 @@
 import { AppDataSource } from "../config/configDb.js";
 import ItemType from "../entity/itemType.entity.js";
 import ItemStock from "../entity/itemStock.entity.js";
+import StampingLevel from "../entity/stampingLevel.entity.js";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
 import InventoryOperation from "../entity/inventoryOperation.entity.js";
 import { generateInventoryReason, createItemSnapshot } from "../helpers/inventory.helpers.js";
 import { Not } from "typeorm";
 
-const validateStampingLevels = (stampingLevels) => {
-  if (!stampingLevels) {
-    return;
-  }
-
-  if (!Array.isArray(stampingLevels)) {
-    throw new Error("stampingLevels debe ser un array.");
-  }
+const processStampingLevels = async (levelsData, manager) => {
+  if (!levelsData || !Array.isArray(levelsData)) return [];
   
-  if (stampingLevels.length > 0) {
-    for (const level of stampingLevels) {
-      if (!level.level || typeof level.level !== "string" || level.level.trim() === "") {
-        throw new Error("Cada nivel de estampado debe tener un nombre válido.");
-      }
-      if (
-        level.price == null || 
-        isNaN(level.price) ||
-        Number(level.price) < 0
-      ) {
-        throw new Error(`El 'price' para el nivel '${level.level}' debe ser un número positivo.`);
-      }
-      if (level.description && typeof level.description !== "string") {
-         throw new Error(`La 'description' para el nivel '${level.level}' debe ser un string.`);
-      }
+  const stampingLevelRepo = manager.getRepository(StampingLevel);
+  const resultLevels = [];
+
+  for (const data of levelsData) {
+    let level = await stampingLevelRepo.findOneBy({ level: data.level.trim() });
+
+    if (!level) {
+      level = stampingLevelRepo.create({
+        level: data.level.trim(),
+        price: Math.round(parseFloat(data.price)),
+        description: data.description || ""
+      });
+      level = await stampingLevelRepo.save(level);
+    } else {
+      level.price = parseFloat(data.price);
+      level.description = data.description || level.description;
+      await stampingLevelRepo.save(level);
     }
+    resultLevels.push(level);
   }
+  return resultLevels;
 };
 
 export const itemTypeService = {
@@ -54,9 +53,9 @@ export const itemTypeService = {
       }
 
       // 2. Validar niveles de estampado
-      let parsedStampingLevels = itemTypeData.stampingLevels;
-      if (typeof parsedStampingLevels === "string") parsedStampingLevels = JSON.parse(parsedStampingLevels);
-      validateStampingLevels(parsedStampingLevels);
+      let rawLevels = itemTypeData.stampingLevels;
+      if (typeof rawLevels === "string") rawLevels = JSON.parse(rawLevels);
+      const linkedLevels = await processStampingLevels(rawLevels, queryRunner.manager);
 
       // 3. Crear nuevo tipo de ítem
       const newItemType = repo.create({
@@ -67,7 +66,7 @@ export const itemTypeService = {
         printingMethods: itemTypeData.printingMethods,
         sizesAvailable: itemTypeData.sizesAvailable,
         productImageUrls: itemTypeData.productImageUrls,
-        stampingLevels: parsedStampingLevels,
+        stampingLevels: linkedLevels,
         createdBy: { id: userId },
       });
       const savedItemType = await repo.save(newItemType);
@@ -132,6 +131,7 @@ export const itemTypeService = {
       const repo = AppDataSource.getRepository(ItemType);
       const itemTypes = await repo.find({
         where: { isActive: true },
+        relations: ["stampingLevels"],
         order: { name: "ASC" },
       });
 
@@ -157,6 +157,7 @@ export const itemTypeService = {
           id: parseInt(id),
           isActive: true,
         },
+        relations: ["stampingLevels"],
       });
 
       if (!itemType) {
@@ -185,48 +186,43 @@ export const itemTypeService = {
   },
 
   async updateItemType(id, itemTypeData, userId) {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
     try {
-      const repo = AppDataSource.getRepository(ItemType);
-      const parsedId = Number(id);
+      const repo = queryRunner.manager.getRepository(ItemType);
 
-      const itemType = await repo.findOne({ where: { id: parsedId } });
+      const itemType = await repo.findOne({ 
+        where: { id: Number(id) },
+        relations: ["stampingLevels"] 
+      });
 
       if (!itemType) {
         return [null, { type: "NOT_FOUND", message: "Tipo de ítem no encontrado", id }];
       }
-
       if (itemTypeData.name && itemTypeData.name !== itemType.name) {
-        const existingItemType = await repo.findOne({
-          where: { 
-            name: itemTypeData.name,
-            id: Not(parsedId) 
-          },
-        });
+      const existingItemType = await repo.findOne({
+        where: { 
+          name: itemTypeData.name,
+          id: Not(Number(id)) 
+        },
+      });
         if (existingItemType) {
+          await queryRunner.rollbackTransaction();
           return [null, {
-          type: "DUPLICATE_NAME",
-          message: "Ya existe un tipo de ítem con ese nombre",
-          field: "name",
-        }];
+            type: "DUPLICATE_NAME",
+            message: "Ya existe un tipo de ítem con ese nombre",
+            field: "name",
+          }];
+        }
       }
-    }
 
-    let parsedStampingLevels = itemType.stampingLevels; 
-    if (itemTypeData.stampingLevels !== undefined) {
-      try {
-        parsedStampingLevels = typeof itemTypeData.stampingLevels === "string" 
-          ? JSON.parse(itemTypeData.stampingLevels)
-          : itemTypeData.stampingLevels;
-        
-        validateStampingLevels(parsedStampingLevels);
-      } catch (e) {
-        return [null, {
-          type: "VALIDATION_ERROR",
-          message: "Error procesando niveles de precio: " + e.message,
-          field: "stampingLevels",
-        }];
+      if (itemTypeData.stampingLevels !== undefined) {
+        let rawLevels = itemTypeData.stampingLevels;
+        if (typeof rawLevels === "string") rawLevels = JSON.parse(rawLevels);
+        itemType.stampingLevels = await processStampingLevels(rawLevels, queryRunner.manager);
       }
-    }
 
     const newHasSizes = itemTypeData.hasSizes !== undefined 
       ? (String(itemTypeData.hasSizes) === "true") 
@@ -252,15 +248,15 @@ export const itemTypeService = {
       description: itemTypeData.description ?? itemType.description,
       hasSizes: newHasSizes,
       sizesAvailable: sizes,
-      stampingLevels: parsedStampingLevels,
       printingMethods: itemTypeData.printingMethods ?? itemType.printingMethods,
       productImageUrls: itemTypeData.productImageUrls ?? itemType.productImageUrls,
       updatedBy: { id: userId },
     };
 
     repo.merge(itemType, updateObject);
-
     const updatedItemType = await repo.save(itemType);
+
+    await queryRunner.commitTransaction();
     return [updatedItemType, null];
 
     } catch (error) {
@@ -270,6 +266,8 @@ export const itemTypeService = {
         message: "Error inesperado al actualizar el tipo de ítem",
         details: error.message,
       }];
+    } finally {
+      await queryRunner.release();
     }
   },
 
@@ -526,6 +524,20 @@ export const itemTypeService = {
           details: error.message,
         },
       ];
+    }
+  },
+
+  async getStampingLevels() {
+    try {
+      const repo = AppDataSource.getRepository(StampingLevel);
+      const levels = await repo.find({
+        where: { isActive: true },
+        order: { level: "ASC" }
+      });
+      return [levels, null];
+    } catch (error) {
+      console.error("Error en getStampingLevels:", error);
+      return [null, { type: "INTERNAL_ERROR", message: error.message }];
     }
   },
 };

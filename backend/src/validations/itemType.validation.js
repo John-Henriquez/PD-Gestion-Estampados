@@ -79,26 +79,22 @@ const itemTypeSchema = Joi.object({
       }),
     }),
 
-stampingLevels: Joi.alternatives()
-    .try(
-      Joi.string().custom((value, helpers) => {
-        try {
-          const parsed = JSON.parse(value);
-          const { error } = stampingLevelsSchema.validate(parsed); 
-          if (error) {
-            return helpers.error("any.invalid", { message: error.details[0].message });
+  stampingLevels: Joi.alternatives()
+      .try(
+        Joi.string().custom((value, helpers) => {
+          try {
+            const parsed = JSON.parse(value);
+            const { error } = stampingLevelsSchema.validate(parsed); 
+            if (error) return helpers.message(error.details[0].message);
+            return parsed; 
+          } catch (e) {
+            return helpers.message("Formato JSON inválido para stampingLevels");
           }
-          return parsed; 
-        } catch (e) {
-          return helpers.error("any.invalid", { message: "Formato JSON inválido para stampingLevels" });
-        }
-      }, "Validación JSON de StampingLevels"),
-
-      stampingLevelsSchema,
-      
-      Joi.allow(null)
-    )
-    .optional(),
+        }),
+        stampingLevelsSchema,
+        Joi.allow(null)
+      )
+      .optional(),
 
 }).options({ stripUnknown: true });
 

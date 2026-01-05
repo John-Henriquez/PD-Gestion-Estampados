@@ -8,6 +8,8 @@ const router = Router();
 
 router.use(authenticateJwt);
 
+router.get("/stamping-levels/list", itemTypeController.getStampingLevels);
+
 router.get("/", itemTypeController.getItemTypes);
 router.get("/deleted", isAdmin, itemTypeController.getDeletedItemTypes);
 router.get("/:id", itemTypeController.getItemTypeById);

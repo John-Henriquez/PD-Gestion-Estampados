@@ -1,6 +1,8 @@
-import { Box, Button, TextField, Typography, Grid, Alert } from '@mui/material';
+import { Box, Button, TextField, Typography, Grid, Alert, Autocomplete } from '@mui/material';
+import { useStampingLevels } from '../../hooks/itemType/useStampingLevels';
 
 const StampingLevelsForm = ({ levels = [], onChange }) => {
+  const { globalLevels } = useStampingLevels();
   const handleAddLevel = () => {
     const newLevels = [
       ...levels,
@@ -24,6 +26,19 @@ const StampingLevelsForm = ({ levels = [], onChange }) => {
     onChange(newLevels);
   };
 
+  const handleSelectSuggestion = (tempId, newValue) => {
+    if (typeof newValue === 'object' && newValue !== null) {
+      const newLevels = levels.map((l) => 
+        l.tempId === tempId 
+          ? { ...l, level: newValue.level, price: newValue.price, description: newValue.description } 
+          : l
+      );
+      onChange(newLevels);
+    } else {
+      handleChangeLevel(tempId, 'level', newValue || '');
+    }
+  };
+
   const hasInvalidPrice = levels.some(
     (l) =>
       l.price === null ||
@@ -32,71 +47,57 @@ const StampingLevelsForm = ({ levels = [], onChange }) => {
       parseFloat(l.price) < 0 ||
       isNaN(parseFloat(l.price))
   );
-  const hasEmptyLevelName = levels.some((l) => !l.level.trim());
-  const hasValidationErrors = hasInvalidPrice || hasEmptyLevelName;
+  const hasValidationErrors = levels.some(l => !l.level.trim() || isNaN(parseFloat(l.price)) || parseFloat(l.price) < 0);
 
   return (
-    <Box
-      sx={{
-        mt: 3,
-        p: 2,
-        border: hasValidationErrors ? '1px solid var(--error-dark)' : '1px solid var(--gray-300)',
-        borderRadius: '4px',
-        bgcolor: 'var(--gray-200)',
-      }}
-    >
+    <Box sx={{ mt: 3, p: 2, border: '1px solid var(--gray-300)', borderRadius: '4px', bgcolor: 'var(--gray-200)' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'var(--primary-dark)' }}>
           Niveles de Servicio de Estampado
         </Typography>
-        <Button
-          type="button"
-          onClick={handleAddLevel}
-          size="small"
-          variant="contained"
-          sx={{ bgcolor: 'var(--success)', '&:hover': { bgcolor: 'var(--success-dark)' } }}
-        >
+        <Button onClick={handleAddLevel} size="small" variant="contained" color="success">
           + Agregar Nivel
         </Button>
       </Box>
+
       {levels.map((level, index) => (
-        <Box
-          key={level.tempId}
-          sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: '6px', bgcolor: 'white' }}
-        >
-          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Nivel #{index + 1} ({level.level || 'Sin Nombre'})
-          </Typography>
-          <Grid container spacing={1}>
+        <Box key={level.tempId} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: '6px', bgcolor: 'white' }}>
+          <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
-              <TextField
-                label="Nombre del Nivel"
+              <Autocomplete
+                freeSolo
+                options={globalLevels}
+                getOptionLabel={(option) => option.level || option}
                 value={level.level}
-                size="small"
-                onChange={(e) => handleChangeLevel(level.tempId, 'level', e.target.value)}
-                fullWidth
-                error={!level.level.trim()}
-                helperText={!level.level.trim() ? 'El nombre del nivel es obligatorio.' : ''}
+                onInputChange={(event, newInputValue) => {
+                  handleChangeLevel(level.tempId, 'level', newInputValue);
+                }}
+                onChange={(event, newValue) => handleSelectSuggestion(level.tempId, newValue)}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="Nombre del Nivel" 
+                    size="small" 
+                    error={!level.level.trim()}
+                    helperText={!level.level.trim() ? 'Requerido' : ''}
+                  />
+                )}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Precio Total Absoluto ($)"
+                label="Precio ($)"
                 type="number"
                 value={level.price}
                 size="small"
-                onChange={(e) =>
-                  handleChangeLevel(level.tempId, 'price', parseFloat(e.target.value) || 0)
-                }
+                onChange={(e) => handleChangeLevel(level.tempId, 'price', e.target.value)}
                 fullWidth
-                inputProps={{ min: 0.01, step: 0.01 }}
-                error={level.price < 0 || isNaN(level.price)}
-                helperText={level.price < 0 ? 'El precio debe ser no negativo.' : ''}
+                error={parseFloat(level.price) < 0}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Descripción para el Cliente"
+                label="Descripción"
                 multiline
                 rows={1}
                 value={level.description}
@@ -106,28 +107,13 @@ const StampingLevelsForm = ({ levels = [], onChange }) => {
               />
             </Grid>
           </Grid>
-
-          <Button
-            type="button"
-            onClick={() => handleRemoveLevel(level.tempId)}
-            size="small"
-            color="error"
-            sx={{ mt: 1 }}
-          >
+          <Button onClick={() => handleRemoveLevel(level.tempId)} size="small" color="error" sx={{ mt: 1 }}>
             Eliminar
           </Button>
         </Box>
       ))}
-      {levels.length === 0 && (
-        <Alert severity="error" sx={{ mt: 1 }}>
-          Debe definir al menos un Nivel de Precio para el producto.
-        </Alert>
-      )}
-      {hasValidationErrors && levels.length > 0 && (
-        <Alert severity="warning" sx={{ mt: 1 }}>
-          Revise los niveles: los nombres son obligatorios y los precios deben ser positivos.
-        </Alert>
-      )}
+      
+      {levels.length === 0 && <Alert severity="error" sx={{ mt: 1 }}>Defina al menos un nivel.</Alert>}
     </Box>
   );
 };

@@ -309,4 +309,15 @@ export const itemTypeController = {
       handleErrorServer(res, 500, error.message);
     }
   },
+
+  async getStampingLevels(req, res) {
+    try {
+      const [levels, error] = await itemTypeService.getStampingLevels();
+      if (error) return handleErrorClient(res, 404, error);
+      
+      handleSuccess(res, 200, "Niveles de estampado obtenidos", levels);
+    } catch (error) {
+      handleErrorServer(res, 500, error.message);
+    }
+  },
 };

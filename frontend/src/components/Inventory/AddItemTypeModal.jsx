@@ -72,6 +72,16 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
   const { updateType, loading: updating } = useUpdateItemType();
   const loading = creating || updating || isUploading;
 
+  const handleClose = useCallback(() => {
+    setForm(initialFormState);
+    setStampingLevels([]);
+    setSelectedFiles([]);
+    setPreviews([]);
+    setUploadError(null);
+    setIsUploading(false);
+    onClose(); 
+  }, [onClose, initialFormState]);
+
   useEffect(() => {
     if (open) {
       if (editingType) {
@@ -86,20 +96,16 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
         });
 
         const initialLevels = (editingType.stampingLevels || []).map((level) => ({
-          level: level.level || level.name,
-          price: level.price || level.absolutePrice,
-          description: level.description || '',
-          tempId: level.level + Math.random(),
+          level: level.level,
+          price: level.price,
+          description: level.description,
+          tempId: `db-${level.id}-${Math.random()}`,
         }));
         setStampingLevels(initialLevels);
-      } else {
-        setForm(initialFormState);
-        setStampingLevels([]);
       }
-      setSelectedFiles([]);
-      setPreviews([]);
-      setUploadError(null);
-      setIsUploading(false);
+    } else {
+      setForm(initialFormState);
+      setStampingLevels([]);
     }
   }, [open, editingType, initialFormState]);
 
@@ -282,8 +288,9 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
     stampingLevels.length === 0 ||
     stampingLevels.some((l) => !l.level?.trim() || l.price < 0 || isNaN(l.price));
 
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" className="modal">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg" className="modal">
       {/* Titulo y Boton de Cerrar */}
       <DialogTitle className="modal-title">
         {editingType ? 'Editar Tipo de Ítem' : 'Nuevo Tipo de Ítem'}
@@ -544,7 +551,7 @@ const AddItemTypeModal = ({ open, onClose, onCreated, editingType }) => {
       </DialogContent>
       {/* Botones de Accion */}
       <DialogActions className="modal-actions">
-        <Button onClick={onClose} className="modal-button modal-button--cancel">
+        <Button onClick={handleClose} className="modal-button modal-button--cancel">
           Cancelar
         </Button>
 
