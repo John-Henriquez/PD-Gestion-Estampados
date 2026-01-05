@@ -89,8 +89,9 @@ export const itemStockService = {
       const qb = AppDataSource.getRepository(ItemStock).createQueryBuilder(
         "itemStock",
       );
-      qb.leftJoinAndSelect("itemStock.itemType", "itemType");
-      qb.leftJoinAndSelect("itemStock.color", "color");
+      qb.leftJoinAndSelect("itemStock.itemType", "itemType")
+        .leftJoinAndSelect("itemType.stampingLevels", "stampingLevels")
+        .leftJoinAndSelect("itemStock.color", "color");
 
       const parsedFilters = {
         ...filters,
@@ -125,9 +126,16 @@ export const itemStockService = {
       if (parsedFilters.publicOnly === true) {
         qb.andWhere("itemStock.isActive = :isActive", { isActive: true });
         qb.andWhere("itemStock.quantity > 0");
-        qb.andWhere("itemType.stampingLevels IS NOT NULL");
-        qb.andWhere("jsonb_array_length(\"itemType\".\"stampingLevels\"::jsonb) > 0");
-      } else{
+
+        qb.andWhere((sub) => {
+        const subQuery = sub.subQuery()
+          .select("1")
+          .from("item_type_stamping_levels", "itsl")
+          .where("itsl.item_type_id = itemType.id")
+          .getQuery();
+        return `EXISTS (${subQuery})`;
+      });
+    } else {
         const isActiveStatus = parsedFilters.isActive !== undefined ? parsedFilters.isActive : true;
         qb.andWhere("itemStock.isActive = :isActive", {
           isActive: isActiveStatus,
@@ -157,11 +165,18 @@ export const itemStockService = {
       );
       
       qb.leftJoinAndSelect("itemStock.itemType", "itemType")
-        .where("itemStock.id = :id", { id })
-        .andWhere("itemStock.isActive = true")
-        .andWhere("itemType.stampingLevels IS NOT NULL")
-        .andWhere("jsonb_array_length(\"itemType\".\"stampingLevels\"::jsonb) > 0");
-
+      .leftJoinAndSelect("itemType.stampingLevels", "stampingLevels")
+      .leftJoinAndSelect("itemStock.color", "color")
+      .where("itemStock.id = :id", { id })
+      .andWhere("itemStock.isActive = true")
+      .andWhere((sub) => {
+        const subQuery = sub.subQuery()
+          .select("1")
+          .from("item_type_stamping_levels", "itsl")
+          .where("itsl.item_type_id = itemType.id")
+          .getQuery();
+        return `EXISTS (${subQuery})`;
+      });
 
       const item = await qb.getOne();
 

@@ -165,6 +165,7 @@ export const packService = {
           "packItems",
           "packItems.itemStock",
           "packItems.itemStock.itemType",
+          "packItems.itemStock.itemType.stampingLevels"
         ],
         order: { createdAt: "DESC" },
       });
@@ -185,6 +186,7 @@ export const packService = {
           "packItems",
           "packItems.itemStock",
           "packItems.itemStock.itemType",
+          "packItems.itemStock.itemType.stampingLevels"
         ],
       });
 
