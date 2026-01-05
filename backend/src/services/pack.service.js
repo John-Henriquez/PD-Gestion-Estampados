@@ -38,7 +38,7 @@ export const packService = {
         for (const itemData of items) {
           const item = await itemStockRepo.findOne({
             where: { id: itemData.itemStockId },
-            relations: ["itemType"],
+            relations: ["itemType", "itemType.stampingLevels"],
           });
 
           if (!item) {
@@ -48,7 +48,7 @@ export const packService = {
             ];
           }
 
-          let unitPrice = Number(item.price);
+          let unitPrice = Number(item.price || 0);
           if (itemData.stampingLevel) {
             const levels = item.itemType.stampingLevels || [];
             const selectedLevel = levels.find((l) => l.level === itemData.stampingLevel);
@@ -90,7 +90,8 @@ export const packService = {
           packItemsDetails.push({
             id: item.id,
             name: item.itemType?.name || `Ítem ${item.id}`,
-            color: item.hexColor,
+            color: item.color?.name || "Sin color",
+            colorHex: item.color?.hex || "#ccc",
             size: item.size || "N/A",
             price: unitPrice,
             stampingLevel: itemData.stampingLevel || "Base",
@@ -114,6 +115,7 @@ export const packService = {
               pack: savedPack,
               itemStock: { id: itemData.itemStockId },
               quantity: itemData.quantity,
+              stampingLevel: itemData.stampingLevel,
             }),
           );
         }
@@ -165,7 +167,8 @@ export const packService = {
           "packItems",
           "packItems.itemStock",
           "packItems.itemStock.itemType",
-          "packItems.itemStock.itemType.stampingLevels"
+          "packItems.itemStock.color",
+          "packItems.itemStock.itemType.stampingLevels",
         ],
         order: { createdAt: "DESC" },
       });
@@ -186,6 +189,7 @@ export const packService = {
           "packItems",
           "packItems.itemStock",
           "packItems.itemStock.itemType",
+          "packItems.itemStock.color",
           "packItems.itemStock.itemType.stampingLevels"
         ],
       });
@@ -212,7 +216,12 @@ export const packService = {
 
         const pack = await repo.findOne({
           where: { id },
-          relations: ["packItems", "packItems.itemStock", "packItems.itemStock.itemType"],
+          relations: [
+            "packItems", 
+            "packItems.itemStock", 
+            "packItems.itemStock.itemType", 
+            "packItems.itemStock.itemType.stampingLevels"
+          ],
         });
 
         if (!pack) return [null, "Pack no encontrado"];
@@ -304,6 +313,7 @@ export const packService = {
                 pack,
                 itemStock: { id: itemData.itemStockId },
                 quantity: itemData.quantity,
+                stampingLevel: itemData.stampingLevel,
               }),
             );
           }

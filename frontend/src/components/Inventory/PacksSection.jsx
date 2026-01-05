@@ -128,12 +128,6 @@ return (
               <Paper className="pack-card" elevation={0}>
                 <div className="pack-card-head">
                   <Typography variant="h6" className="pack-title">{pack.name}</Typography>
-                  <Chip 
-                    label={pack.isActive ? 'Público' : 'Oculto'} 
-                    size="small" 
-                    color={pack.isActive ? 'success' : 'default'}
-                    className="status-chip"
-                  />
                 </div>
 
                 <div className="pack-card-body">
@@ -169,11 +163,13 @@ return (
                           </span>
                           <div 
                             className="color-dot" 
-                            style={{ backgroundColor: pItem.itemStock?.hexColor || '#ccc' }} 
-                            title={pItem.itemStock?.color?.name}
+                            style={{ 
+                              backgroundColor: pItem.itemStock?.color?.hex || '#ccc' 
+                            }} 
+                            title={pItem.itemStock?.color?.name || 'Color base'}
                           />
                         </li>
-                      ))}
+                      ))}         
                     </ul>
                   </div>
                 </div>

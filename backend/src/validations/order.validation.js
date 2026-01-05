@@ -15,7 +15,7 @@ const orderItemSchema = Joi.object({
     description: Joi.string().optional(),
     level: Joi.string().optional(),
     price: Joi.number().optional(),
-  }).optional(),
+  }).unknown(true).optional(),
 })
   .xor("itemStockId", "packId")
   .messages({

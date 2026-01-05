@@ -3,7 +3,7 @@ import {
   IconCurrencyDollar, 
   IconClipboardList, 
   IconAlertTriangle, 
-  IconUsers 
+  IconTag,
 } from '@tabler/icons-react';
 import '../../styles/components/statCards.css';
 
@@ -29,9 +29,9 @@ const StatCard = ({ title, value, icon: Icon, color }) => (
 const StatCards = ({ stats }) => {
   const items = [
   { title: 'Ventas Totales', value: `$${stats?.totalSales?.toLocaleString('es-CL') || 0}`, icon: IconCurrencyDollar, color: '#10b981' },
+  { title: 'Ticket Promedio', value: `$${stats?.averageTicket?.toLocaleString('es-CL') || 0}`, icon: IconTag, color: '#f59e0b' },
   { title: 'Pedidos Hoy', value: stats?.ordersToday || 0, icon: IconClipboardList, color: '#3b82f6' },
   { title: 'Stock Crítico', value: stats?.lowStockCount || 0, icon: IconAlertTriangle, color: '#ef4444' },
-  { title: 'Total Clientes', value: stats?.totalCustomers || 0, icon: IconUsers, color: '#8b5cf6' },
 ];
 
   return (

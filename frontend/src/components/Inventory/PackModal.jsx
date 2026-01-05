@@ -52,7 +52,7 @@ const PackModal = ({ open, onClose, onCompleted, editingPack, currentUserRut, it
       const initialStocks = editingPack.packItems.map((pi) => ({
         itemStock: pi.itemStock,
         quantity: pi.quantity.toString(),
-        stampingLevel: pi.sstampingLevels || '',
+        stampingLevel: pi.stampingLevel || '',
       }));
       setSelectedStocks(initialStocks);
       setForm({
@@ -76,12 +76,13 @@ const PackModal = ({ open, onClose, onCompleted, editingPack, currentUserRut, it
   const calculateSubtotal = () => {
     return selectedStocks.reduce((sum, s) => {
       const { itemStock, stampingLevel } = s;
-      let itemPrice = Number(itemStock.price || 0);
+
+      const levelObj = itemStock?.itemType?.stampingLevels?.find(l => l.level === stampingLevel);
+
+      const itemPrice = levelObj 
+        ? Number(levelObj.price) 
+        : Number(itemStock?.price || 0);
       
-      if (stampingLevel && itemStock.itemType?.stampingLevels) {
-        const lvl = itemStock.itemType.stampingLevels.find(l => l.level === stampingLevel);
-        if (lvl) itemPrice = Number(lvl.price);
-      }
       return sum + (itemPrice * Number(s.quantity || 1));
     }, 0);
   };
@@ -211,7 +212,7 @@ const PackModal = ({ open, onClose, onCompleted, editingPack, currentUserRut, it
                 return (
                   <Chip 
                     key={stock.id}
-                    label={`${stock.itemType?.name} ${stock.size || ''}`}
+                    label={`${stock.itemType?.name} - ${stock.color?.name} (${stock.size || 'N/A'})`}
                     onClick={() => handleSelectStock(stock)}
                     icon={isSelected ? <CloseIcon /> : <AddIcon />}
                     color={isSelected ? "primary" : "default"}
@@ -234,9 +235,19 @@ const PackModal = ({ open, onClose, onCompleted, editingPack, currentUserRut, it
                   <Box className="item-row-header">
                     <Box>
                       <Typography variant="body2" fontWeight="700">{s.itemStock.itemType.name}</Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {s.itemStock.size || 'Talla única'} • {s.itemStock.colorName || 'Color base'}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {/* Círculo de color visual */}
+                        <Box 
+                          sx={{ 
+                            width: 12, height: 12, borderRadius: '50%', 
+                            bgcolor: s.itemStock.color?.hex || '#ccc',
+                            border: '1px solid #ddd' 
+                          }} 
+                        />
+                        <Typography variant="caption" color="textSecondary">
+                          {s.itemStock.size || 'Talla única'} • {s.itemStock.color?.name || 'Color base'}
+                        </Typography>
+                      </Box>
                     </Box>
                     <Box className="item-row-actions">
                       <TextField type="number" label="Cant." size="small" value={s.quantity}

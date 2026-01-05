@@ -5,6 +5,8 @@ import { IconRefresh, IconFileAnalytics, IconClipboardCheck } from '@tabler/icon
 import StatCards from '../components/Dashboard/StatCards.jsx';
 import SalesChart from '../components/Dashboard/SalesChart.jsx';
 import StockCriticalChart from '../components/Dashboard/StockCriticalChart.jsx';
+import TopProductsList from '../components/Dashboard/TopProductsList.jsx';
+import CategoryPieChart from '../components/Dashboard/CategoryPieChart.jsx';
 import LogicalAuditModal from '../components/Dashboard/LogicalAuditModal.jsx';
 
 import { getDashboardStats } from '../services/report.service';
@@ -28,6 +30,11 @@ const Dashboard = () => {
     else setStats(data);
     setLoading(false);
   };
+
+  const loadInventory = async () => {
+    const data = await getItemStock();
+    setInventoryData(Array.isArray(data) ? data.filter(i => i.isActive) : []);
+  };
   
   useEffect(() => {
     loadData();
@@ -43,10 +50,6 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error al obtener stock para auditoría:", err);
     }
-  };
-  const loadInventory = async () => {
-    const data = await getItemStock();
-    setInventoryData([...data]);
   };
   
   const handleDownloadAuditSheet = async () => {
@@ -68,15 +71,14 @@ const Dashboard = () => {
       <Typography sx={{ mt: 2 }} color="textSecondary">Cargando métricas en tiempo real...</Typography>
     </Box>
   );
-  
-  console.log("📊 stats.salesHistory:", stats?.salesHistory);
+
   return (
     <Box className="dashboard-wrapper animate--fadeIn" sx={{ pt: 11, pb: 5 }}>
       <Container maxWidth="xl">
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <Box>
             <Typography variant="h4" fontWeight="800" color="primary">Panel de Control</Typography>
-            <Typography variant="body1" color="textSecondary">Bienvenido al centro de gestión de <b>Vibra Estampados</b></Typography>
+            <Typography variant="body1" color="textSecondary">Métricas estratégicas e inventario crítico</Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -95,14 +97,28 @@ const Dashboard = () => {
 
         {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
+        {/* 1. Tarjetas de Resumen (KPIs Financieros) */}
         <StatCards stats={stats?.kpis} />
 
-        <Grid container spacing={3} sx={{ mt: 2 }}>
+        <Grid container spacing={3} sx={{ mt: 1 }}>
+          {/* 2. Tendencia de Ventas (Grande) */}
           <Grid item xs={12} lg={8}>
-            <SalesChart data={stats?.salesHistoryTransactions}/>
+            <SalesChart data={stats?.salesHistoryDaily} />
           </Grid>
+
+          {/* 3. Top Productos (Lateral) */}
           <Grid item xs={12} lg={4}>
+            <TopProductsList products={stats?.topProducts} />
+          </Grid>
+
+          {/* 4. Stock Crítico (Enfoque en reposición) */}
+          <Grid item xs={12} md={6} lg={4}>
             <StockCriticalChart data={inventoryData} />
+          </Grid>
+
+          {/* 5. Ventas por Categoría (Balance de negocio) */}
+          <Grid item xs={12} md={6} lg={8}>
+            <CategoryPieChart data={stats?.categoryDistribution} />
           </Grid>
         </Grid>
 

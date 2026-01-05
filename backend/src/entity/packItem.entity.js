@@ -14,6 +14,11 @@ const PackItemSchema = new EntitySchema({
       type: "int",
       nullable: false,
     },
+    stampingLevel: {
+      type: "varchar",
+      length: 50,
+      nullable: true,
+    },
   },
   relations: {
     pack: {
