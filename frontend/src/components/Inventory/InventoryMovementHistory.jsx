@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import {
   Box, Typography, Select, MenuItem, TextField, InputLabel, 
   FormControl, Grid, CircularProgress, Paper, IconButton, 
-  Avatar, Chip, Tooltip, Divider, useMediaQuery, useTheme
+  Avatar, Chip, Divider, useMediaQuery, useTheme
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
@@ -50,6 +50,41 @@ const InventoryMovementHistory = ({ onClose }) => {
   const formatCLP = (value) => 
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
 
+  const formatPropertyLabel = (key) => {
+    const labels = {
+      status: 'Estado del Pedido',
+      paymentDate: 'Fecha de Pago',
+      paymentMethod: 'Método de Pago',
+      quantity: 'Cantidad',
+      price: 'Precio',
+      isActive: 'Vigencia',
+      minStock: 'Stock Crítico'
+    };
+    return labels[key] || key.charAt(0).toUpperCase() + key.slice(1);
+  };
+
+  const formatAuditValue = (key, value) => {
+    if (!value || value === 'ø') return 'ø';
+    if (key === 'status') {
+      const cleanValue = String(value).replace(/_/g, ' ');
+      return cleanValue.charAt(0).toUpperCase() + cleanValue.slice(1);
+    }
+    if (key.toLowerCase().includes('date') || (typeof value === 'string' && value.includes('T') && value.includes('Z'))) {
+      const date = new Date(value);
+      if (!isNaN(date)) {
+        return date.toLocaleString('es-CL', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+    if (typeof value === 'boolean') return value ? 'Activado' : 'Desactivado';
+    return String(value);
+  };
+  
   return (
     <Box className="history-modal-container">
       <Box className="history-header">
@@ -172,10 +207,10 @@ const InventoryMovementHistory = ({ onClose }) => {
                             <Box className="audit-log-box" sx={{ mt: 1 }}>
                               {Object.entries(mov.changes).map(([field, data]) => (
                                 <div key={field} className="log-line">
-                                  <span className="field-label" style={{textTransform: 'capitalize'}}>{field}:</span>
-                                  <span className="val-old">{data.oldValue ?? 'ø'}</span>
+                                  <span className="field-label" style={{textTransform: 'capitalize'}}>{formatPropertyLabel(field)}:</span>
+                                  <span className="val-old">{formatAuditValue(field, data.oldValue)}</span>
                                   <span className="log-arrow">→</span>
-                                  <span className="val-new">{String(data.newValue)}</span>
+                                  <span className="val-new">{formatAuditValue(field, data.newValue)}</span>
                                 </div>
                               ))}
                             </Box>
