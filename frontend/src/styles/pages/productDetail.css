@@ -1,6 +1,6 @@
 .product-detail-container {
-  max-width: 1000px;
-  margin: var(--spacing-xl) auto;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: var(--spacing-md);
   padding-top: calc(4.5rem + var(--spacing-lg));
 }
@@ -57,7 +57,7 @@
 .product-info__description {
   color: var(--gray-700);
   margin-bottom: var(--spacing-md);
-  min-height: 3em;
+  min-height: auto;
 }
 
 .product-info__price {
@@ -187,4 +187,83 @@
   background-color: rgba(0, 0, 0, 0.4);
   border-radius: 20px;
   padding: 4px 8px;
+}
+
+.selection-card, .customization-card {
+  padding: 24px;
+  border-radius: 16px !important;
+  border: 1px solid var(--gray-200) !important;
+  margin-bottom: 20px;
+  background-color: white !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+}
+
+.section-subtitle {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 16px !important;
+  color: var(--gray-800);
+}
+
+.selection-group {
+  margin-bottom: 20px;
+}
+
+.selection-label {
+  font-size: 0.85rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-500);
+  margin-bottom: 8px !important;
+  font-weight: 600 !important;
+}
+
+.size-toggle-group {
+  gap: 8px;
+  border: none !important;
+}
+
+.size-button {
+  border: 1px solid var(--gray-300) !important;
+  border-radius: 8px !important;
+  width: 50px;
+  height: 45px;
+  transition: all 0.2s !important;
+}
+
+.size-button.Mui-selected {
+  background-color: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+}
+
+.sticky-action-bar {
+  padding: 20px;
+  border-radius: 20px !important;
+  background: white !important;
+  border: 2px solid var(--primary-light) !important;
+  display: flex;
+  margin-top: 20px;
+}
+
+.quantity-controls-modern {
+  display: flex;
+  align-items: center;
+  background: var(--gray-100);
+  border-radius: 30px;
+  padding: 4px 12px;
+}
+
+.add-to-cart-premium {
+  background-color: var(--primary) !important;
+  padding: 12px 32px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  box-shadow: 0 8px 16px rgba(123, 44, 191, 0.2) !important;
+}
+
+.add-to-cart-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px rgba(123, 44, 191, 0.3) !important;
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import {
-  Box, Typography, Button, CircularProgress, Alert, Chip,
+  Box, Tooltip, Typography, Button, CircularProgress, Alert, Chip,
   TextField, IconButton, Divider, Grid, FormControl,
   RadioGroup, FormControlLabel, Radio, ToggleButtonGroup, ToggleButton, Paper,
 } from '@mui/material';
@@ -347,132 +347,63 @@ const currentImageUrl = productImageUrls.length > 0 ? getFullImageUrl(productIma
         </div>
 
         <section className="product-info-section">
-          <Typography component="h1" className="product-info__name">
-            {name}
-          </Typography>
-          <Typography className="product-info__description">{description}</Typography>
+          <Box sx={{ mb: 3 }}>
+            <Typography component="h1" className="product-info__name">
+              {name}
+            </Typography>
+            <Typography className="product-info__description" sx={{ mt: 2 }}>
+              {description}
+            </Typography>
+          </Box>
 
-          <Typography className="product-info__price">
-            {formatCLP(calculateDynamicPrice() || 0)}
-          </Typography>
-
-          {/* --- INICIO SELECCIÓN TALLA Y COLOR --- */}
-
-          <div className="product-info__details">
-            {/* Selector de Talla */}
-            {itemType.hasSizes && realAvailableSizes.length > 0 && (
-              <div className="product-info__detail-item">
-                <Typography component="span" fontWeight="bold" sx={{ pt: 1 }}>
-                  Talla:
-                </Typography>
-                <ToggleButtonGroup
-                  value={selectedSize}
-                  exclusive
-                  onChange={handleSizeChange}
-                  aria-label="Seleccionar talla"
-                  size="small"
-                  sx={{ flexWrap: 'wrap' }}
-                >
-                  {realAvailableSizes.map((size) => (
-                    <ToggleButton
-                      key={size}
-                      value={size}
-                      aria-label={size}
-                      sx={{
-                        fontWeight: 600,
-                      }}
-                    >
-                      {size}
-                    </ToggleButton>
-                  ))}
-                </ToggleButtonGroup>
-              </div>
-            )}
-            {/* Selector de Color */}
-            <div className="product-info__detail-item">
-              <Typography
-                component="span"
-                fontWeight="bold"
-                sx={{
-                  alignSelf: 'flex-start',
-                  pt: 1,
-                }}
-              >
-                Color:
-              </Typography>
-              {availableColors.length > 0 ? (
-                <FormControl component="fieldset">
-                  <RadioGroup
-                    row
-                    name="color-selector"
-                    value={selectedColorObj?.id || ''}
-                    onChange={handleColorChange}
+          <Paper variant="outlined" className="selection-card">
+            <Typography variant="h6" className="section-subtitle">Opciones del Producto</Typography>
+            
+            <div className="product-info__details">
+              {/* Selector de Talla con mejor estilo */}
+              {itemType.hasSizes && realAvailableSizes.length > 0 && (
+                <div className="selection-group">
+                  <Typography className="selection-label">Talla Disponible</Typography>
+                  <ToggleButtonGroup
+                    value={selectedSize}
+                    exclusive
+                    onChange={handleSizeChange}
+                    className="size-toggle-group"
                   >
-                    {availableColors.map((color) => (
-                      <FormControlLabel
-                        key={color.id}
-                        value={color.id}
-                        control={<Radio sx={{ display: 'none' }} />}
-                        label={
-                          <Chip
-                            icon={
-                              <Box
-                                component="span"
-                                sx={{
-                                  width: 20,
-                                  height: 20,
-                                  borderRadius: '50%',
-                                  backgroundColor: color.hex,
-                                  border: '1px solid #ccc',
-                                  cursor: 'pointer',
-                                  ml: 1,
-                                }}
-                              />
-                            }
-                            label={color.name}
-                            variant={selectedColorObj?.id === color.id ? 'filled' : 'outlined'}
-                            sx={{
-                              cursor: 'pointer',
-                              borderColor: selectedColorObj?.id === color.id ? 'var(--primary)' : 'var(--gray-300)',
-                              backgroundColor: selectedColorObj?.id === color.id ? 'var(--primary-light)' : 'default',
-                              marginRight: 1,
-                            }}
-                          />
-                        }
-                      />
+                    {realAvailableSizes.map((size) => (
+                      <ToggleButton key={size} value={size} className="size-button">
+                        {size}
+                      </ToggleButton>
                     ))}
-                  </RadioGroup>
-                </FormControl>
-              ) : (
-                <Typography component="span" color="text.secondary">
-                  (Selecciona una talla)
-                </Typography>
+                  </ToggleButtonGroup>
+                </div>
               )}
-            </div>
 
-            {/* Disponibilidad */}
-
-            <div className="product-info__detail-item">
-              <Typography component="span" fontWeight="bold">
-                Disponibilidad:
-              </Typography>
-              {selectedStock ? (
-                <Typography
-                  component="span"
-                  sx={{
-                    color: currentStockQuantity > 0 ? 'var(--success-dark)' : 'var(--error-dark)',
-                    fontWeight: 600,
-                  }}
-                >
-                  {currentStockQuantity > 0 ? `${currentStockQuantity} en stock` : 'Agotado'}
-                </Typography>
-              ) : (
-                <Typography component="span" color="text.secondary">
-                  (Selecciona talla y color)
-                </Typography>
-              )}
+              {/* Selector de Color tipo 'Swatches' */}
+              <div className="selection-group">
+                <Typography className="selection-label">Color</Typography>
+                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                  {availableColors.map((color) => (
+                    <Tooltip title={color.name} key={color.id}>
+                      <Box
+                        onClick={() => setSelectedColorObj(color)}
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          backgroundColor: color.hex,
+                          border: selectedColorObj?.id === color.id ? '3px solid var(--primary)' : '1px solid var(--gray-300)',
+                          boxShadow: selectedColorObj?.id === color.id ? '0 0 0 2px var(--primary-light)' : 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      />
+                    </Tooltip>
+                  ))}
+                </Box>
+              </div>
             </div>
-          </div>
+          </Paper>
 
           {isStampable && (
             <Box className="product-customization-section" sx={{ my: 'var(--spacing-lg)' }}>
@@ -608,47 +539,35 @@ const currentImageUrl = productImageUrls.length > 0 ? getFullImageUrl(productIma
             </Box>
           )}
 
-          <div className="product-actions">
-            <Box className="quantity-selector">
-              <Typography fontWeight="bold">Cantidad:</Typography>
-              <Button
-                variant="outlined"
-                onClick={() => handleQuantityChange(-1)}
-                disabled={quantity <= 1}
-                className="quantity-selector__button"
-              >
-                -
-              </Button>
-              <TextField
-                type="number"
-                value={quantity}
-                InputProps={{ readOnly: true }}
-                className="quantity-selector__input"
-              />
-              <Button
-                variant="outlined"
-                onClick={() => handleQuantityChange(1)}
-                disabled={!selectedStock || quantity >= currentStockQuantity}
-                className="quantity-selector__button"
-              >
-                +
-              </Button>
+          <Paper elevation={4} className="sticky-action-bar">
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Total Producto</Typography>
+                <Typography variant="h5" color="var(--primary)" fontWeight="800">
+                  {formatCLP(totalItemPrice || 0)}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <div className="quantity-controls-modern">
+                  <IconButton onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1} size="small">
+                    <Typography variant="h5">-</Typography>
+                  </IconButton>
+                  <Typography fontWeight="bold" sx={{ mx: 2 }}>{quantity}</Typography>
+                  <IconButton onClick={() => handleQuantityChange(1)} disabled={quantity >= currentStockQuantity} size="small">
+                    <Typography variant="h5">+</Typography>
+                  </IconButton>
+                </div>
+                <Button
+                  variant="contained"
+                  className="add-to-cart-premium"
+                  onClick={handleAddToCartAndCheckout}
+                  disabled={!selectedStock || currentStockQuantity === 0}
+                >
+                  {editItem ? 'Actualizar Carrito' : 'Comprar Ahora'}
+                </Button>
+              </Box>
             </Box>
-
-            <Typography variant="h6" sx={{ textAlign: 'right', my: 1 }}>
-              Total Item: ${(totalItemPrice || 0).toLocaleString()}
-            </Typography>
-
-            <Button
-              variant="contained"
-              size="large"
-              onClick={handleAddToCartAndCheckout}
-              disabled={!selectedStock || currentStockQuantity === 0}
-              className="add-to-cart-button animate--pulse"
-            >
-              {editItem ? 'Guardar Cambios y Volver' : (isStampable ? 'Añadir Personalización y Comprar' : 'Añadir al Carrito y Comprar')}
-            </Button>
-          </div>
+          </Paper>
         </section>
       </div>
     </div>
