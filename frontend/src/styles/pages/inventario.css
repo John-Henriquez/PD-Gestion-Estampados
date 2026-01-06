@@ -61,7 +61,8 @@
 
 .inventory-paper-header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: space-between;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
 }
@@ -82,11 +83,7 @@
 .inventory-paper-actions {
   display: flex;
   gap: var(--spacing-sm);
-  flex-wrap: wrap;
-}
-
-.inventory-paper-actions button {
-  flex: 1;
+  align-items: center;
 }
 
 .inventory-paper table {
@@ -123,15 +120,24 @@
   box-sizing: border-box;
 }
 
-/* FIX 2 */
 @media (max-width: 600px) {
   .inventory-page {
     padding-left: 12px !important;
     padding-right: 12px !important;
   }
+
+  .inventory-paper-actions .MuiButton-root {
+    flex: 1;
+  }
+  .inventory-paper-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .inventory-paper-actions {
+    width: 100%;
+  }
 }
 
-/* FIX 3 */
 .inventory-page .MuiGrid-item {
   max-width: 100%;
 }
