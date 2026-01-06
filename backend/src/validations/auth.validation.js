@@ -10,8 +10,8 @@ const domainEmailValidator = (value, helper) => {
 
 export const authValidation = Joi.object({
   email: Joi.string()
-    .min(14)
-    .max(35)
+    .min(15)
+    .max(100)
     .email()
     .required()
     .messages({
@@ -21,7 +21,7 @@ export const authValidation = Joi.object({
       "string.email": "El correo electrónico debe finalizar en @gmail.cl.",
       "string.min": "El correo electrónico debe tener al menos 15 caracteres.",
       "string.max":
-        "El correo electrónico debe tener como máximo 35 caracteres.",
+        "El correo electrónico debe tener como máximo 100 caracteres.",
     })
     .custom(domainEmailValidator, "Validación dominio email"),
   password: Joi.string()
@@ -75,8 +75,8 @@ export const registerValidation = Joi.object({
         "Formato rut inválido, debe ser xx.xxx.xxx-x o xxxxxxxx-x.",
     }),
   email: Joi.string()
-    .min(14)
-    .max(35)
+    .min(15)
+    .max(100)
     .email()
     .required()
     .messages({
@@ -86,7 +86,7 @@ export const registerValidation = Joi.object({
       "string.email": "El correo electrónico debe finalizar en @gmail.cl.",
       "string.min": "El correo electrónico debe tener al menos 15 caracteres.",
       "string.max":
-        "El correo electrónico debe tener como máximo 35 caracteres.",
+        "El correo electrónico debe tener como máximo 100 caracteres.",
     })
     .custom(domainEmailValidator, "Validación dominio email"),
   password: Joi.string()

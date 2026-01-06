@@ -34,7 +34,7 @@ async function createUsers() {
         userRepository.create({
           nombreCompleto: "Administrador Principal",
           rut: "11.111.111-1",
-          email: "user@admin.com",
+          email: "notificaciones.vibraes@gmail.com",
           password: await encryptPassword("admin123"),
           rol: "administrador",
         }),
