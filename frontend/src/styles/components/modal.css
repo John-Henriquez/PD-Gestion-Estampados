@@ -1,10 +1,8 @@
-/* === Estilos base del modal === */
 .modal .MuiDialog-paper {
   font-family: var(--font-family);
   border-radius: var(--border-radius-lg) !important;
   overflow: hidden;
 }
-/* Título del modal */
 .modal-title {
   color: var(--primary-dark);
   font-weight: 600;
@@ -13,8 +11,6 @@
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--gray-300);
 }
-
-/* Contenido del modal */
 .modal-content {
   padding: var(--spacing-lg);
   background-color: var(--gray-100);

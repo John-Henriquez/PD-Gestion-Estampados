@@ -54,7 +54,7 @@ const Login = () => {
               type: 'email',
               required: true,
               minLength: 5,
-              maxLength: 30,
+              maxLength: 100,
               errorMessageData: errorEmail,
               validate: {
                 emailDomain: (value) => value.includes('@'),

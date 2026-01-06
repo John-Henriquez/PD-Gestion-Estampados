@@ -5,7 +5,7 @@
     padding: 0 24px;
     height: 70px;
     background: var(--primary);
-    z-index: 2000;
+    z-index: 1000;
     width: 100%;
     max-width: 100%;
 }

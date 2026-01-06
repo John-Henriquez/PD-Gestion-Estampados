@@ -62,7 +62,7 @@ const Register = () => {
               type: 'email',
               required: true,
               minLength: 15,
-              maxLength: 35,
+              maxLength: 100,
               errorMessageData: errorEmail,
               validate: {
                 emailDomain: (value) => value.includes('@'),

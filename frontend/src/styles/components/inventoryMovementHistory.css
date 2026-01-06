@@ -1,8 +1,8 @@
-/* inventoryMovementHistory.css - Potenciado */
-
 .history-modal-container {
     display: flex;
     flex-direction: column;
+    position: fixed;
+    z-index: 2000;
     height: 100%;
     background-color: var(--gray-50);
 }
@@ -14,7 +14,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    z-index: 10;
+    z-index: 2000;
 }
 
 .history-icon-circle {
