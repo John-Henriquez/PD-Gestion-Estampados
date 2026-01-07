@@ -30,7 +30,7 @@ export const orderService = {
         const packRepo = transactionalEntityManager.getRepository(Pack);
         const statusRepo = transactionalEntityManager.getRepository(OrderStatus);
 
-        const { items, customerData, shippingData } = orderData;
+        const { items, customerData, shippingAddress, customerPhone } = orderData;
 
         if (!items || items.length === 0) return [null, "El pedido debe contener al menos un artículo."];
         
@@ -134,13 +134,13 @@ export const orderService = {
 
         const newOrder = orderRepo.create({
           status: initialStatus,
-          subtotal: calculatedSubtotal,
           total: calculatedSubtotal,
+          subtotal: calculatedSubtotal,
           user: userId ? { id: userId } : null,
           guestEmail: !userId ? customerData?.email : null,
           customerName: customerData?.name || null,
-          customerPhone: shippingData.phone,
-          shippingAddress: shippingData.address,
+          customerPhone: customerPhone,
+          shippingAddress: shippingAddress,
         });
         const savedOrder = await orderRepo.save(newOrder);
 

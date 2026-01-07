@@ -185,6 +185,8 @@ const OrderDetail = () => {
     return null;
   };
 
+  console.log("Datos de la orden recibidos:", order);
+
   return (
     <Box className="order-detail-container">
       <Button
@@ -464,7 +466,7 @@ const OrderDetail = () => {
                       Dirección de Entrega
                     </Typography>
                     <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {order.shippingAddress || 'No especificada'}
+                      {order.shippingAddress || 'Retiro en tienda / Pendiente'}
                     </Typography>
                   </Box>
                 </Box>

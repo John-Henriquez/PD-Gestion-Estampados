@@ -132,6 +132,10 @@ const handleComunaChange = (event) => {
       return;
     }
 
+    const regionName = regions.find(r => r.id === addressDetails.regionId)?.name || '';
+    const comunaName = selectedComunaData?.name || '';
+
+    const fullAddress = `${addressDetails.street}, ${comunaName}, ${regionName}`.trim();
     setIsProcessing(true);
 
     const orderPayload = {
@@ -144,12 +148,8 @@ const handleComunaChange = (event) => {
         stampOptionsSnapshot: item.stampOptionsSnapshot,
       })),
       customerData: isAuthenticated ? null : customerData,
-      shippingData: {
-        phone: addressDetails.phone,
-        street: addressDetails.street,
-        comunaId: addressDetails.comunaId,
-        regionId: addressDetails.regionId,
-      },
+      shippingAddress: fullAddress, 
+      customerPhone: addressDetails.phone,
     };
 
     try {

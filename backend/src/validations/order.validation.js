@@ -69,5 +69,14 @@ export const createOrderSchema = Joi.object({
       "any.required": "customerData es requerido para pedidos de invitados.",
     }),
 
-  shippingData: shippingDataSchema.required(),
+  shippingAddress: Joi.string().min(10).required().messages({
+    "string.empty": "La dirección de envío es obligatoria.",
+    "string.min": "La dirección debe ser más detallada.",
+    "any.required": "La dirección de envío es requerida.",
+  }),
+
+  customerPhone: Joi.string().min(8).required().messages({
+    "string.empty": "El teléfono de contacto es obligatorio.",
+    "any.required": "El teléfono es requerido.",
+  }),
 });
