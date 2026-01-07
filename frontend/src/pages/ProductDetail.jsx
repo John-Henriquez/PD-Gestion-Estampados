@@ -402,6 +402,29 @@ const currentImageUrl = productImageUrls.length > 0 ? getFullImageUrl(productIma
                   ))}
                 </Box>
               </div>
+              <div className="selection-group">
+                <Typography className="selection-label">Disponibilidad</Typography>
+                {selectedStock ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip
+                      label={currentStockQuantity > 0 ? `${currentStockQuantity} unidades disponibles` : "Sin stock"}
+                      color={currentStockQuantity > 10 ? "success" : currentStockQuantity > 0 ? "warning" : "error"}
+                      variant="outlined"
+                      size="small"
+                      sx={{ fontWeight: 'bold' }}
+                    />
+                    {currentStockQuantity < 5 && currentStockQuantity > 0 && (
+                      <Typography variant="caption" color="error.main" fontWeight="bold">
+                        ¡Últimas unidades!
+                      </Typography>
+                    )}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    Selecciona talla y color para ver disponibilidad
+                  </Typography>
+                )}
+              </div>
             </div>
           </Paper>
 
