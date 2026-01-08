@@ -191,3 +191,28 @@ export async function sendOrderCancelledEmail(order) {
   const html = getEmailTemplate("Pedido Cancelado", "#c0392b", content); 
   return sendEmail(emailDestino, `Pedido Cancelado #${order.id}`, html);
 }
+
+export async function sendLowStockAlert(stockItem, currentQty) {
+  const content = `
+    <p style="font-size: 16px;"> <strong>ALERTA DE STOCK CRÍTICO</strong></p>
+    <p>El siguiente producto ha alcanzado un nivel de inventario bajo:</p>
+    
+    <div style="background-color: #fff1f0; border-left: 4px solid #cf1322; padding: 15px; margin: 20px 0;">
+      <p style="margin: 0;"><strong>Producto:</strong> ${stockItem.itemType?.name || 'Desconocido'}</p>
+      <p style="margin: 5px 0;"><strong>Variación:</strong> Talla ${stockItem.size} - Color ${stockItem.color?.name || 'N/A'}</p>
+      <p style="margin: 5px 0; color: #cf1322; font-size: 18px;"><strong>Stock Restante:</strong> ${currentQty} unidades</p>
+    </div>
+
+    <p>Se recomienda gestionar la reposición a la brevedad para evitar quiebres de stock en la tienda.</p>
+    
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="${process.env.VITE_BASE_URL || '#'}/admin/inventory" 
+         style="background-color: #333333; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+         Ir al Panel de Inventario
+      </a>
+    </div>
+  `;
+
+  const html = getEmailTemplate("Emergencia de Stock", "#cf1322", content);
+  return sendEmail(EMAIL_USER, `Stock Bajo: ${stockItem.itemType?.name}`, html);
+}

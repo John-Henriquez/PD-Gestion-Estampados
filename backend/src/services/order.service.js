@@ -16,6 +16,7 @@ import {
   sendOrderCreatedEmail,
   sendOrderPaidEmail,
   sendOrderShippedEmail,
+  sendLowStockAlert
 } from "./email.service.js";
 
 export const orderService = {
@@ -157,6 +158,11 @@ export const orderService = {
             where: { id: stockId }, 
             relations: ["itemType", "color"]
           });
+
+          if (stockItemForSnapshot && stockItemForSnapshot.isActive && stockItemForSnapshot.quantity <= stockItemForSnapshot.minStock) {
+            sendLowStockAlert(stockItemForSnapshot, stockItemForSnapshot.quantity).catch(console.error);
+          }
+
 
           const { reason: helperReason } = generateInventoryReason("sale");
 
@@ -305,16 +311,18 @@ export const orderService = {
             "status",
             "user", 
             "orderItems", 
-            "orderItems.itemStock",
-            "orderItems.itemStock.itemType",
-            "orderItems.pack",
-            "orderItems.pack.packItems",
-            "orderItems.pack.packItems.itemStock",
-            "orderItems.pack.packItems.itemStock.itemType"
           ]
         });
 
         if (!order) throw new Error("Pedido no encontrado.");
+
+        if (order.status.name === newStatusName) {
+          return [order, null]; 
+        }
+
+        if (newStatusName === "en_proceso" && order.status.name !== "pendiente_de_pago") {
+          return [order, null];
+        }
 
         const targetStatus = await statusRepo.findOneBy({ name: newStatusName });
         if (!targetStatus) throw new Error(`Estado inválido: ${newStatusName}`);
@@ -371,19 +379,16 @@ export const orderService = {
           }
         }
 
-        if (newStatusName === "en_proceso" && !order.paymentDate) {
-            order.paymentDate = new Date();
-            changes.paymentDate = { oldValue: null, newValue: order.paymentDate };
-            if (!order.paymentMethod) {
-              order.paymentMethod = "Confirmado por Sistema";
-            }
-          }
+        if (newStatusName === "en_proceso") {
+          order.paymentDate = order.paymentDate || new Date();
+          order.paymentMethod = order.paymentMethod || "Confirmado por Sistema";
+        }
 
         order.status = targetStatus;
         requiresAuditLog = true;
         order.updatedAt = new Date();
-
-        const updatedOrder = await orderRepo.save(order);
+        
+        const updatedOrder = await transactionalEntityManager.getRepository(Order).save(order);
 
         const operation = await operationRepo.findOneBy({ slug: "update_info" });
         if (requiresAuditLog && operation) {
@@ -412,7 +417,7 @@ export const orderService = {
             await emailMap[newStatusName](updatedOrder);
           }
         } catch (emailErr) {
-          console.error(`⚠️ Error enviando correo para ${newStatusName}:`, emailErr);
+          console.error(`Error enviando correo para ${newStatusName}:`, emailErr);
         }
 
         return [updatedOrder, null];

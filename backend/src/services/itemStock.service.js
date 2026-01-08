@@ -8,6 +8,7 @@ import PackItem from "../entity/packItem.entity.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 import { createItemSnapshot, generateInventoryReason } from "../helpers/inventory.helpers.js";
 import { Not } from "typeorm";
+import { sendLowStockAlert } from "./email.service.js";
 
 const getOpEntity = async (manager, slug) => {
   const meta = generateInventoryReason(slug);
@@ -220,6 +221,10 @@ export const itemStockService = {
 
       const updatedItem = await repo.save(item);
 
+      if (updatedItem.isActive && updatedItem.quantity <= updatedItem.minStock) {
+        sendLowStockAlert(updatedItem, updatedItem.quantity).catch(console.error);
+      }
+
       for (const field of Object.keys(changes)) {
         let slug = "update_info";
         if (field === "quantity") slug = changes.quantity.newValue > changes.quantity.oldValue ? "adjust_in" : "adjust_out";
@@ -407,6 +412,10 @@ export const itemStockService = {
         if (item.quantity < 0) throw new Error("El stock resultante no puede ser negativo");
         
         await stockRepo.save(item);
+
+        if (item.quantity <= item.minStock) {
+          sendLowStockAlert(item, item.quantity).catch(console.error);
+        }
 
         await movementRepo.save({
           type: meta.type,

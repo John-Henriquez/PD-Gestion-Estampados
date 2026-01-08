@@ -36,22 +36,44 @@ export const receiveWebhook = async (req, res) => {
   try {
     const { query } = req;
     const topic = query.topic || query.type;
-    const paymentId = query.id || query['data.id'];
 
-    if (topic === "payment" && paymentId) {
+    if (topic === "payment") {
+      const paymentId = query.id || query['data.id'];
+      if (!paymentId) return res.sendStatus(200);
+
       const paymentData = await paymentService.checkPaymentStatus(paymentId);
 
-      if (paymentData && paymentData.status === "approved") {
+      if (paymentData?.status === "approved") {
         const orderId = paymentData.external_reference;
-        console.log(`=> Pago aprobado para Orden #${orderId}. Actualizando stock...`);
-        
-        await orderService.updateOrderStatus(orderId, "en_proceso", 1); 
+        console.log(`Pago aprobado (payment) Orden #${orderId}`);
+        await orderService.updateOrderStatus(orderId, "en_proceso", 1);
       }
     }
 
-    res.status(200).send("OK");
+    if (topic === "merchant_order") {
+      const merchantOrderId = query.id;
+      if (!merchantOrderId) return res.sendStatus(200);
+
+      const order = await fetch(
+        `https://api.mercadopago.com/merchant_orders/${merchantOrderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+          },
+        }
+      ).then(r => r.json());
+
+      for (const payment of order.payments || []) {
+        if (payment.status === "approved") {
+          console.log(`Pago aprobado (merchant_order) Orden #${order.external_reference}`);
+          await orderService.updateOrderStatus(order.external_reference, "en_proceso", 1);
+        }
+      }
+    }
+
+    res.sendStatus(200);
   } catch (error) {
-    console.error("Error en Webhook:", error.message);
-    res.status(500).send("Error al procesar Webhook");
+    console.error("Error en Webhook:", error);
+    res.sendStatus(500);
   }
 };
