@@ -1,5 +1,47 @@
 # Changelog
 
+## [1.0.2] — Revisión de middlewares
+ 
+### Backend · `src/middlewares`
+ 
+#### `authentication.middleware.js`
+ 
+##### Corregido
+ 
+* Agregado `"use strict"` faltante.
+---
+ 
+#### `authorization.middleware.js`
+ 
+##### Corregido
+ 
+* Agregado `"use strict"` faltante.
+* Se eliminó una query innecesaria a la base de datos para obtener el rol del usuario. El rol ya está disponible en `req.user` desde el JWT — hacer un `findOneBy` por cada request protegido era un hit de base de datos completamente evitable.
+* La función pasó de `async` a síncrona al no requerir operaciones asíncronas.
+---
+ 
+#### `permission.middleware.js`
+ 
+##### Corregido
+ 
+* Agregado `"use strict"` faltante.
+* Se eliminó la importación de `getSolicitudService` desde `solicitud.service.js`, archivo que no existe en este proyecto — era código residual de otro sistema.
+##### Refactorizado
+ 
+* El middleware fue reimplementado como `verifyOrderOwnership`, adaptado al dominio del proyecto. Verifica que el usuario autenticado sea el propietario del pedido solicitado, o que tenga rol de administrador.
+---
+ 
+#### `uploadMiddleware.js`
+ 
+##### Corregido
+ 
+* Agregado `"use strict"` faltante.
+* Eliminado `image/svg+xml` de los tipos MIME permitidos — los archivos SVG pueden contener scripts ejecutables y representan un vector de XSS si se sirven directamente.
+* El nombre del archivo guardado dejó de derivarse del nombre original del cliente. Ahora se genera completamente en el servidor (`upload-{timestamp}-{random}{ext}`), eliminando el riesgo de path traversal y nombres maliciosos.
+##### Agregado
+ 
+* Validación de extensión de archivo además del tipo MIME — el mimetype puede ser falsificado por el cliente; la extensión agrega una segunda capa de verificación.
+
 # [1.0.1] — Revisión de entidades restantes
 
 ## Backend · `src/entity`

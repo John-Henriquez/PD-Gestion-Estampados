@@ -1,24 +1,24 @@
-import { getSolicitudService } from "../services/solicitud.service.js";
+"use strict";
+import { AppDataSource } from "../config/configDb.js";
+import Order from "../entity/order.entity.js";
 import { handleErrorClient } from "../handlers/responseHandlers.js";
 
-export async function verifyUserPermission(req, res, next) {
+export async function verifyOrderOwnership(req, res, next) {
   try {
-    const solicitud = await getSolicitudService(req.params.id_solicitud);
+    if (req.user?.rol === "administrador") return next();
 
-    if (!solicitud) {
-      return handleErrorClient(res, 404, "Solicitud no encontrada");
+    const repo = AppDataSource.getRepository(Order);
+    const order = await repo.findOne({
+      where: { id: Number(req.params.id) },
+      relations: ["user"],
+    });
+
+    if (!order) {
+      return handleErrorClient(res, 404, "Pedido no encontrado");
     }
 
-    if (req.user && req.user.rol === "administrador") {
-      return next();
-    }
-
-    if (solicitud.rut_creador !== req.user.rut) {
-      return handleErrorClient(
-        res,
-        403,
-        "No tienes permiso para acceder a esta solicitud",
-      );
+    if (order.user?.id !== req.user.id) {
+      return handleErrorClient(res, 403, "No tienes permiso para acceder a este pedido");
     }
 
     next();

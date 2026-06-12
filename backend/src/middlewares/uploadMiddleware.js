@@ -1,3 +1,4 @@
+"use strict";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -12,15 +13,14 @@ const storage = multer.diskStorage({
     cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname);
-    const name = path
-      .basename(file.originalname, ext)
-      .toLowerCase()
-      .replace(/\s+/g, "_")
-      .replace(/[^\w\-.]+/g, "");
+    const ext = path.extname(file.originalname).toLowerCase();
+
+    const allowedExts = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+    if (!allowedExts.includes(ext)) {
+      return cb(new Error("Extensión no permitida"), false);
+    }
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const finalName = `${name}-${uniqueSuffix}${ext}`.substring(0, 250);
-    cb(null, finalName);
+    cb(null, `upload-${uniqueSuffix}${ext}`);
   },
 });
 
@@ -30,7 +30,6 @@ const imageFileFilter = (req, file, cb) => {
     "image/png",
     "image/gif",
     "image/webp",
-    "image/svg+xml",
   ];
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
