@@ -3,142 +3,111 @@ import User from "../entity/user.entity.js";
 import Color from "../entity/color.entity.js";
 import Region from "../entity/region.entity.js";
 import Comuna from "../entity/comuna.entity.js";
+import InventoryOperation from "../entity/inventoryOperation.entity.js";
+import OrderStatus from "../entity/orderStatus.entity.js";
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
 import { COLOR_DICTIONARY } from "../constants/colorData.js";
 import { INVENTORY_OPERATIONS } from "../constants/inventoryOperations.js";
 import { regionesYComunas } from "../constants/chileData.js";
-import InventoryOperation from "../entity/inventoryOperation.entity.js";
+import { ZONE_PRICES } from "../constants/shippingData.js"; 
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  ADMIN_RUT,
+} from "./configEnv.js";
 
-export async function seedInventoryOperations(dataSource) {
-  const repo = dataSource.getRepository(InventoryOperation);
-  
-  const count = await repo.count();
-  if (count > 0) return;
-
-  console.log("* => Poblando tabla de operaciones de inventario...");
-  
-  await repo.save(INVENTORY_OPERATIONS);
-  
-  console.log("* => Operaciones de inventario inicializadas con éxito.");
+async function isEmpty(repo) {
+  return (await repo.count()) === 0;
 }
 
 async function createUsers() {
-  try {
-    const userRepository = AppDataSource.getRepository(User);
+  const repo = AppDataSource.getRepository(User);
+  if (!(await isEmpty(repo))) return;
 
-    const count = await userRepository.count();
-    if (count > 0) return;
-    await Promise.all([
-      userRepository.save(
-        userRepository.create({
-          nombreCompleto: "Administrador Principal",
-          rut: "11.111.111-1",
-          email: "notificaciones.vibraes@gmail.com",
-          password: await encryptPassword("admin123"),
-          rol: "administrador",
-        }),
-      ),
-    ]);
-    console.log("* => Usuarios creados exitosamente");
-  } catch (error) {
-    console.error("Error al crear usuarios:", error);
-  }
+  await repo.save(
+    repo.create({
+      nombreCompleto: "Administrador Principal",
+      rut: ADMIN_RUT,
+      email: ADMIN_EMAIL,
+      password: await encryptPassword(ADMIN_PASSWORD),
+      rol: "administrador",
+    }),
+  );
+  console.log("* => Usuario administrador inicializado con éxito.");
 }
 
 async function seedColors(){
-try {
-    const colorRepository = AppDataSource.getRepository(Color);
-    const count = await colorRepository.count();
-    
-    if (count > 0) return;
+  const repo = AppDataSource.getRepository(Color);
+  if (!(await isEmpty(repo))) return;
 
-    const colorEntities = COLOR_DICTIONARY.map(color => 
-      colorRepository.create({
-        name: color.name,
-        hex: color.hex
-      })
-    );
-
-    await colorRepository.save(colorEntities);
-    console.log("* => Colores de inventario inicializados exitosamente");
-  } catch (error) {
-    console.error("Error al inicializar colores:", error);
-  }
+  const entities = COLOR_DICTIONARY.map((c) =>
+    repo.create({ name: c.name, hex: c.hex }),
+  );
+  await repo.save(entities);
+  console.log("* => Colores inicializados con éxito.");
 }
 
 async function seedOrderStatuses() {
-  try {
-    const statusRepo = AppDataSource.getRepository("OrderStatus");
-    const count = await statusRepo.count();
-    if (count > 0) return;
+  const repo = AppDataSource.getRepository(OrderStatus);
+  if (!(await isEmpty(repo))) return;
 
-    const statuses = [
-      { name: "pendiente_de_pago", displayName: "Pendiente de Pago" },
-      { name: "en_proceso", displayName: "En Proceso" },
-      { name: "enviado", displayName: "Enviado" },
-      { name: "completado", displayName: "Completado" },
-      { name: "cancelado", displayName: "Cancelado" },
-    ];
-
-    await statusRepo.save(statuses);
-    console.log("* => Estados de órdenes inicializados exitosamente");
-  } catch (error) {
-    console.error("Error al inicializar estados:", error);
-  }
+ await repo.save([
+    { name: "pendiente_de_pago", displayName: "Pendiente de Pago" },
+    { name: "en_proceso",        displayName: "En Proceso" },
+    { name: "enviado",           displayName: "Enviado" },
+    { name: "completado",        displayName: "Completado" },
+    { name: "cancelado",         displayName: "Cancelado" },
+  ]);
+  console.log("* => Estados de órdenes inicializados");
 }
 
+export async function seedInventoryOperations(dataSource) {
+  const repo = AppDataSource.getRepository(InventoryOperation);
+  if (!(await isEmpty(repo))) return;
+  
+  await repo.save(INVENTORY_OPERATIONS);
+    console.log("* => Operaciones de inventario inicializadas");
+}
+
+
 async function seedGeography() {
-  try {
-    const regionRepo = AppDataSource.getRepository(Region);
-    const comunaRepo = AppDataSource.getRepository(Comuna);
+  const regionRepo = AppDataSource.getRepository(Region);
+  const comunaRepo = AppDataSource.getRepository(Comuna);
+  if (!(await isEmpty(regionRepo))) return;
 
-    const count = await regionRepo.count();
-    if (count > 0) return;
+  console.log("* => Poblando geografía de Chile...");
 
-    console.log("* => Poblando geografía de Chile y tarifas referenciales...");
+  for (const item of regionesYComunas) {
+    const region = await regionRepo.save(
+      regionRepo.create({ name: item.region, ordinal: item.ordinal }),
+    );
 
-    const ZONE_PRICES = {
-      'LOCAL': 2000,
-      'SUR_CERCANO': 5500,
-      'CENTRO': 7500,
-      'NORTE': 8500,
-      'SUR': 9500,
-      'NORTE_EXTREMO': 12500,
-      'SUR_EXTREMO': 15000
-    };
-    for (const item of regionesYComunas) {
-      const region = regionRepo.create({ 
-        name: item.region, 
-        ordinal: item.ordinal 
-      });
-      const savedRegion = await regionRepo.save(region);
-
-      const priceRef = ZONE_PRICES[item.zone] || 7500;
-
-      const comunasEntities = item.comunas.map((nombreComuna) => {
-        return comunaRepo.create({
-          name: nombreComuna,
-          region: savedRegion,
+    await comunaRepo.save(
+      item.comunas.map((nombre) =>
+        comunaRepo.create({
+          name: nombre,
+          region,
           zone: item.zone,
-          baseShippingPrice: priceRef,
-          hasDelivery: true
-        });
-      });
-
-      await comunaRepo.save(comunasEntities);
-    }
-
-    console.log("* => Geografía y logística inicializada con éxito.");
-  } catch (error) {
-    console.error("Error al inicializar geografía:", error);
+          baseShippingPrice: ZONE_PRICES[item.zone] ?? 7500,
+          hasDelivery: true,
+        }),
+      ),
+    );
   }
+    console.log("* => Geografía inicializada");
 }
 
 export async function initialSetup() {
-  await createUsers();
-  await seedColors();
-  await seedOrderStatuses();
-  await seedInventoryOperations(AppDataSource);
-  await seedGeography();
+  try {
+    await createUsers();
+    await seedColors();
+    await seedOrderStatuses();
+    await seedInventoryOperations();
+    await seedGeography();
+    console.log("* => Setup inicial completado");
+  } catch (error) {
+    console.error("Error en initialSetup:", error);
+    throw error; 
+  }
 }

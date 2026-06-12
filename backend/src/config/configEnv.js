@@ -7,8 +7,19 @@ const _filename = fileURLToPath(import.meta.url);
 const _dirname = path.dirname(_filename);
 
 const envFilePath = path.resolve(process.cwd(), ".env");
-
 dotenv.config({ path: envFilePath });
+
+const REQUIRED_VARS = [
+    'DB_USERNAME', 'PASSWORD', 'DATABASE',
+    'ACCESS_TOKEN_SECRET', 'cookieKey',
+    'ADMIN_EMAIL', 'ADMIN_PASSWORD'
+];
+
+const missing = REQUIRED_VARS.filter(v => !process.env[v]);
+if (missing.length > 0) {
+  console.error(`Error: faltan variables de entorno obligatorias: ${missing.join(', ')}`);
+  process.exit(1);
+}
 
 export const PORT = process.env.PORT || 3000;
 export const HOST = process.env.HOST || "localhost";
@@ -22,5 +33,5 @@ export const EMAIL_PASS = process.env.EMAIL_PASS;
 export const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
 export const FRONTEND_URL = process.env.FRONTEND_URL;
 
-console.log("Config Cargada - FRONTEND_URL:", FRONTEND_URL);
-console.log("Config Cargada - JWT SECRET:", ACCESS_TOKEN_SECRET ? "EXISTE" : "FALTA");
+
+

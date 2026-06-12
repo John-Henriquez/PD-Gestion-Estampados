@@ -23,11 +23,9 @@ async function setupServer() {
 app.use(
   cors({
     origin: (origin, callback) => {
-      const allowedOrigins = [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'https://uncomplacent-sheena-entomologically.ngrok-free.dev',
-      ];
+      const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173')
+        .split(',')
+        .map(o => o.trim());
 
       if (!origin) return callback(null, true);
 
@@ -50,7 +48,7 @@ app.use(
       const { id } = req.params;
       const { payment_id, status } = req.query;
       console.log(`🚀 Redirigiendo Orden #${id} al Frontend local...`);
-      res.redirect(`http://localhost:5173/order-confirmation/${id}?payment_id=${payment_id}&status=${status}`);
+      res.redirect(`${FRONTEND_URL}/order-confirmation/${id}?payment_id=${payment_id}&status=${status}`);
     });
 
     app.use(
@@ -59,8 +57,9 @@ app.use(
         resave: false,
         saveUninitialized: false,
         cookie: {
-          secure: false,
-          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          httpOnly: true,  
         }
       }),
     );
@@ -82,13 +81,9 @@ app.use(
 }
 
 async function setupAPI() {
-  try {
-    await connectDB();
-    await setupServer();
-    await initialSetup();
-  } catch (error) {
-    console.log("Error en index.js -> setupAPI(), el error es: ", error);
-  }
+  await connectDB();
+  await initialSetup();  
+  await setupServer();
 }
 
 setupAPI()
