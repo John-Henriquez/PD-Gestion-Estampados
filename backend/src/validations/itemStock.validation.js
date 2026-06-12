@@ -1,5 +1,6 @@
+"use strict";
 import Joi from "joi";
-// item individual 
+
 const singleItemSchema = Joi.object({
   itemTypeId: Joi.number().integer().positive().required().messages({
     "any.required": "El tipo de ítem es obligatorio.",
@@ -12,7 +13,7 @@ const singleItemSchema = Joi.object({
   size: Joi.string().optional().allow(null, ""),
   quantity: Joi.number().integer().min(0).required(),
   minStock: Joi.number().integer().min(0).optional(),
-}).unknown(true);
+}).unknown(false);
 
 const itemStockSchema = Joi.alternatives().try(
   singleItemSchema,

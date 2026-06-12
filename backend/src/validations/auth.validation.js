@@ -1,13 +1,6 @@
 "use strict";
 import Joi from "joi";
 
-const domainEmailValidator = (value, helper) => {
-  if (!value.includes("@")) {
-    return helper.message("El correo electrónico debe contener @.");
-  }
-  return value;
-};
-
 export const authValidation = Joi.object({
   email: Joi.string()
     .min(15)
@@ -18,14 +11,14 @@ export const authValidation = Joi.object({
       "string.empty": "El correo electrónico no puede estar vacío.",
       "any.required": "El correo electrónico es obligatorio.",
       "string.base": "El correo electrónico debe ser de tipo texto.",
-      "string.email": "El correo electrónico debe finalizar en @gmail.cl.",
+      "string.email": "El correo electrónico no es válido.",
       "string.min": "El correo electrónico debe tener al menos 15 caracteres.",
       "string.max":
         "El correo electrónico debe tener como máximo 100 caracteres.",
     })
     .custom(domainEmailValidator, "Validación dominio email"),
   password: Joi.string()
-    .min(7)
+    .min(8)
     .max(26)
     .pattern(/^[a-zA-Z0-9]+$/)
     .required()
@@ -83,7 +76,7 @@ export const registerValidation = Joi.object({
       "string.empty": "El correo electrónico no puede estar vacío.",
       "any.required": "El correo electrónico es obligatorio.",
       "string.base": "El correo electrónico debe ser de tipo texto.",
-      "string.email": "El correo electrónico debe finalizar en @gmail.cl.",
+      "string.email": "El correo electrónico no es válido.",
       "string.min": "El correo electrónico debe tener al menos 15 caracteres.",
       "string.max":
         "El correo electrónico debe tener como máximo 100 caracteres.",

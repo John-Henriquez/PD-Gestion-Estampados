@@ -1,3 +1,4 @@
+"use strict";
 import Joi from "joi";
 
 // nivel de estampado individual
@@ -16,7 +17,7 @@ const stampingLevelSchema = Joi.object({
 //niveles de estampado
 const stampingLevelsSchema = Joi.array()
   .items(stampingLevelSchema)
-  .min(0) 
+  .min(1) 
   .optional()
   .messages({
     "array.base": "stampingLevels debe ser un array.",
@@ -52,7 +53,7 @@ const itemTypeSchema = Joi.object({
     }),
   productImageUrls: Joi.array()
     .items(
-       Joi.string().pattern(/^\/uploads\/[a-zA-Z0-9_.\-\s]+\.[a-zA-Z0-9]{2,5}$/)
+      Joi.string().pattern(/^\/uploads\/[a-zA-Z0-9_.\-]+\.[a-zA-Z0-9]{2,5}$/)
     )
     .allow(null)
     .optional()

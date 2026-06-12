@@ -1,5 +1,76 @@
 # Changelog
 
+## [1.0.3] — Revisión de handlers, validaciones y documentación
+
+### Backend · `src/handlers`
+
+#### `responseHandlers.js`
+
+Sin cambios — estructura aprobada. Patrón de respuesta uniforme en los tres casos (`handleSuccess`, `handleErrorClient`, `handleErrorServer`).
+
+---
+
+### Backend · `src/validations`
+
+#### `auth.validation.js`
+
+##### Corregido
+
+* Eliminado `domainEmailValidator` personalizado — redundante con la validación nativa `.email()` de Joi.
+* `password`: corregido `min(7)` a `min(8)` para que coincida con el mensaje de error que ya indicaba "al menos 8 caracteres".
+* Mensajes de `string.email` corregidos: decían `"debe finalizar en @gmail.cl"` pero la validación acepta cualquier dominio válido — reemplazado por mensaje genérico.
+
+#### `user.validation.js`
+
+##### Corregido
+
+* Mismas correcciones de `domainEmailValidator` y mensajes de email que en `auth.validation.js`.
+* `newPassword`: resuelto conflicto entre `.allow("")` y el patrón `/^[a-zA-Z0-9]+$/` — el patrón rechaza strings vacíos, contradiciendo el `allow("")`. Campo marcado como `.optional()` con patrón aplicado solo cuando el valor está presente.
+* `rol` en `userBodyValidation`: cambiado de `Joi.string().min(4).max(15)` (acepta cualquier string) a `Joi.string().valid("administrador", "usuario")` — consistente con el check constraint agregado en `user.entity.js`.
+
+#### `itemStock.validation.js`
+
+##### Corregido
+
+* Agregado `"use strict"` faltante.
+* `singleItemSchema`: cambiado `.unknown(true)` a `.unknown(false)` — permitir propiedades arbitrarias contradice el propósito de validar la entrada.
+* `quantity` en creación: corregido `min(0)` a `min(1)` — no tiene sentido crear un registro de stock con 0 unidades. En el schema de actualización se conserva `min(0)` para permitir ajustes manuales.
+
+#### `itemType.validation.js`
+
+##### Corregido
+
+* Agregado `"use strict"` faltante.
+* `productImageUrls`: eliminado `\s` del patrón de validación — nombres de archivo con espacios producen URLs inválidas sin encoding.
+* `stampingLevelsSchema`: eliminado `.min(0).optional()` redundante — si el array es opcional, `min(0)` no agrega restricción útil.
+
+#### `order.validation.js`
+
+##### Agregado
+
+* `stampImageUrl`: agregado patrón `/^\/uploads\/[a-zA-Z0-9_.\-]+\.[a-zA-Z0-9]{2,5}$/` — consistente con la validación de `productImageUrls` en `itemType.validation.js`.
+
+---
+
+### Documentación
+
+#### `README.md` _(reescrito)_
+
+##### Eliminado
+
+* Contenido legacy que describía el proyecto como "módulo inicial de autenticación en progreso" — descripción que no representaba el estado real ni la complejidad del sistema.
+
+##### Agregado
+
+* Descripción del problema de negocio que resuelve el sistema.
+* Tabla de stack tecnológico completa (React, Vite, Node.js, Express, TypeORM, PostgreSQL, MercadoPago, Docker, Joi, Nodemailer).
+* Sección de funcionalidades organizada por dominio: panel administrativo, tienda y sistema.
+* Estructura de carpetas resumida con descripción de cada módulo.
+* Instrucciones de instalación con Docker (recomendado) y sin Docker.
+* Tabla de variables de entorno completa basada en `configEnv.js`.
+* Resumen de endpoints de la API por módulo.
+* Placeholder para screenshots.
+
 ## [1.0.2] — Revisión de middlewares
  
 ### Backend · `src/middlewares`

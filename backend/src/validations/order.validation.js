@@ -9,7 +9,10 @@ const orderItemSchema = Joi.object({
     "number.positive": "La cantidad debe ser mayor que cero.",
     "any.required": "La cantidad es requerida.",
   }),
-  stampImageUrl: Joi.string().allow(null, "").optional().messages({}),
+  stampImageUrl: Joi.string()
+    .pattern(/^\/uploads\/[a-zA-Z0-9_.\-]+\.[a-zA-Z0-9]{2,5}$/)
+    .allow(null, "")
+    .optional(),
   stampInstructions: Joi.string().allow(null, "").optional(),
   stampOptionsSnapshot: Joi.object({
     description: Joi.string().optional(),
