@@ -39,21 +39,16 @@ const ItemTypeSchema = new EntitySchema({
       nullable: false,
     },
     productImageUrls: {
-      type: "simple-array",
+      type: "jsonb",    
       nullable: true,
+      default: [],
     },
     isActive: {
       type: "boolean",
       default: true,
     },
-    createdAt: {
-      type: "timestamp",
-      createDate: true,
-    },
-    updatedAt: {
-      type: "timestamp",
-      updateDate: true,
-    },
+    createdAt: { type: "timestamp with time zone", createDate: true },
+    updatedAt: { type: "timestamp with time zone", updateDate: true },
   },
   relations: {
     stampingLevels: {
@@ -72,18 +67,23 @@ const ItemTypeSchema = new EntitySchema({
       inverseSide: "itemType",
     },
     createdBy: {
-      type: "many-to-one",
-      target: "User",
+      type: "many-to-one", target: "User",
       joinColumn: { name: "created_by" },
       nullable: true,
+      onDelete: "SET NULL",
     },
     updatedBy: {
-      type: "many-to-one",
-      target: "User",
+      type: "many-to-one", target: "User",
       joinColumn: { name: "updated_by" },
       nullable: true,
+      onDelete: "SET NULL",
     },
   },
+  indices: [
+    { name: "IDX_ITEM_TYPE_NAME",     columns: ["name"], unique: true },
+    { name: "IDX_ITEM_TYPE_CATEGORY", columns: ["category"] },
+    { name: "IDX_ITEM_TYPE_ACTIVE",   columns: ["isActive"] },
+  ],
 });
 
 export default ItemTypeSchema;

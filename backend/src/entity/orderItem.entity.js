@@ -19,6 +19,7 @@ const OrderItemSchema = new EntitySchema({
     },
     itemNameSnapshot: {
       type: "varchar",
+      length: 255,
       nullable: false,
     },
     sizeSnapshot: {
@@ -73,9 +74,13 @@ const OrderItemSchema = new EntitySchema({
     },
   },
   indices: [
-    { name: "IDX_ORDERITEM_ORDER_ID", columns: ["order"] },
-    { name: "IDX_ORDERITEM_ITEMSTOCK_ID", columns: ["itemStock"] },
-    { name: "IDX_ORDERITEM_PACK_ID", columns: ["pack"] },
+    { name: "IDX_ORDERITEM_ORDER_ID", columns: ["order_id"] },
+    { name: "IDX_ORDERITEM_ITEMSTOCK_ID", columns: ["item_stock_id"] },
+    { name: "IDX_ORDERITEM_PACK_ID", columns: ["pack_id"] },
+    { name: "CHK_ORDERITEM_QUANTITY", columns: ["quantity"],
+      where: `quantity > 0` },           
+    { name: "CHK_ORDERITEM_PRICE", columns: ["priceAtTime"],
+      where: `"priceAtTime" >= 0` },
   ],
 });
 

@@ -1,5 +1,141 @@
 # Changelog
 
+# [1.0.1] — Revisión de entidades restantes
+
+## Backend · `src/entity`
+
+### `stampingLevel.entity.js`
+
+#### Corregido
+
+* Agregado `"use strict"` faltante.
+
+#### Agregado
+
+* Timestamps `createdAt` y `updatedAt` (`timestamp with time zone`) para trazabilidad de cambios de precio.
+* Índice `IDX_STAMPING_LEVEL_ACTIVE` sobre `isActive`.
+* Constraint `CHK_STAMPING_LEVEL_PRICE` para garantizar `price >= 0`.
+
+---
+
+### `color.entity.js`
+
+#### Corregido
+
+* Agregado `"use strict"` faltante.
+
+#### Agregado
+
+* Constraint `CHK_COLOR_HEX` con regex `^#[0-9A-Fa-f]{6}$` para evitar almacenar valores inválidos como `"rojo"` o `"#GGGGGG"`.
+
+---
+
+### `orderStatus.entity.js`
+
+#### Corregido
+
+* Agregado `"use strict"` faltante.
+
+#### Agregado
+
+* Constraint `CHK_ORDER_STATUS_NAME` que restringe `name` al conjunto cerrado de estados soportados:
+
+  * `pendiente_de_pago`
+  * `en_proceso`
+  * `enviado`
+  * `completado`
+  * `cancelado`
+
+  Esto evita estados no contemplados que podrían romper la lógica del frontend encargada de mapear etiquetas y colores.
+
+---
+
+### `inventoryOperation.entity.js`
+
+#### Corregido
+
+* Definidos `nullable: false` en `slug`, `name` y `type`, evitando registros incompletos.
+
+#### Agregado
+
+* Índice `IDX_INVENTORY_OP_TYPE` sobre `type`, utilizado frecuentemente para filtrar movimientos.
+* Timestamp `createdAt` (`timestamp with time zone`).
+
+---
+
+### `comuna.entity.js`
+
+#### Corregido
+
+* Agregado `"use strict"` faltante.
+* Definido `nullable: false` en `name`.
+* Configurada la relación `region` con:
+
+  * `nullable: false`, ya que toda comuna debe pertenecer a una región.
+  * `onDelete: "RESTRICT"`, evitando eliminar regiones con comunas asociadas.
+
+#### Agregado
+
+* Índice `IDX_COMUNA_REGION` sobre `region_id`.
+* Índice `IDX_COMUNA_ZONE` sobre `zone`.
+* Constraint `CHK_COMUNA_SHIPPING` para garantizar `baseShippingPrice >= 0`.
+* Constraint `CHK_COMUNA_ZONE` que restringe `zone` a los valores definidos en `shippingData.js`:
+
+  * `LOCAL`
+  * `SUR_CERCANO`
+  * `CENTRO`
+  * `NORTE`
+  * `SUR`
+  * `NORTE_EXTREMO`
+  * `SUR_EXTREMO`
+
+---
+
+### `InventoryMovementSchema.js`
+
+#### Corregido
+
+* Campo `changes` migrado de `json` a `jsonb`, habilitando índices GIN y consultas por campos en PostgreSQL.
+* Campo `createdAt` unificado a `timestamp with time zone` usando `createDate: true`, eliminando el valor por defecto redundante.
+* `onDelete: "SET NULL"` en `createdBy` movido al nivel de la relación, ya que estaba definido dentro de `joinColumn` y era ignorado por TypeORM.
+* Agregado `onDelete: "RESTRICT"` en `operation` para impedir la eliminación de operaciones con movimientos asociados.
+* Eliminados `updatedAt` y `deletedAt`, dado que los movimientos de inventario son registros de auditoría inmutables. Las correcciones deben realizarse mediante movimientos compensatorios y no modificando registros existentes.
+
+#### Agregado
+
+* Índices sobre `item_stock_id`, `operation_id` y `order_id` para optimizar consultas sobre claves foráneas.
+* Constraint `CHK_MOVEMENT_QUANTITY` para garantizar `quantity != 0`.
+
+---
+
+### `packItem.entity.js`
+
+#### Corregido
+
+* Configurado `onDelete: "CASCADE"` en `pack`, asegurando la eliminación de sus ítems asociados.
+* Configurado `onDelete: "RESTRICT"` en `itemStock`, evitando eliminar stock referenciado por packs activos.
+* Reemplazado `stampingLevel` basado en texto libre por una relación `many-to-one` hacia `StampingLevel`, garantizando integridad referencial.
+
+#### Agregado
+
+* Valor por defecto `1` para `quantity`.
+* Índices sobre `pack_id` e `item_stock_id`.
+* Constraint `CHK_PACKITEM_QUANTITY` para garantizar `quantity > 0`.
+
+---
+
+### `region.entity.js`
+
+#### Corregido
+
+* Agregado `"use strict"` faltante.
+* Definido `nullable: false` en `name`.
+
+#### Agregado
+
+* Índice único `IDX_REGION_NAME` sobre `name`, incorporado explícitamente para mantener consistencia con el resto de las entidades.
+
+
 ## [1.0.0] — Refactorización Base del Backend
 
 ### Backend · `src/config`
@@ -192,3 +328,97 @@
 
 * Nuevo archivo para centralizar el objeto `ZONE_PRICES`.
 * Las tarifas de despacho quedan agrupadas junto al resto de constantes de negocio, mejorando mantenibilidad y reutilización.
+
+---
+
+### Backend · `src/entity`
+
+#### `user.entity.js`
+
+##### Corregido
+
+* Se eliminó el índice `IDX_USER` sobre `id` — redundante con el índice de clave primaria que Postgres crea automáticamente.
+* Se reemplazó `onUpdate: "CURRENT_TIMESTAMP"` (opción exclusiva de MySQL, ignorada en Postgres) por `updateDate: true`, delegando la actualización automática a TypeORM.
+
+##### Agregado
+
+* Índice `CHK_USER_ROL` con cláusula `WHERE` que restringe los valores de `rol` a `'administrador'` y `'usuario'`, evitando roles arbitrarios que podrían romper la lógica de autorización.
+
+---
+
+#### `order.entity.js`
+
+##### Corregido
+
+* `subtotal` y `total` ahora son `nullable: false` con `default: 0` — columnas económicas no deben admitir `NULL`.
+* Los índices `IDX_ORDER_STATUS` e `IDX_ORDER_USER_ID` referenciaban nombres de relación (`"status"`, `"user"`) en lugar de los nombres reales de las columnas FK (`"status_id"`, `"user_id"`). TypeORM no creaba los índices. Corregido.
+* Timestamps unificados a `timestamp with time zone` con `createDate`/`updateDate` para consistencia con el resto del sistema.
+
+##### Agregado
+
+* Índice `CHK_ORDER_PAYMENT_METHOD` que restringe los métodos de pago a valores conocidos: `mercadopago`, `transferencia`, `efectivo`.
+* Relación `shippingComuna` hacia la entidad `Comuna` para normalizar el destino de despacho, reemplazando el campo de texto libre.
+* `shippingAddress` conservado como `nullable: true` para preservar compatibilidad con registros históricos durante la transición.
+
+---
+
+#### `itemStock.entity.js`
+
+##### Corregido
+
+* `updatedBy` carecía de `onDelete: "SET NULL"` (ya presente en `createdBy`). Corregido para evitar errores de integridad referencial al eliminar usuarios.
+
+##### Agregado
+
+* Índices sobre `itemTypeId` y `color_id` — FKs frecuentemente consultadas que Postgres no indexa automáticamente.
+* Índice sobre `isActive` para acelerar filtros de stock activo.
+* `CHK_ITEM_STOCK_CONSISTENCY`: check constraint que garantiza coherencia entre `isActive` y `deletedAt`, evitando estados contradictorios como `deletedAt != NULL` con `isActive = true`.
+* `CHK_ITEM_STOCK_QUANTITY`: check constraint `quantity >= 0` como última línea de defensa a nivel de base de datos.
+
+---
+
+#### `itemType.entity.js`
+
+##### Corregido
+
+* `productImageUrls` cambió de `simple-array` (CSV serializado sin índices) a `jsonb`, habilitando índices GIN y consultas por elemento en Postgres.
+* Timestamps unificados a `timestamp with time zone` con `createDate`/`updateDate`.
+* `createdBy` y `updatedBy` carecían de `onDelete: "SET NULL"`. Corregido en ambas relaciones.
+
+##### Agregado
+
+* Índices sobre `name` (unique), `category` e `isActive` para acelerar filtros y búsquedas frecuentes.
+
+---
+
+#### `orderItem.entity.js`
+
+##### Corregido
+
+* Los índices referenciaban nombres de relación (`"order"`, `"itemStock"`, `"pack"`) en lugar de los nombres reales de las columnas FK (`"order_id"`, `"item_stock_id"`, `"pack_id"`). TypeORM no creaba los índices. Corregido.
+* `itemNameSnapshot` carecía de `length: 255`. Corregido.
+
+##### Agregado
+
+* `CHK_ORDERITEM_QUANTITY`: check constraint `quantity > 0` — un ítem de pedido siempre tiene al menos una unidad.
+* `CHK_ORDERITEM_PRICE`: check constraint `priceAtTime >= 0`.
+
+---
+
+#### `pack.entity.js`
+
+##### Corregido
+
+* Timestamps unificados a `timestamp with time zone` con `createDate`/`updateDate`/`nullable`.
+* `createdBy` y `updatedBy` carecían de `onDelete: "SET NULL"`. Corregido en ambas relaciones.
+
+##### Agregado
+
+* `CHK_PACK_DISCOUNT`: check constraint `discount BETWEEN 0 AND 1` — el descuento es un porcentaje decimal.
+* `CHK_PACK_PRICE`: check constraint `price >= 0`.
+* `CHK_PACK_VALIDITY`: check constraint que garantiza `validFrom <= validUntil` cuando ambos campos tienen valor, evitando rangos de fecha inválidos.
+* Índice sobre `isActive` para filtros de packs disponibles.
+
+---
+
+_Próxima sesión: entidades restantes (`stampingLevel`, `color`, `orderStatus`, `inventoryOperation`) y middlewares._

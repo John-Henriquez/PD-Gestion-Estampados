@@ -46,18 +46,9 @@ const PackSchema = new EntitySchema({
       type: "timestamp",
       nullable: true,
     },
-    createdAt: {
-      type: "timestamp",
-      createDate: true,
-    },
-    updatedAt: {
-      type: "timestamp",
-      updateDate: true,
-    },
-    deletedAt: {
-      type: "timestamp",
-      nullable: true,
-    },
+    createdAt: { type: "timestamp with time zone", createDate: true },
+    updatedAt: { type: "timestamp with time zone", updateDate: true },
+    deletedAt: { type: "timestamp with time zone", nullable: true },
   },
   relations: {
     packItems: {
@@ -70,14 +61,25 @@ const PackSchema = new EntitySchema({
       target: "User",
       joinColumn: { name: "created_by" },
       nullable: true,
+      onDelete: "SET NULL",
     },
     updatedBy: {
       type: "many-to-one",
       target: "User",
       joinColumn: { name: "updated_by" },
       nullable: true,
+      onDelete: "SET NULL",
     },
   },
+  indices: [
+    { name: "CHK_PACK_DISCOUNT", columns: ["discount"],
+      where: `discount >= 0 AND discount <= 1` },
+    { name: "CHK_PACK_PRICE",    columns: ["price"],
+      where: `price >= 0` },
+    { name: "CHK_PACK_VALIDITY", columns: ["validFrom", "validUntil"],
+      where: `"validFrom" IS NULL OR "validUntil" IS NULL OR "validFrom" <= "validUntil"` },
+    { name: "IDX_PACK_ACTIVE",   columns: ["isActive"] },
+  ],
 });
 
 export default PackSchema;

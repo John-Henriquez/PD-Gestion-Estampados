@@ -71,8 +71,18 @@ const ItemStockSchema = new EntitySchema({
       target: "User",
       joinColumn: { name: "updated_by" },
       nullable: true,
+      onDelete: "SET NULL",
     },
   },
+  indices: [
+    { name: "IDX_ITEM_STOCK_ITEM_TYPE", columns: ["itemTypeId"] },
+    { name: "IDX_ITEM_STOCK_COLOR",     columns: ["color_id"] },
+    { name: "IDX_ITEM_STOCK_ACTIVE",    columns: ["isActive"] },
+    { name: "CHK_ITEM_STOCK_CONSISTENCY", columns: ["isActive", "deletedAt"],
+      where: `("deletedAt" IS NULL AND "isActive" = true) OR ("deletedAt" IS NOT NULL AND "isActive" = false) OR ("isActive" = false)` },
+    { name: "CHK_ITEM_STOCK_QUANTITY", columns: ["quantity"],
+      where: `quantity >= 0` },
+  ],
 });
 
 export default ItemStockSchema;

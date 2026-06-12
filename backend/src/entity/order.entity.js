@@ -11,21 +11,17 @@ const OrderSchema = new EntitySchema({
       generated: true,
     },
     subtotal: {
-      type: "decimal",
-      precision: 12,
-      scale: 2,
+      type: "decimal", precision: 12, scale: 2,
+      nullable: false, default: 0,
       transformer: { to: (v) => v, from: (v) => parseFloat(v) },
     },
     total: {
-      type: "decimal",
-      precision: 12,
-      scale: 2,
+      type: "decimal", precision: 12, scale: 2,
+      nullable: false, default: 0,
       transformer: { to: (v) => v, from: (v) => parseFloat(v) },
     },
     paymentMethod: {
-      type: "varchar",
-      length: 100,
-      nullable: true,
+      type: "varchar", length: 100, nullable: true,
     },
     paymentDate: {
       type: "timestamp",
@@ -50,17 +46,23 @@ const OrderSchema = new EntitySchema({
       type: "text",
       nullable: true
     },
-
     createdAt: {
-      type: "timestamp",
+      type: "timestamp with time zone",
       createDate: true,
     },
     updatedAt: {
-      type: "timestamp",
+      type: "timestamp with time zone",
       updateDate: true,
     },
   },
   relations: {
+    shippingComuna: {
+      type: "many-to-one",
+      target: "Comuna",
+      joinColumn: { name: "shipping_comuna_id" },
+      nullable: true,
+    },
+
     status: {
       type: "many-to-one",
       target: "OrderStatus",
@@ -81,8 +83,11 @@ const OrderSchema = new EntitySchema({
     },
   },
   indices: [
-    { name: "IDX_ORDER_STATUS", columns: ["status"] },
-    { name: "IDX_ORDER_USER_ID", columns: ["user"] },
+    { name: "CHK_ORDER_PAYMENT_METHOD", columns: ["paymentMethod"],
+      where: `"paymentMethod" IN ('mercadopago', 'transferencia', 'efectivo') OR "paymentMethod" IS NULL` },
+
+    { name: "IDX_ORDER_STATUS", columns: ["status_id"] },
+    { name: "IDX_ORDER_USER_ID", columns: ["user_id"] },
     { name: "IDX_ORDER_GUEST_EMAIL", columns: ["guestEmail"] },
   ],
 });

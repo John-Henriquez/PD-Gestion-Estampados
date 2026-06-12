@@ -1,3 +1,4 @@
+"use strict";
 import { EntitySchema } from "typeorm";
 
 const ColorSchema = new EntitySchema({
@@ -22,6 +23,10 @@ const ColorSchema = new EntitySchema({
       nullable: false,
     },
   },
+  indices: [
+    { name: "CHK_COLOR_HEX", columns: ["hex"],
+      where: `hex ~ '^#[0-9A-Fa-f]{6}$'` },
+  ],
 });
 
 export default ColorSchema;

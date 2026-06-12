@@ -13,11 +13,7 @@ const PackItemSchema = new EntitySchema({
     quantity: {
       type: "int",
       nullable: false,
-    },
-    stampingLevel: {
-      type: "varchar",
-      length: 50,
-      nullable: true,
+      default: 1,
     },
   },
   relations: {
@@ -26,14 +22,29 @@ const PackItemSchema = new EntitySchema({
       target: "Pack",
       joinColumn: { name: "pack_id" },
       nullable: false,
+      onDelete: "CASCADE",
     },
     itemStock: {
       type: "many-to-one",
       target: "ItemStock",
       joinColumn: { name: "item_stock_id" },
       nullable: false,
+      onDelete: "RESTRICT",
+    },
+    stampingLevel: {
+      type: "many-to-one",
+      target: "StampingLevel",
+      joinColumn: { name: "stamping_level_id" },
+      nullable: true,
+      onDelete: "SET NULL",
     },
   },
+  indices: [
+    { name: "IDX_PACKITEM_PACK",       columns: ["pack_id"] },
+    { name: "IDX_PACKITEM_ITEMSTOCK",  columns: ["item_stock_id"] },
+    { name: "CHK_PACKITEM_QUANTITY",   columns: ["quantity"],
+      where: `quantity > 0` },
+  ],
 });
 
 export default PackItemSchema;

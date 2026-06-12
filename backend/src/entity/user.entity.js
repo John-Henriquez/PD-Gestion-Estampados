@@ -43,27 +43,15 @@ const UserSchema = new EntitySchema({
     },
     updatedAt: {
       type: "timestamp with time zone",
-      default: () => "CURRENT_TIMESTAMP",
-      onUpdate: "CURRENT_TIMESTAMP",
+      updateDate: true,
       nullable: false,
     },
   },
   indices: [
-    {
-      name: "IDX_USER",
-      columns: ["id"],
-      unique: true,
-    },
-    {
-      name: "IDX_USER_RUT",
-      columns: ["rut"],
-      unique: true,
-    },
-    {
-      name: "IDX_USER_EMAIL",
-      columns: ["email"],
-      unique: true,
-    },
+    { name: "IDX_USER_RUT", columns: ["rut"], unique: true },
+    { name: "IDX_USER_EMAIL", columns: ["email"], unique: true },
+    { name: "CHK_USER_ROL", columns: ["rol"],
+      where: `"rol" IN ('administrador', 'usuario')` },
   ],
 });
 

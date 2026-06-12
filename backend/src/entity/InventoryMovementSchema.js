@@ -24,25 +24,11 @@ const InventoryMovementSchema = new EntitySchema({
       type: "text",
       nullable: false,
     },
-    changes: {
-      type: "json",
-      nullable: true,
-    },
+    changes: { type: "jsonb", nullable: true },
     createdAt: {
-      type: "timestamp",
+      type: "timestamp with time zone",
       createDate: true,
-      default: () => "CURRENT_TIMESTAMP",
     },
-    updatedAt: {
-      type: "timestamp",
-      onUpdate: "CURRENT_TIMESTAMP",
-      nullable: true,
-    },
-    deletedAt: {
-      type: "timestamp",
-      nullable: true,
-    },
-    // Campos de snapshot
     snapshotItemName: {
       type: "varchar",
       length: 255,
@@ -80,6 +66,7 @@ const InventoryMovementSchema = new EntitySchema({
       target: "InventoryOperation",
       joinColumn: { name: "operation_id" },
       nullable: false,
+      onDelete: "RESTRICT",
     },
     itemStock: {
       type: "many-to-one",
@@ -109,6 +96,7 @@ const InventoryMovementSchema = new EntitySchema({
         referencedColumnName: "id",
       },
       nullable: true,
+      onDelete: "SET NULL",
     },
     order: {
       type: "many-to-one",
@@ -118,14 +106,13 @@ const InventoryMovementSchema = new EntitySchema({
     }
   },
   indices: [
-    {
-      name: "IDX_MOVEMENT_CREATED_AT",
-      columns: ["createdAt"],
-    },
-    {
-      name: "IDX_MOVEMENT_TYPE",
-      columns: ["type"],
-    },
+    { name: "IDX_MOVEMENT_CREATED_AT",   columns: ["createdAt"] },
+    { name: "IDX_MOVEMENT_TYPE",          columns: ["type"] },
+    { name: "IDX_MOVEMENT_ITEM_STOCK",    columns: ["item_stock_id"] },
+    { name: "IDX_MOVEMENT_OPERATION",     columns: ["operation_id"] },
+    { name: "IDX_MOVEMENT_ORDER",         columns: ["order_id"] },
+    { name: "CHK_MOVEMENT_QUANTITY",      columns: ["quantity"],
+      where: `quantity != 0` }, 
   ],
 });
 
