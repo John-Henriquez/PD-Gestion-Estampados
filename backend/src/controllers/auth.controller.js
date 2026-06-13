@@ -1,5 +1,6 @@
 "use strict";
 import { loginService, registerService } from "../services/auth.service.js";
+import { NODE_ENV } from "../config/configEnv.js";
 import {
   authValidation,
   registerValidation,
@@ -26,10 +27,12 @@ export async function login(req, res) {
 
     res.cookie("jwt", accessToken, {
       httpOnly: true,
+      secure: NODE_ENV === "production",
+      sameSite: NODE_ENV === "production" ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    handleSuccess(res, 200, "Inicio de sesión exitoso", { token: accessToken });
+    handleSuccess(res, 200, "Inicio de sesión exitoso");
   } catch (error) {
     handleErrorServer(res, 500, error.message);
   }
@@ -62,7 +65,11 @@ export async function register(req, res) {
 
 export async function logout(req, res) {
   try {
-    res.clearCookie("jwt", { httpOnly: true });
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      secure: NODE_ENV === "production",
+      sameSite: NODE_ENV === "production" ? "none" : "lax",
+    });
     handleSuccess(res, 200, "Sesión cerrada exitosamente");
   } catch (error) {
     handleErrorServer(res, 500, error.message);

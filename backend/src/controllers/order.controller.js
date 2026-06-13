@@ -1,3 +1,4 @@
+"use strict";
 import { orderService } from "../services/order.service.js";
 import {
   handleErrorClient,
@@ -78,8 +79,6 @@ export const orderController = {
   },
   async getAllOrders(req, res) {
     try {
-      const userId = req.user?.id;
-
       const [orders, error] = await orderService.getOrders(null, true);
 
       if (error) {
@@ -111,6 +110,15 @@ export const orderController = {
         orderId,
         userId,
         isAdminUser,
+        userEmailForGuestCheck
+      );
+
+      const guestEmail = req.body.guestEmail || req.query.guestEmail || null;
+      const [order, error] = await orderService.getOrderById(
+        orderId,
+        userId,
+        isAdminUser,
+        guestEmail,
       );
 
       if (error) {

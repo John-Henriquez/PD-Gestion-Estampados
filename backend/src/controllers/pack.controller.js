@@ -1,3 +1,4 @@
+"use strict";
 import { packService } from "../services/pack.service.js";
 import {
   handleErrorClient,

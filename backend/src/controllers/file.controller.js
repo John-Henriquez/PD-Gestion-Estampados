@@ -1,3 +1,4 @@
+"use strict";
 import fs from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
@@ -186,7 +187,7 @@ async renameFile(req, res) {
 
       handleSuccess(res, 200, "Archivo renombrado correctamente", { old: safeOld, new: safeNew });
 
-    } catch (error) {-
+    } catch (error) { 
       await queryRunner.rollbackTransaction();
       
       if (fileRenamed) {

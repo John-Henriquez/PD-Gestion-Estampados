@@ -1,3 +1,4 @@
+"use strict";
 import {
   handleErrorClient,
   handleErrorServer,
@@ -16,58 +17,47 @@ export const itemTypeController = {
         req.body.productImageUrls = req.files.map(
           (file) => `/uploads/${file.filename}`,
         );
-        console.log(
-          `${req.files.length} imágenes subidas, productImageUrls seteado:`,
-          req.body.productImageUrls,
-        );
+ 
       } else {
         req.body.productImageUrls = req.body.productImageUrls || [];
-        console.log("No se recibieron archivos de imagen.");
+ 
       }
 
       if (typeof req.body.printingMethods === "string") {
-        req.body.printingMethods = JSON.parse(req.body.printingMethods);
-        console.log("printingMethods parseado:", req.body.printingMethods);
+        req.body.printingMethods = JSON.parse(req.body.printingMethods); 
       }
 
       if (typeof req.body.initialStock === "string") {
         try {
-          req.body.initialStock = JSON.parse(req.body.initialStock);
-          console.log("initialStock parseado:", req.body.initialStock);
+          req.body.initialStock = JSON.parse(req.body.initialStock); 
         } catch (e) {
           req.body.initialStock = [];
         }
       }
 
-      if (typeof req.body.stampingLevels === "string") {
-        console.log("stampingLevels recibido como string, se procesará en el servicio.");
+      if (typeof req.body.stampingLevels === "string") { 
       }
       if (typeof req.body.sizesAvailable === "string") {
-        req.body.sizesAvailable = JSON.parse(req.body.sizesAvailable);
-        console.log("sizesAvailable parseado:", req.body.sizesAvailable);
+        req.body.sizesAvailable = JSON.parse(req.body.sizesAvailable); 
       }
 
       if (Array.isArray(req.body.printingMethods)) {
-        req.body.printingMethods = req.body.printingMethods.flat(Infinity);
-        console.log("printingMethods flatten:", req.body.printingMethods);
+        req.body.printingMethods = req.body.printingMethods.flat(Infinity); 
       }
 
       if (Array.isArray(req.body.sizesAvailable)) {
-        req.body.sizesAvailable = req.body.sizesAvailable.flat(Infinity);
-        console.log("sizesAvailable flatten:", req.body.sizesAvailable);
+        req.body.sizesAvailable = req.body.sizesAvailable.flat(Infinity); 
       }
 
       const { error, validatedBody } = createItemTypeSchema.validate(req.body);
-      if (error) {
-        console.error("Error de validación Joi:", error.details);
+      if (error) { 
         return handleErrorClient(
           res,
           400,
           "Error de validación",
           error.details.map((d) => d.message),
         );
-      }
-      console.log("Validación Joi OK");
+      } 
 
       const userId = req.user?.id;
       if (!userId) return handleErrorClient(res, 401, "Usuario no autenticado");
@@ -80,11 +70,9 @@ export const itemTypeController = {
         console.error("Error en itemTypeService.createItemType:", serviceError);
         return handleErrorClient(res, 400, serviceError);
       }
-
-      console.log("Tipo de ítem creado exitosamente:", newItemType);
+ 
       handleSuccess(res, 201, "Tipo de ítem creado", newItemType);
-    } catch (error) {
-      console.error("Error en createItemType catch:", error);
+    } catch (error) { 
       handleErrorServer(res, 500, error.message);
     }
   },
@@ -114,11 +102,9 @@ export const itemTypeController = {
         console.error("Error en itemTypeService.getItemTypeById:", error);
         return handleErrorClient(res, 404, error);
       }
-
-      console.log("Tipo de ítem obtenido por ID:", itemType);
+ 
       handleSuccess(res, 200, "Tipo de ítem obtenido", itemType);
-    } catch (error) {
-      console.error("Error en getItemTypeById catch:", error);
+    } catch (error) { 
       handleErrorServer(res, 500, error.message);
     }
   },
@@ -132,10 +118,9 @@ export const itemTypeController = {
         return handleErrorClient(res, 400, "ID inválido");
       }
 
-      const newImageUrls = [];
+      let newImageUrls = [];
       if (req.files && req.files.length > 0) {
         newImageUrls = req.files.map((file) => `/uploads/${file.filename}`);
-        console.log("Nuevas imágenes subidas:", newImageUrls);
       }
 
       let existingImageUrls = [];
@@ -152,37 +137,30 @@ export const itemTypeController = {
       req.body.productImageUrls = [...existingImageUrls, ...newImageUrls];
       
       if (typeof req.body.hasSizes === "string") {
-        req.body.hasSizes = JSON.parse(req.body.hasSizes);
-        console.log("hasSizes parseado:", req.body.hasSizes);
+        req.body.hasSizes = JSON.parse(req.body.hasSizes); 
       }
 
       if (typeof req.body.printingMethods === "string") {
-        req.body.printingMethods = JSON.parse(req.body.printingMethods);
-        console.log("printingMethods parseado:", req.body.printingMethods);
+        req.body.printingMethods = JSON.parse(req.body.printingMethods); 
       }
 
       if (typeof req.body.sizesAvailable === "string") {
-        req.body.sizesAvailable = JSON.parse(req.body.sizesAvailable);
-        console.log("sizesAvailable parseado:", req.body.sizesAvailable);
+        req.body.sizesAvailable = JSON.parse(req.body.sizesAvailable); 
       }
 
-      if (typeof req.body.stampingLevels === "string") {
-        console.log("stampingLevels recibido como string, se procesará en el servicio.");
+      if (typeof req.body.stampingLevels === "string") { 
       }
 
       if (Array.isArray(req.body.printingMethods)) {
-        req.body.printingMethods = req.body.printingMethods.flat(Infinity);
-        console.log("printingMethods flatten:", req.body.printingMethods);
+        req.body.printingMethods = req.body.printingMethods.flat(Infinity); 
       }
 
       if (Array.isArray(req.body.sizesAvailable)) {
-        req.body.sizesAvailable = req.body.sizesAvailable.flat(Infinity);
-        console.log("sizesAvailable flatten:", req.body.sizesAvailable);
+        req.body.sizesAvailable = req.body.sizesAvailable.flat(Infinity); 
       }
 
       const { error } = updateItemTypeSchema.validate(req.body);
-      if (error) {
-        console.error("Error de validación Joi:", error.details);
+      if (error) { 
         return handleErrorClient(
           res,
           400,
@@ -200,8 +178,7 @@ export const itemTypeController = {
         console.error("Error en itemTypeService.updateItemType:", serviceError);
         return handleErrorClient(res, 400, serviceError);
       }
-
-      console.log("Tipo de ítem actualizado exitosamente:", updatedItemType);
+ 
       handleSuccess(res, 200, "Tipo de ítem actualizado", updatedItemType);
     } catch (error) {
       console.error("Error en updateItemType catch:", error);
@@ -218,7 +195,7 @@ export const itemTypeController = {
         return handleErrorClient(res, 400, "ID inválido");
       }
 
-      const [result, error] = await itemTypeService.deleteItemType(id);
+      const [result, error] = await itemTypeService.deleteItemType(id, req.user.id);
       if (error) {
         console.error("Error en itemTypeService.deleteItemType:", error);
 
@@ -229,8 +206,7 @@ export const itemTypeController = {
 
         return handleErrorClient(res, status, error);
       }
-
-      console.log("Tipo de ítem desactivado exitosamente:", id);
+ 
       handleSuccess(res, 200, "Tipo de ítem desactivado", result);
     } catch (error) {
       console.error("Error en deleteItemType catch:", error);
@@ -253,8 +229,7 @@ export const itemTypeController = {
         console.error("Error en itemTypeService.restoreItemType:", error);
         return handleErrorClient(res, 404, error);
       }
-
-      console.log("Tipo de ítem restaurado exitosamente:", restoredItemType);
+ 
       handleSuccess(res, 200, "Tipo de ítem restaurado", restoredItemType);
     } catch (error) {
       console.error("Error en restoreItemType catch:", error);
@@ -300,7 +275,7 @@ export const itemTypeController = {
 
   async emptyTrash(req, res) {
     try {
-      const [deletedItems, error] = await itemTypeService.emptyTrash();
+      const [deletedItems, error] = await itemTypeService.emptyTrash(req.user.id);
       if (error) return handleErrorClient(res, 400, error);
 
       handleSuccess(res, 200, "Papelera vaciada", deletedItems);

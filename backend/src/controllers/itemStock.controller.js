@@ -1,3 +1,4 @@
+"use strict";
 import { itemStockService } from "../services/itemStock.service.js";
 import {
   handleErrorClient,
@@ -195,7 +196,7 @@ export const itemStockController = {
         return handleErrorClient(res, 404, error);
       }
 
-      handleSuccess(res, 200, result.message, { id: result.id });
+      handleSuccess(res, 200, "Item eliminado correctamente", { id: result.id });
     } catch (error) {
       handleErrorServer(res, 500, error.message);
     }
@@ -206,13 +207,9 @@ export const itemStockController = {
       const [deletedCount, error] = await itemStockService.emptyTrash(
         req.user.id,
       );
-      if (error) return handleErrorClient(res, 500, error);
+      if (deletedCount === null) return handleErrorServer(res, 500, message);
 
-      handleSuccess(
-        res,
-        200,
-        `Papelera vaciada. Items eliminados: ${deletedCount}`,
-      );
+      handleSuccess(res, 200, message || `Papelera vaciada. Items eliminados: ${deletedCount}`, { deletedCount });
     } catch (error) {
       handleErrorServer(res, 500, error.message);
     }
@@ -357,10 +354,7 @@ export const itemStockController = {
         return handleErrorClient(res, 400, "Se requiere información para procesar la recarga.");
       }
 
-      const [updatedStocks, serviceError] = await itemStockService.restockVariants(
-        restockData,
-        userId
-      );
+      await itemStockService.restockVariants(dataToProcess, userId);
 
       if (serviceError) {
         return handleErrorClient(res, 400, serviceError);

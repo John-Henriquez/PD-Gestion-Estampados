@@ -1,3 +1,4 @@
+"use strict";
 import { AppDataSource } from "../config/configDb.js";
 import Color from "../entity/color.entity.js";
 import { handleSuccess, handleErrorServer } from "../handlers/responseHandlers.js";

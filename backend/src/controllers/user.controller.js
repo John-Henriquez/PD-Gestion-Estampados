@@ -39,9 +39,7 @@ export async function getUsers(req, res) {
 
     if (errorUsers) return handleErrorClient(res, 404, errorUsers);
 
-    users.length === 0
-      ? handleSuccess(res, 204)
-      : handleSuccess(res, 200, "Usuarios encontrados", users);
+    handleSuccess(res, 200, "Usuarios encontrados", users);
   } catch (error) {
     handleErrorServer(res, 500, error.message);
   }
@@ -122,7 +120,7 @@ export async function deleteUser(req, res) {
       return handleErrorClient(
         res,
         404,
-        "Error eliminado al usuario",
+        "Error eliminando al usuario",
         errorUserDelete,
       );
 

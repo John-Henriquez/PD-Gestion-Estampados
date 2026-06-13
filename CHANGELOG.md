@@ -1,5 +1,122 @@
 # Changelog
 
+## [1.0.5] — Revisión de la capa de controladores
+
+### Backend · `src/controllers`
+
+#### `auth.controller.js`
+
+##### Corregido
+
+* Cookie JWT sin `secure` ni `sameSite` — vulnerable en producción. Ambas opciones ahora condicionadas a `NODE_ENV === "production"`, consistente con la corrección aplicada en `index.js`.
+* `logout` usaba opciones distintas a las de `login` en `clearCookie` — el navegador no eliminaba la cookie. Opciones unificadas.
+* Token JWT expuesto en el body de respuesta además de en la cookie. Eliminado del body — un solo mecanismo de transporte.
+
+---
+
+#### `payment.controller.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* Respuestas directas `res.status().json()` reemplazadas por `handleSuccess` y `handleErrorServer` en todas las funciones, unificando el formato de respuesta con el resto de la API.
+* `verifyPayment`: `req.user?.id || 1` como fallback asignaba al administrador como responsable cuando no había usuario autenticado, contaminando la auditoría. Cambiado a `|| null`.
+* `receiveWebhook`: `adminUserId` hardcodeado como `1`. Cambiado a `null` — los webhooks son eventos del sistema, no de un usuario.
+* `receiveWebhook`: sin validación de firma MercadoPago — cualquier agente podía hacer POST al endpoint y marcar órdenes como pagadas. Agregada validación HMAC-SHA256 con header `x-signature`.
+* `createPreference`: `handleErrorServer` inalcanzable después de un `return`. Eliminado.
+* `import` statements dentro de función arrow — sintaxis inválida en ES modules. Movidos al tope del archivo.
+
+---
+
+#### `order.controller.js`
+
+##### Corregido
+
+* `getAllOrders`: `userId` declarado pero nunca utilizado. Eliminado.
+* `getOrderById`: cuarto parámetro `userEmailForGuestCheck` no se pasaba al servicio — pedidos de invitados eran inaccesibles para sus propios creadores. Corregido leyendo `guestEmail` desde `req.body` o `req.query`.
+
+##### Deuda técnica documentada
+
+* Detección de tipo de error por `string.includes()` en tres funciones. Requiere refactorización del patrón de error en servicios hacia objetos estructurados con `code`.
+
+---
+
+#### `itemStock.controller.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* `deleteItemStock`: `result.message` era `undefined` — el servicio devuelve `{ id }` sin `message`. Reemplazado por mensaje estático.
+* `emptyTrash`: mensaje informativo de ítems en uso tratado como error con código 500. Ahora distingue entre error real (`deletedCount === null`) y mensaje informativo, devolviendo 200 en ambos casos.
+* `restockVariants`: normalizaba `restockData` a array en `dataToProcess` pero pasaba el original sin normalizar al servicio. Corregido para usar `dataToProcess`.
+
+---
+
+#### `pack.controller.js`
+
+Sin cambios — aprobado.
+
+---
+
+#### `user.controller.js`
+
+##### Corregido
+
+* `getUsers`: devolvía HTTP 204 cuando no hay usuarios — HTTP 204 no permite body. Cambiado a 200 con array vacío.
+* `deleteUser`: typo en mensaje de error "Error eliminado al usuario" → "Error eliminando al usuario".
+
+---
+
+#### `inventoryMovement.controller.js`
+
+##### Corregido
+
+* Filtro `operationSlug` disponible en el servicio pero no leído desde `req.query`. Agregado al objeto `filters`.
+
+---
+
+#### `report.controller.js`
+
+##### Corregido
+
+* Bloques `catch` con mensaje genérico que perdían el error real. Reemplazados por `handleErrorServer(res, 500, error.message)`.
+
+---
+
+#### `itemType.controller.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* `updateItemType`: `newImageUrls` declarado como `const` e inmediatamente reasignado — `TypeError` en runtime. Cambiado a `let`. Agregado bloque de lectura de `req.files` faltante que hacía que las nuevas imágenes nunca se agregaran en actualizaciones.
+* `emptyTrash`: `userId` no se pasaba al servicio cuya firma requiere `emptyTrash(userId)`.
+* `deleteItemType`: `userId` no se pasaba al servicio cuya firma requiere `deleteItemType(id, userId)`.
+* Eliminados más de 15 `console.log` de debug que se ejecutaban en producción.
+
+---
+
+#### `file.controller.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* Typo de sintaxis en `renameFile`: guión suelto (`-`) después de la llave de apertura del `catch` — rompía el archivo completo.
+
+---
+
+#### `geography.controller.js`
+
+##### Corregido
+
+* Respuestas directas `res.json()` y `res.status().json()` reemplazadas por `handleSuccess` y `handleErrorServer`, unificando el formato con el resto de la API.
+* `getComunasByRegion`: `regionId` no se validaba antes de hacer la query — consultas con `NaN` llegaban a la base de datos. Agregada validación de tipo numérico.
+ 
+---
+
+#### `color.controller.js` · `upload.controller.js`
+
+Sin cambios — aprobados.
+
 ## [1.0.4] — Revisión de la capa de servicios
 
 ### Backend · `src/services`

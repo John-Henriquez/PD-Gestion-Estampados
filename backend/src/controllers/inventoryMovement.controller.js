@@ -1,3 +1,4 @@
+"use strict";
 import {
   handleErrorClient,
   handleErrorServer,
@@ -14,6 +15,7 @@ export const inventoryMovementController = {
         type: req.query.type,
         itemStockId: req.query.itemStockId,
         createdBy: req.query.createdBy,
+        operationSlug: req.query.operationSlug,
       };
 
       const [reportData, error] =

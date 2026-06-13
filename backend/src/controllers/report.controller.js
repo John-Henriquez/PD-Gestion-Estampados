@@ -1,3 +1,4 @@
+"use strict";
 import { reportService } from "../services/report.service.js";
 import { handleSuccess, handleErrorServer } from "../handlers/responseHandlers.js";
 
@@ -19,7 +20,7 @@ export const reportController = {
       
       handleSuccess(res, 200, "Resumen de pérdidas obtenido", lossSummary);
     } catch (error) {
-      handleErrorServer(res, 500, "Error interno al procesar reportes");
+      handleErrorServer(res, 500, error.message);
     }
   }
 };

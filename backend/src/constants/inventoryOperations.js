@@ -1,3 +1,4 @@
+"use strict";
 export const INVENTORY_OPERATIONS = [
   // ENTRADAS
   { slug: "initial_load", name: "Carga Inicial", type: "entrada", description: "Stock ingresado al crear el producto por primera vez" },
