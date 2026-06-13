@@ -40,10 +40,9 @@ const PackItemSchema = new EntitySchema({
     },
   },
   indices: [
-    { name: "IDX_PACKITEM_PACK",       columns: ["pack_id"] },
-    { name: "IDX_PACKITEM_ITEMSTOCK",  columns: ["item_stock_id"] },
-    { name: "CHK_PACKITEM_QUANTITY",   columns: ["quantity"],
-      where: `quantity > 0` },
+    { name: "IDX_PACKITEM_PACK",      columns: ["pack"] },
+    { name: "IDX_PACKITEM_ITEMSTOCK", columns: ["itemStock"] },
+    { name: "CHK_PACKITEM_QUANTITY",  columns: ["quantity"], where: `quantity > 0` },
   ],
 });
 

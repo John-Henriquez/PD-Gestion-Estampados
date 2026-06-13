@@ -17,17 +17,28 @@ services:
       DATABASE: ${DATABASE}
       ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
       cookieKey: ${cookieKey}
+      NODE_ENV: ${NODE_ENV}
+      FRONTEND_URL: ${FRONTEND_URL}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_RUT: ${ADMIN_RUT}
+      BACKEND_URL: ${BACKEND_URL}
 
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     
     volumes:
       - ./backend:/app
+      - /app/node_modules
 
-    restart: 
-      unless-stopped
+    restart: unless-stopped
     networks:
-    - vibra-network
+      - vibra-network
 
   db:
     image: postgres:16
@@ -39,18 +50,23 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped  
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - vibra-network
-
+ 
   frontend:
     build:
       context: ./frontend
 
       args:
         VITE_BASE_URL: ${VITE_BASE_URL}
-      
-    environment:
-      - VITE_BASE_URL=http://backend:${PORT}
+        VITE_API_URL: http://localhost:${PORT}
+ 
     depends_on:
       - backend
     ports:

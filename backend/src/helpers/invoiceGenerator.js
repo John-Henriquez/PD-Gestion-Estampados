@@ -1,3 +1,4 @@
+"use strict";
 import PDFDocument from "pdfkit";
 
 export function buildInvoicePdf(order) {
@@ -33,7 +34,7 @@ export function buildInvoicePdf(order) {
     doc.fontSize(10)
        .text(`Orden #: ${order.id}`, 50, 200)
        .text(`Fecha: ${new Date().toLocaleDateString("es-CL")}`, 50, 215)
-       .text(`Total: $${order.total.toLocaleString("es-CL")}`, 50, 130, { align: "right" }); 
+       .text(`Total: $${order.total.toLocaleString("es-CL")}`, 50, 230, { align: "right" }); 
 
     const customerName = order.user ? order.user.nombreCompleto : (order.customerName || "Invitado");
     doc.text(`Cliente: ${customerName}`, 300, 200, { align: "right" });

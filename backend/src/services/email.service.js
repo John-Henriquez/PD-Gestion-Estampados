@@ -1,6 +1,5 @@
 "use strict";
 import transporter from "../config/mailer.js";
-import { EMAIL_USER } from "../config/configEnv.js";
 import { buildInvoicePdf } from "../helpers/invoiceGenerator.js";
 import { EMAIL_USER, FRONTEND_URL } from "../config/configEnv.js";
 

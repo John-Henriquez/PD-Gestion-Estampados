@@ -1,5 +1,4 @@
-"use strict";
-import dotenv from "dotenv";
+"use strict"; 
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
@@ -7,13 +6,12 @@ import indexRoutes from "./routes/index.routes.js";
 import session from "express-session";
 import passport from "passport";
 import express, { json, urlencoded } from "express";
-import { cookieKey, HOST, PORT } from "./config/configEnv.js";
+import { cookieKey, HOST, PORT, FRONTEND_URL, NODE_ENV } from "./config/configEnv.js";
 import { connectDB } from "./config/configDb.js";
 import { initialSetup } from "./config/initialSetup.js";
 import { passportJwtSetup } from "./auth/passport.auth.js";
 
-dotenv.config();
-
+  
 async function setupServer() {
   try {
     const app = express();
@@ -57,8 +55,8 @@ app.use(
         resave: false,
         saveUninitialized: false,
         cookie: {
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          secure: NODE_ENV === 'production',
+          sameSite: NODE_ENV  === 'production' ? 'none' : 'lax',
           httpOnly: true,  
         }
       }),

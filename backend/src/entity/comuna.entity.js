@@ -22,7 +22,7 @@ export default new EntitySchema({
     },
   },
   indices: [
-    { name: "IDX_COMUNA_REGION",   columns: ["region_id"] },
+    { name: "IDX_COMUNA_REGION",   columns: ["region"] },
     { name: "IDX_COMUNA_ZONE",     columns: ["zone"] },
     { name: "CHK_COMUNA_SHIPPING", columns: ["baseShippingPrice"],
       where: `"baseShippingPrice" >= 0` },

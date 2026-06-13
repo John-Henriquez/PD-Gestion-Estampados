@@ -1,3 +1,4 @@
+"use strict";
 export function validateRut(rut) {
   rut = rut.replace(/\./g, "").replace(/-/g, "").toUpperCase();
   if (!/^\d{7,8}[0-9K]$/.test(rut)) return false;

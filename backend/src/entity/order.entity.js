@@ -86,8 +86,8 @@ const OrderSchema = new EntitySchema({
     { name: "CHK_ORDER_PAYMENT_METHOD", columns: ["paymentMethod"],
       where: `"paymentMethod" IN ('mercadopago', 'transferencia', 'efectivo') OR "paymentMethod" IS NULL` },
 
-    { name: "IDX_ORDER_STATUS", columns: ["status_id"] },
-    { name: "IDX_ORDER_USER_ID", columns: ["user_id"] },
+    { name: "IDX_ORDER_STATUS", columns: ["status"] },
+    { name: "IDX_ORDER_USER_ID", columns: ["user"] },
     { name: "IDX_ORDER_GUEST_EMAIL", columns: ["guestEmail"] },
   ],
 });

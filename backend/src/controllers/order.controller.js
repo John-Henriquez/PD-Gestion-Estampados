@@ -114,19 +114,19 @@ export const orderController = {
       );
 
       const guestEmail = req.body.guestEmail || req.query.guestEmail || null;
-      const [order, error] = await orderService.getOrderById(
+      const [orderData, orderError] = await orderService.getOrderById(
         orderId,
         userId,
         isAdminUser,
         guestEmail,
       );
 
-      if (error) {
-        const statusCode = error.includes("permiso") ? 403 : 404;
-        return handleErrorClient(res, statusCode, error);
+      if (orderError) {
+        const statusCode = orderError.includes("permiso") ? 403 : 404;
+        return handleErrorClient(res, statusCode, orderError);
       }
 
-      handleSuccess(res, 200, "Detalle del pedido obtenido", order);
+      handleSuccess(res, 200, "Detalle del pedido obtenido", orderData);
     } catch (error) {
       console.error("Error en getOrderById controller:", error);
       handleErrorServer(

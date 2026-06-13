@@ -1,30 +1,26 @@
 "use strict";
-import passport from "passport";
-import User from "../entity/user.entity.js";
+import passport from "passport"; 
 import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
-import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js";
-import { AppDataSource } from "../config/configDb.js";
+import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js"; 
+
+const cookieExtractor = (req) => req?.cookies?.jwt || null;
 
 const options = {
-  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  jwtFromRequest: cookieExtractor,  
   secretOrKey: ACCESS_TOKEN_SECRET,
 };
 
 passport.use(
-  new JwtStrategy(options, async (jwt_payload, done) => {
+  new JwtStrategy(options, (jwt_payload, done) => {
     try {
-      const userRepository = AppDataSource.getRepository(User);
-      const user = await userRepository.findOne({
-        where: {
-          email: jwt_payload.email,
-        },
+      if (!jwt_payload?.id) return done(null, false);
+      return done(null, {
+        id: jwt_payload.id,
+        email: jwt_payload.email,
+        rol: jwt_payload.rol,
+        rut: jwt_payload.rut,
+        nombreCompleto: jwt_payload.nombreCompleto,
       });
-
-      if (user) {
-        return done(null, user);
-      } else {
-        return done(null, false);
-      }
     } catch (error) {
       return done(error, false);
     }

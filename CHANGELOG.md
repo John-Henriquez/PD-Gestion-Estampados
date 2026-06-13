@@ -1,4 +1,150 @@
-# Changelog
+# Changelog 
+
+## [1.0.8] — Correcciones de arranque con Docker Compose
+
+### Backend · `src/config/configEnv.js`
+
+##### Corregido
+
+* Variables `NODE_ENV`, `BACKEND_URL`, `ALLOWED_ORIGINS`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` y `ADMIN_RUT` faltaban en las exportaciones — varios módulos las importaban sin que existieran, causando `SyntaxError` al arrancar.
+* Imports de `path` y `fileURLToPath` eliminados — quedaron huérfanos tras remover `_filename` y `_dirname` en el refactor anterior.
+* Llamada `path.resolve(process.cwd(), ".env")` eliminada junto con su dependencia. Reemplazada por `dotenv.config()` sin argumentos, que resuelve `.env` automáticamente desde el directorio de trabajo.
+
+---
+
+### Backend · `src/config/configDb.js`
+
+##### Corregido
+
+* `NODE_ENV` usado en `synchronize` y `logging` pero no importado desde `configEnv.js` — `ReferenceError` al arrancar. Agregado al import.
+
+---
+
+### Backend · `src/services/email.service.js`
+
+##### Corregido
+
+* `EMAIL_USER` importado dos veces en líneas separadas — `SyntaxError: Identifier already declared`. Unificado en un único import junto a `FRONTEND_URL`.
+
+---
+
+### Backend · `src/validations/auth.validation.js` · `user.validation.js`
+
+##### Corregido
+
+* `domainEmailValidator` eliminado en el refactor anterior pero sus llamadas a `.custom()` permanecían en los schemas — `ReferenceError` al arrancar. Eliminadas todas las referencias.
+
+---
+
+### Backend · `src/controllers/order.controller.js`
+
+##### Corregido
+
+* Variable `order` redeclarada dentro de `getOrderById` — conflicto con el nombre del objeto `orderController` en el mismo scope. Renombrada a `orderData` / `orderError`.
+
+---
+
+### Backend · `src/entity/` — índices sobre FK
+
+##### Corregido
+
+* TypeORM EntitySchema requiere que los índices sobre columnas FK usen el **nombre de la propiedad de relación**, no el nombre de la columna generada. El error se manifestaba como `Index contains column that is missing in the entity`. Corregido en todas las entidades afectadas:
+
+  * `orderItem.entity.js`: `order_id` → `order`, `item_stock_id` → `itemStock`, `pack_id` → `pack`
+  * `order.entity.js`: `status_id` → `status`, `user_id` → `user`
+  * `itemStock.entity.js`: `itemTypeId` → `itemType`, `color_id` → `color`
+  * `InventoryMovementSchema.js`: `item_stock_id` → `itemStock`, `operation_id` → `operation`, `order_id` → `order`
+  * `comuna.entity.js`: `region_id` → `region`
+
+---
+
+### Infraestructura · `docker-compose.yml`
+
+##### Corregido
+
+* Variable `HOST` usada tanto para el servidor Express como para la conexión a Postgres — dentro de Docker el backend debe conectarse al servicio `db`, no a `localhost`. Separado en `HOST=localhost` (Express) y `DB_HOST=db` (TypeORM) para evitar el mensaje `Servidor corriendo en db:3000`.
+
+---
+
+### Estado del sistema tras esta versión
+
+* Backend arranca correctamente con `docker compose up`
+* Seed completo ejecutado: usuarios, colores, estados de orden, operaciones de inventario, regiones y comunas de Chile
+* Frontend sirve en `http://localhost` — pendiente configurar proxy hacia el backend
+
+## [1.0.7] — Revisión de helpers, auth, configuración y despliegue
+
+### Backend · `src/auth`
+
+#### `passport.auth.js`
+
+##### Corregido
+
+* Estrategia JWT configurada para extraer el token desde el header `Authorization: Bearer` — incompatible con la cookie `httpOnly` usada en `auth.controller.js`. Reemplazado por extractor de cookie (`req.cookies.jwt`).
+* Query a la base de datos por cada request autenticado para re-validar el usuario por email. Eliminada — el JWT firmado y verificado ya contiene los datos necesarios (`id`, `email`, `rol`, `rut`, `nombreCompleto`). La función de la estrategia pasó de `async` a síncrona.
+* Imports de `User`, `AppDataSource` y `ExtractJwt` eliminados al quedar huérfanos tras remover la query.
+
+---
+
+### Backend · `src/helpers`
+
+#### `bcrypt.helper.js`
+
+Sin cambios — aprobado.
+
+#### `deepEqual.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+
+#### `inventory.helpers.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* `createItemSnapshot` incluía campo `snapshotItemTypeName` que no existe en `InventoryMovementSchema` — se guardaba en un campo inexistente silenciosamente. Eliminado.
+
+#### `invoiceGenerator.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* Posición Y del total hardcodeada en `y: 130` — mismo valor que el título "BOLETA ELECTRÓNICA", causando superposición visual. Corregido a `y: 230`.
+
+##### Deuda técnica documentada
+
+* Cálculo de IVA asume que `order.total` incluye IVA del 19%. Verificar con la lógica de negocio real antes de producción.
+
+#### `rutHelper.js`
+
+Sin cambios — aprobado.
+
+---
+
+### Backend · `src/index.js`
+
+##### Corregido
+
+* `dotenv.config()` duplicado — `configEnv.js` ya carga el `.env` al importarse. Llamada redundante y su import eliminados.
+* `FRONTEND_URL` usado en el redirect de MercadoPago pero no importado desde `configEnv.js` — `ReferenceError` en runtime. Agregado al import.
+* `NODE_ENV` leído directamente desde `process.env` en la configuración de la cookie de sesión, inconsistente con el resto del sistema. Reemplazado por la variable exportada desde `configEnv.js`.
+* `console.log` en bloques `catch` reemplazados por `console.error` — los errores deben ir a stderr, no stdout.
+
+---
+
+### Raíz · `docker-compose.yml`
+
+##### Corregido
+
+* Variables de entorno del servicio `backend` incompletas — faltaban `NODE_ENV`, `FRONTEND_URL`, `BACKEND_URL`, `ALLOWED_ORIGINS`, `EMAIL_USER`, `EMAIL_PASS`, `MP_ACCESS_TOKEN`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_RUT`.
+* `restart: unless-stopped` con salto de línea entre clave y valor — sintaxis inválida en YAML. Corregido a una sola línea.
+* Volumen `./backend:/app` sin volumen anónimo para `node_modules` — podía causar conflictos entre dependencias del host y del contenedor. Agregado `/app/node_modules`.
+* Servicio `db` sin `restart: unless-stopped` ni `healthcheck`. Agregados ambos con `pg_isready`.
+* `depends_on` del backend sin condición de healthcheck — el backend podía intentar conectarse antes de que Postgres estuviera listo. Cambiado a `condition: service_healthy`.
+* Servicio `backend` duplicado en el archivo — la segunda definición pisaba a la primera. Unificado en una sola entrada con `depends_on` y healthcheck correctos.
+* Servicio `frontend` sin `restart: unless-stopped`. Agregado.
+* Variable `VITE_BASE_URL` pasada como `environment` en el frontend — Vite reemplaza variables en build time, no en runtime. Movida a `args` en el bloque `build`.
 
 ## [1.0.6] — Revisión de la capa de rutas
 

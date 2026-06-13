@@ -75,8 +75,8 @@ const ItemStockSchema = new EntitySchema({
     },
   },
   indices: [
-    { name: "IDX_ITEM_STOCK_ITEM_TYPE", columns: ["itemTypeId"] },
-    { name: "IDX_ITEM_STOCK_COLOR",     columns: ["color_id"] },
+    { name: "IDX_ITEM_STOCK_ITEM_TYPE", columns: ["itemType"] },
+    { name: "IDX_ITEM_STOCK_COLOR",     columns: ["color"] },
     { name: "IDX_ITEM_STOCK_ACTIVE",    columns: ["isActive"] },
     { name: "CHK_ITEM_STOCK_CONSISTENCY", columns: ["isActive", "deletedAt"],
       where: `("deletedAt" IS NULL AND "isActive" = true) OR ("deletedAt" IS NOT NULL AND "isActive" = false) OR ("isActive" = false)` },

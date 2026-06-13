@@ -1,4 +1,4 @@
-/* "use strict";
+"use strict";
 
 import transporter from "../config/mailer.js";
 
@@ -30,4 +30,3 @@ export async function sendEmailController(req, res) {
   }
 }
 
- */

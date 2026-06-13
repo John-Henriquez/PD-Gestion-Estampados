@@ -1,3 +1,4 @@
+"use strict";
 import { INVENTORY_OPERATIONS } from "../constants/inventoryOperations.js";
 
 export function generateInventoryReason(slug) {
@@ -25,8 +26,7 @@ export function createItemSnapshot(entity) {
     return {
       snapshotItemName: entity.itemType?.name || "Producto desconocido",
       snapshotItemColor: entity.color?.hex || entity.hexColor || null, 
-      snapshotItemSize: entity.size || "N/A",
-      snapshotItemTypeName: entity.itemType?.category || "item",
+      snapshotItemSize: entity.size || "N/A", 
       snapshotPrice: entity.price || 0,
     };
   } 

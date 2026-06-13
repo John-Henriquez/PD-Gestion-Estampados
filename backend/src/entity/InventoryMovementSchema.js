@@ -108,9 +108,9 @@ const InventoryMovementSchema = new EntitySchema({
   indices: [
     { name: "IDX_MOVEMENT_CREATED_AT",   columns: ["createdAt"] },
     { name: "IDX_MOVEMENT_TYPE",          columns: ["type"] },
-    { name: "IDX_MOVEMENT_ITEM_STOCK",    columns: ["item_stock_id"] },
-    { name: "IDX_MOVEMENT_OPERATION",     columns: ["operation_id"] },
-    { name: "IDX_MOVEMENT_ORDER",         columns: ["order_id"] },
+    { name: "IDX_MOVEMENT_ITEM_STOCK",    columns: ["itemStock"] },
+    { name: "IDX_MOVEMENT_OPERATION",     columns: ["operation"] },
+    { name: "IDX_MOVEMENT_ORDER",         columns: ["order"] },
     { name: "CHK_MOVEMENT_QUANTITY",      columns: ["quantity"],
       where: `quantity != 0` }, 
   ],

@@ -1,3 +1,4 @@
+"use strict";
 export function deepEqual(a, b) {
   if (a === b) return true;
 
