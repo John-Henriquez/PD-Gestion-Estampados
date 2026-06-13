@@ -1,5 +1,61 @@
 # Changelog
 
+## [1.0.6] — Revisión de la capa de rutas
+
+### Backend · `src/routes`
+
+#### `user.routes.js`
+
+##### Corregido
+
+* `isAdmin` estaba declarado después del controller en `PATCH /detail/` y `DELETE /detail/` — en Express los middlewares se ejecutan en orden, por lo que la protección de rol nunca se aplicaba. Movido antes del controller en ambas rutas.
+
+---
+
+#### `itemStock.routes.js`
+
+##### Corregido
+
+* Conflicto de rutas entre `PATCH /:id/adjust` y `PATCH /adjust/:id/add` / `PATCH /adjust/:id/remove`. Express resuelve rutas en orden de declaración — `/:id` capturaba `/adjust/5/add` como `id="adjust"`, dejando las rutas específicas inalcanzables. Reordenado para declarar rutas específicas antes que las genéricas.
+
+---
+
+#### `file.routes.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+
+---
+ 
+#### `color.routes.js`
+
+##### Deuda técnica documentada
+
+* Los colores están protegidos con `authenticateJwt` pero son datos necesarios para vistas públicas. Evaluar si deben ser públicos según necesidades del frontend.
+
+---
+
+#### `payment.routes.js`
+
+##### Deuda técnica documentada
+
+* `POST /verify-payment` sin autenticación — cualquier agente puede llamar al endpoint con un `paymentId` arbitrario. Considerar agregar `optionalAuth` y verificar relación del caller con la orden.
+
+---
+
+#### `index.routes.js`
+
+##### Deuda técnica documentada
+
+* Movimientos de inventario montados bajo el prefijo `/reports/inventory-movements` generando la URL `/api/reports/inventory-movements/report` — inconsistente con `/api/reports/stats`. Considerar mover a `/api/inventory-movements` en una iteración futura.
+
+---
+
+#### Aprobados sin cambios
+
+`auth.routes.js`, `upload.routes.js`, `report.routes.js`, `pack.routes.js`, `order.routes.js`, `itemType.routes.js`, `inventoryMovement.routes.js`, `geography.routes.js`
+
 ## [1.0.5] — Revisión de la capa de controladores
 
 ### Backend · `src/controllers`

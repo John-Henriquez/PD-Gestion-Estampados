@@ -16,7 +16,7 @@ router.use(authenticateJwt);
 router
   .get("/", getUsers)
   .get("/detail/", getUser)
-  .patch("/detail/", updateUser, isAdmin)
-  .delete("/detail/", deleteUser, isAdmin);
+  .patch("/detail/", isAdmin, updateUser)
+  .delete("/detail/", isAdmin, deleteUser);
 
 export default router;

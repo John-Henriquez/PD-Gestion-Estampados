@@ -1,3 +1,4 @@
+"use strict";
 import express from "express";
 import { uploadMiddleware } from "../middlewares/uploadMiddleware.js";
 import { uploadController } from "../controllers/upload.controller.js";

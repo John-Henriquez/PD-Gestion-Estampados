@@ -1,3 +1,4 @@
+"use strict";
 import { Router } from "express";
 import { authenticateJwt } from "../middlewares/authentication.middleware.js";
 import { isAdmin } from "../middlewares/authorization.middleware.js";
@@ -21,11 +22,11 @@ router.post("/restock", isAdmin, itemStockController.restockVariants);
 
 router.get("/", itemStockController.getItemStock);
 router.post("/", isAdmin, itemStockController.createItemStock);
-router.patch("/:id", isAdmin, itemStockController.updateItemStock);
 router.delete("/:id", isAdmin, itemStockController.deleteItemStock);
 
-router.patch("/:id/adjust", isAdmin, itemStockController.adjustStock);
 router.patch("/adjust/:id/add", isAdmin, itemStockController.addStock);
 router.patch("/adjust/:id/remove", isAdmin, itemStockController.removeStock);
+router.patch("/:id/adjust", isAdmin, itemStockController.adjustStock);
+router.patch("/:id", isAdmin, itemStockController.updateItemStock);
 
 export default router;
