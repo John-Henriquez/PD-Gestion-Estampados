@@ -1,3 +1,4 @@
+"use strict";
 import { AppDataSource } from "../config/configDb.js";
 import Order from "../entity/order.entity.js";
 import OrderItem from "../entity/orderItem.entity.js";
@@ -54,7 +55,7 @@ export const orderService = {
               where: { id: itemInput.itemStockId },
               relations: ["itemType", "color"],
             });
-            if (!stockItem || !stockItem.isActive || stockItem.quantity < itemInput.quantity) {
+            if (!stockItem || stockItem.deletedAt !== null || stockItem.quantity < itemInput.quantity) {
               throw new Error(
                 `Stock insuficiente o inválido para el producto: ${
                   stockItem?.itemType?.name || `ID ${itemInput.itemStockId}`
@@ -81,10 +82,11 @@ export const orderService = {
             const priceAtTime = selectedLevelObject ? selectedLevelObject.price : 0;
             calculatedSubtotal += priceAtTime * itemInput.quantity;
 
-            itemsToUpdateStock.set(
-              stockItem.id,
-              (itemsToUpdateStock.get(stockItem.id) || 0) + itemInput.quantity,
-            );
+            const prev = itemsToUpdateStock.get(stockItem.id);
+            itemsToUpdateStock.set(stockItem.id, {
+              qty: (prev?.qty || 0) + itemInput.quantity,
+              snapshot: stockItem,
+            });
 
             orderItemsData.push({
               itemStock: { id: stockItem.id },
@@ -115,10 +117,11 @@ export const orderService = {
               if (pItem.itemStock.quantity < totalRequired) {
                 throw new Error(`Stock insuficiente en pack para ${pItem.itemStock.itemType.name}`);
               }
-              itemsToUpdateStock.set(
-                pItem.itemStock.id,
-                (itemsToUpdateStock.get(pItem.itemStock.id) || 0) + totalRequired,
-              );
+              const prev = itemsToUpdateStock.get(pItem.itemStock.id);
+              itemsToUpdateStock.set(pItem.itemStock.id, {
+                qty: (prev?.qty || 0) + totalRequired,
+                snapshot: pItem.itemStock, 
+              });
             }
 
             orderItemsData.push({
@@ -150,13 +153,8 @@ export const orderService = {
         const operationEntity = await operationRepo.findOneBy({ slug: "sale" });
         if (!operationEntity) throw new Error("Operación 'sale' no encontrada.");
 
-        for (const [stockId, qty] of itemsToUpdateStock.entries()) {
+        for (const [stockId, { qty, snapshot }] of itemsToUpdateStock.entries()) {
           await itemStockRepo.decrement({ id: stockId }, "quantity", qty);
-
-          const stockItemForSnapshot = await itemStockRepo.findOne({
-            where: { id: stockId }, 
-            relations: ["itemType", "color"]
-          });
 
           const { reason: helperReason } = generateInventoryReason("sale");
 
@@ -168,7 +166,7 @@ export const orderService = {
             itemStock: { id: stockId },
             createdBy: userId ? { id: userId } : null,
             order: { id: savedOrder.id },
-            ...createItemSnapshot(stockItemForSnapshot || { id: stockId }),
+            ...createItemSnapshot(snapshot),
           });
         }
 
@@ -381,7 +379,6 @@ export const orderService = {
 
         order.status = targetStatus;
         requiresAuditLog = true;
-        order.updatedAt = new Date();
 
         const updatedOrder = await orderRepo.save(order);
 
@@ -392,7 +389,7 @@ export const orderService = {
             type: "ajuste",
             operation: operation,
             reason: helperReason,
-            quantity: 0,
+            quantity: 1,
             order: updatedOrder,
             createdBy: { id: adminUserId },
             changes: changes,

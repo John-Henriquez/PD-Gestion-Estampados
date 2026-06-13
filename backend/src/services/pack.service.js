@@ -1,3 +1,4 @@
+"use strict";
 import { AppDataSource } from "../config/configDb.js";
 import Pack from "../entity/pack.entity.js";
 import PackItem from "../entity/packItem.entity.js";
@@ -327,7 +328,7 @@ export const packService = {
             type: "ajuste",
             operation: operationEntity,
             reason: meta.reason || `Actualización de pack "${updatedPack.name}"`,
-            quantity: 0,
+            quantity: 1,
             pack: updatedPack,
             createdBy: { id: updateData.updatedById },
             changes: { pack: packChanges, items: itemChanges },
@@ -372,7 +373,7 @@ export const packService = {
         type: "ajuste",
         reason,
         operation: operationEntity,
-        quantity: 0,
+        quantity: 1,
         pack: updatedPack,
         createdBy: { id: userId },
         snapshotPackName: updatedPack.name,
@@ -479,7 +480,7 @@ export const packService = {
         type: "ajuste",
         operation: operationEntity,
         reason,
-        quantity: totalQuantity,
+        quantity: totalQuantity > 0 ? totalQuantity : 1,
         pack: pack,
         createdBy: { id: userId },
         changes: {
@@ -522,7 +523,9 @@ export const packService = {
           return [0, null];
         }
 
-        const { operation, reason } = generateInventoryReason("purge");
+        const { operation: opSlug, reason } = generateInventoryReason("purge");
+        const operationRepo = transactionalEntityManager.getRepository(InventoryOperation);
+        const operationEntity = await operationRepo.findOneBy({ slug: opSlug });
 
         for (const pack of packsToDelete) {
           const itemsDetails = pack.packItems.map((pi) => ({
@@ -542,9 +545,9 @@ export const packService = {
 
           await movementRepo.save({
             type: "ajuste",
-            operation,
+            operation: operationEntity,
             reason,
-            quantity: totalQuantity,
+            quantity: totalQuantity > 0 ? totalQuantity : 1,
             pack: pack,
             createdBy: { id: userId },
             changes: {

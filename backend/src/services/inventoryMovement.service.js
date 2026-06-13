@@ -1,3 +1,4 @@
+"use strict";
 import { AppDataSource } from "../config/configDb.js";
 import { Between } from "typeorm";
 import InventoryMovement from "../entity/InventoryMovementSchema.js";
@@ -39,6 +40,7 @@ export const inventoryMovementService = {
           "itemStock", 
           "itemStock.itemType", 
           "itemStock.color",
+          "pack",
           "createdBy",
           "order"        
         ],

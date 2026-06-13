@@ -1,3 +1,4 @@
+"use strict";
 import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
 import { FRONTEND_URL, MP_ACCESS_TOKEN } from "../config/configEnv.js";
 
@@ -7,8 +8,8 @@ export const paymentService = {
 async createPreference(order) {
     try {
       const preference = new Preference(client);
-      const tunnelUrl = "https://uncomplacent-sheena-entomologically.ngrok-free.dev";
-      const returnUrl = `${tunnelUrl}/order-confirmation/${order.id}`;
+
+      const returnUrl = `${FRONTEND_URL}/order-confirmation/${order.id}`;
       
       const body = {
         items: order.orderItems.map((item) => {
@@ -22,7 +23,7 @@ async createPreference(order) {
         };
       }),
         external_reference: String(order.id),
-        notification_url: "https://uncomplacent-sheena-entomologically.ngrok-free.dev/api/payments/webhook",
+        notification_url: `${BACKEND_URL}/api/payments/webhook`,
         back_urls: {
           success: returnUrl,
           failure: returnUrl,

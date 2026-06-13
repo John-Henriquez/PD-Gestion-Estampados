@@ -1,6 +1,8 @@
+"use strict";
 import transporter from "../config/mailer.js";
 import { EMAIL_USER } from "../config/configEnv.js";
 import { buildInvoicePdf } from "../helpers/invoiceGenerator.js";
+import { EMAIL_USER, FRONTEND_URL } from "../config/configEnv.js";
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
@@ -35,7 +37,7 @@ const getEmailTemplate = (title, color, contentHtml) => {
             <p style="margin: 0;">Vibra Estampados</p>
             <p style="margin: 5px 0;">Chillán, Región de Ñuble, Chile</p>
               <a
-                href="${process.env.VITE_BASE_URL || "#"}" style="color: #ffffff; text-decoration: none;">Visitar Tienda
+                href="${FRONTEND_URL || "#"}" style="color: #ffffff; text-decoration: none;">Visitar Tienda
               </a>
           </td>
         </tr>
@@ -44,7 +46,7 @@ const getEmailTemplate = (title, color, contentHtml) => {
   `;
 };
 
-async function sendEmail(to, subject, htmlContent, attachments = []) {
+export async function sendEmail(to, subject, htmlContent, attachments = []) {
   try {
     const info = await transporter.sendMail({
       from: `"Vibra Estampados" <${EMAIL_USER}>`,
@@ -139,7 +141,7 @@ export async function sendOrderShippedEmail(order) {
     
     <div style="text-align: center; margin-top: 30px;">
       <a
-        href="${process.env.VITE_BASE_URL}/my-orders" style="background-color: #8e44ad; color: white;
+        href="${FRONTEND_URL}/my-orders" style="background-color: #8e44ad; color: white;
         padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
           Ver Mis Pedidos
       </a>

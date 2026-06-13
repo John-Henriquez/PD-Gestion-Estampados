@@ -36,6 +36,7 @@ export async function loginService(user) {
     }
 
     const payload = {
+      id: userFound.id,
       nombreCompleto: userFound.nombreCompleto,
       email: userFound.email,
       rut: userFound.rut,
@@ -59,28 +60,16 @@ export async function registerService(user) {
 
     const { nombreCompleto, rut, email } = user;
 
-    const createErrorMessage = (dataInfo, message) => ({
-      dataInfo,
-      message,
+    const err = (dataInfo, message) => ({ dataInfo, message });
+
+    const existing = await userRepository.findOne({
+      where: [{ email }, { rut }],
     });
-
-    const existingEmailUser = await userRepository.findOne({
-      where: {
-        email,
-      },
-    });
-
-    if (existingEmailUser)
-      return [null, createErrorMessage("email", "Correo electrónico en uso")];
-
-    const existingRutUser = await userRepository.findOne({
-      where: {
-        rut,
-      },
-    });
-
-    if (existingRutUser)
-      return [null, createErrorMessage("rut", "Rut ya asociado a una cuenta")];
+    if (existing) {
+      const field = existing.email === email ? "email" : "rut";
+      const msg   = field === "email" ? "Correo electrónico en uso" : "Rut ya asociado a una cuenta";
+      return [null, err(field, msg)];
+    }
 
     const newUser = userRepository.create({
       nombreCompleto,

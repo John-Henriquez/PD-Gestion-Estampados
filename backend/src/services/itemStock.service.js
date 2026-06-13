@@ -263,7 +263,7 @@ export const itemStockService = {
 
       await movementRepo.save({
         type: meta.type,
-        quantity: 0,
+        quantity: 1,
         itemStock: item,
         createdBy: { id: userId },
         operation,
@@ -293,7 +293,7 @@ export const itemStockService = {
       await movementRepo.save({
         type: meta.type,
         operation,
-        quantity: 0,
+        quantity: 1,
         itemStock: item,
         createdBy: { id: userId },
         reason: meta.reason,
@@ -321,7 +321,7 @@ export const itemStockService = {
       await movementRepo.save({
         type: meta.type,
         operation,
-        quantity: 0,
+        quantity: 1,
         itemStock: null,
         createdBy: { id: userId },
         reason: meta.reason,
@@ -367,7 +367,7 @@ export const itemStockService = {
         await movementRepo.save({
           type: meta.type, 
           operation: opEntity, 
-          quantity: 0,
+          quantity: 1,
           itemStock: null, 
           createdBy: { id: userId },
           reason: meta.reason,
@@ -404,7 +404,7 @@ export const itemStockService = {
 
         const oldQty = item.quantity;
         item.quantity += amount;
-        if (item.quantity < 0) throw new Error("El stock resultante no puede ser negativo");
+        if (item.quantity < 0) return [null, "El stock resultante no puede ser negativo"];
         
         await stockRepo.save(item);
 

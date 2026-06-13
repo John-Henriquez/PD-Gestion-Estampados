@@ -1,3 +1,4 @@
+"use strict";
 import { AppDataSource } from "../config/configDb.js";
 import ItemType from "../entity/itemType.entity.js";
 import ItemStock from "../entity/itemStock.entity.js";
@@ -304,7 +305,7 @@ export const itemTypeService = {
           await movementRepo.save({
             type: meta.type,
             operation: operationEntity,
-            quantity: 0,
+            quantity: 1,
             reason: meta.reason,
             itemStock: stock,
             createdBy: { id: userId },
@@ -363,7 +364,7 @@ export const itemTypeService = {
         await movementRepo.save({
           type: meta.type,
           operation: operationEntity,
-          quantity: 0,
+          quantity: 1,
           reason: meta.reason,
           itemStock: stock,
           createdBy: { id: userId },
@@ -371,14 +372,10 @@ export const itemTypeService = {
         });
       }
 
-      return [
-        {
-          restoredItemTypeId: id,
-          restoredStocks: stocksToRestore.length,
-        },
-        null,
-      ];
+      await queryRunner.commitTransaction();
+      return [{ restoredItemTypeId: id, restoredStocks: stocksToRestore.length }, null];
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       console.error("Error en restoreItemType:", error);
       return [
         null,
@@ -389,6 +386,7 @@ export const itemTypeService = {
         },
       ];
     }
+    finally { await queryRunner.release(); }
   },
 
   async getDeletedItemTypes() {
@@ -421,6 +419,7 @@ export const itemTypeService = {
       const itemTypeRepo = queryRunner.manager.getRepository(ItemType);
       const itemStockRepo = queryRunner.manager.getRepository(ItemStock);
       const movementRepo = queryRunner.manager.getRepository(InventoryMovement);
+      const operationRepo = queryRunner.manager.getRepository(InventoryOperation);
 
       const itemType = await itemTypeRepo.findOne({
         where: { id: parseInt(id) },
@@ -439,7 +438,7 @@ export const itemTypeService = {
         movementRepo.save({
           type: meta.type,
           operation: operationEntity,
-          quantity: 0, 
+          quantity: 1, 
           itemStock: null,
           createdBy: { id: userId },
           reason: meta.reason, 
@@ -453,7 +452,7 @@ export const itemTypeService = {
       }
 
       await itemTypeRepo.remove(itemType);
-
+      await queryRunner.commitTransaction();
       return [
         { id: parseInt(id), deletedStocks: itemType.stocks.length },
         null,
@@ -469,6 +468,7 @@ export const itemTypeService = {
         },
       ];
     }
+    finally { await queryRunner.release(); }
   },
 
   async emptyTrash(userId) {
@@ -486,7 +486,8 @@ export const itemTypeService = {
         return [[], null];
       }
 
-      const { reason, operation } = generateInventoryReason("purge");
+      const meta = generateInventoryReason("purge");
+      const operationRepo = AppDataSource.getRepository(InventoryOperation);
       const operationEntity = await operationRepo.findOneBy({ slug: meta.operation });
 
       for (const itemType of deletedItems) {
@@ -494,15 +495,12 @@ export const itemTypeService = {
           itemType.stocks.map((stock) =>
             movementRepo.save({
               type: "ajuste",
-              quantity: 0,
+              quantity: 1,
               itemStock: null,
               createdBy: { id: userId },
               reason: meta.reason,
               operation: operationEntity,
-              itemName: itemType.name,
-              itemColor: stock.hexColor,
-              itemSize: stock.size,
-              itemTypeName: itemType.name,
+              ...createItemSnapshot({ ...stock, itemType }),
             }),
           ),
         );

@@ -11,7 +11,6 @@ export const reportService = {
       const orderRepository = AppDataSource.getRepository(Order);
       const stockRepository = AppDataSource.getRepository(ItemStock);
       const userRepository = AppDataSource.getRepository(User);
-      const orderItemRepository = AppDataSource.getRepository("OrderItem")
 
       // 1. KPIs Financieros y Clientes
       const financialStats = await orderRepository
@@ -38,7 +37,7 @@ export const reportService = {
       });
 
       const totalCustomers = await userRepository.count({
-        where: { rol: "cliente" }
+        where: { rol: "usuario" }
       });
 
       const sevenDaysAgo = new Date();
@@ -164,7 +163,7 @@ export const reportService = {
         .leftJoin("movement.operation", "operation") 
         .select("movement.reason", "reason")
         .addSelect("SUM(movement.quantity)", "quantity")
-        .where("movement.type = :type", { type: 'Salida' })
+        .where("movement.type = :type", { type: 'salida' })
         .andWhere("operation.slug IN (:...slugs)", { slugs: ['adjust_out', 'waste', 'deactivate'] })
         .groupBy("movement.reason")
         .getRawMany();

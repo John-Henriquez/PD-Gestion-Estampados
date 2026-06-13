@@ -1,5 +1,134 @@
 # Changelog
 
+## [1.0.4] — Revisión de la capa de servicios
+
+### Backend · `src/services`
+
+#### `auth.service.js`
+
+##### Corregido
+
+* `createErrorMessage` estaba redefinido como función interna en cada función del módulo. Extraído al tope del archivo como helper de módulo.
+* El payload del JWT no incluía el `id` del usuario, obligando a queries adicionales a la base de datos en otros módulos para identificar al usuario autenticado.
+* `registerService` hacía dos queries separadas para verificar duplicado de `email` y `rut`. Unificado en una sola query con `where: [{ email }, { rut }]`.
+
+---
+
+#### `user.service.js`
+
+##### Corregido
+
+* `updateUserService` asignaba `updatedAt: new Date()` manualmente — TypeORM ya gestiona este campo con `updateDate: true`. Línea eliminada.
+* `updateUserService` usaba `userRepository.update()` seguido de `findOne()` — dos queries cuando `save()` devuelve la entidad actualizada directamente.
+* `deleteUserService` tenía el guard de administrador comentado — protección crítica desactivada que permitía eliminar al único administrador del sistema. Restaurado.
+* `getUserService` construía `where: [{ id }, { rut }, { email }]` sin filtrar `undefined`, causando que TypeORM buscase registros con campos `IS NULL` cuando los parámetros no se proveían.
+
+---
+
+#### `order.service.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* `order.updatedAt = new Date()` en `updateOrderStatus` eliminado — TypeORM gestiona el campo automáticamente.
+* Filtro de stock activo cambiado de `stockItem.isActive` a `stockItem.deletedAt !== null`, consistente con el mecanismo de soft delete definido en la entidad.
+* `createOrder`: el `Map` de stock a actualizar almacenaba solo la cantidad, requiriendo una query adicional por cada item para obtener el snapshot. Refactorizado para almacenar `{ qty, snapshot }` — la query extra eliminada.
+* El patrón del `Map` se aplicó también al loop de items de packs para consistencia y para evitar tipos mezclados cuando un item aparece en ambos contextos.
+* `quantity: 0` en el movimiento de auditoría de `updateOrderStatus` violaba `CHK_MOVEMENT_QUANTITY`. Cambiado a `quantity: 1` como workaround documentado hasta implementar tabla de auditoría de pedidos separada.
+
+##### Deuda técnica documentada
+
+* Los movimientos de cambio de estado de pedido se registran en `InventoryMovement`, mezclando auditoría de pedidos con trazabilidad de stock. Se recomienda una tabla `order_history` dedicada en una iteración futura.
+
+---
+
+#### `payment.service.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* URL de ngrok hardcodeada en dos lugares: `returnUrl` y `notification_url`. Reemplazadas por `FRONTEND_URL` y nueva variable `BACKEND_URL` desde `configEnv.js`.
+
+---
+
+#### `itemType.service.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* `forceDeleteItemType`: `operationRepo` se declaraba usando `queryRunner.manager` antes de que `queryRunner` existiera. Movido al bloque `try` junto al resto de repos.
+* `forceDeleteItemType`: faltaban `commitTransaction()` antes del return y `queryRunner.release()` en el bloque `finally`.
+* `restoreItemType`: `commitTransaction()` estaba después del `return` — la transacción nunca se confirmaba. Corregido el orden.
+* `restoreItemType`: faltaba `rollbackTransaction()` en el bloque `catch`.
+* `emptyTrash`: usaba variables `meta` y `operationRepo` no declaradas en ese scope. Corregido declarando ambas correctamente.
+* `emptyTrash`: usaba campos de snapshot inexistentes (`itemName`, `itemColor`, `itemTypeName`). Reemplazado por `createItemSnapshot()`.
+* `deleteItemType` y `restoreItemType`: `quantity: 0` en movimientos de auditoría violaba `CHK_MOVEMENT_QUANTITY`. Cambiado a `quantity: 1`.
+
+---
+
+#### `itemStock.service.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* `deleteItemStock`, `restoreItemStock`, `forceDeleteItemStock` y `emptyTrash`: `quantity: 0` en movimientos violaba `CHK_MOVEMENT_QUANTITY`. Cambiado a `quantity: 1` en todos.
+* `adjustStock`: `throw new Error` dentro de la transacción para stock negativo reemplazado por `return [null, mensaje]` para que la transacción termine limpiamente.
+
+---
+
+#### `pack.service.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* `emptyTrash`: pasaba el slug string `operation` directamente al movimiento en lugar de la entidad buscada. Corregido usando `operationEntity`.
+* `emptyTrash` y `forceDeletePack`: `quantity: 0` cuando el pack no tiene items. Agregado fallback `totalQuantity > 0 ? totalQuantity : 1`.
+* `updatePack`: `quantity: 0` en movimiento de auditoría. Cambiado a `quantity: 1`.
+* `deletePack`: `quantity: 0` en movimiento. Cambiado a `quantity: 1`.
+
+##### Deuda técnica documentada
+
+* `deletePack`, `restorePack` y `forceDeletePack` no usan transacciones. Si el guardado del movimiento falla después del guardado del pack, el estado queda inconsistente sin auditoría.
+
+---
+
+#### `report.service.js`
+
+##### Corregido
+
+* `orderItemRepository` declarado pero nunca utilizado. Eliminado.
+* `totalCustomers` filtraba por `rol: "cliente"` — valor que no existe en el sistema (los roles son `"administrador"` y `"usuario"`). La query siempre devolvía 0. Corregido a `rol: "usuario"`.
+* `getInventoryLossReport` filtraba `movement.type = 'Salida'` con mayúscula inicial, no coincidiendo con los valores del enum (`"salida"`). La query nunca devolvía resultados. Corregido a minúscula.
+
+##### Deuda técnica documentada
+
+* `salesHistoryTransactions` se calcula pero no se incluye en el objeto de retorno — código muerto. Pendiente de eliminar o exponer según necesidad del frontend.
+
+---
+
+#### `email.service.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+* `process.env.VITE_BASE_URL` accedido directamente en las plantillas HTML. Reemplazado por `FRONTEND_URL` importado desde `configEnv.js`, consistente con el resto del sistema.
+
+##### Agregado
+
+* `sendEmail` exportada para permitir uso desde otros módulos sin duplicar lógica.
+
+---
+
+#### `inventoryMovement.service.js`
+
+##### Corregido
+
+* `"use strict"` faltante.
+
+##### Agregado
+
+* Relación `"pack"` agregada a las relaciones cargadas en `getInventoryMovements` — movimientos asociados a packs no cargaban su referencia.
+
 ## [1.0.3] — Revisión de handlers, validaciones y documentación
 
 ### Backend · `src/handlers`
