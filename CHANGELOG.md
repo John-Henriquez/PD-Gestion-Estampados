@@ -1,5 +1,44 @@
 # Changelog 
 
+## [1.0.9] — Docker Development Environment
+
+### Infraestructura
+
+#### Docker
+
+##### Refactorizado
+
+* El frontend dejó de utilizar una imagen estática basada en Nginx durante desarrollo.
+* Migración a ejecución directa mediante Vite dentro del contenedor para habilitar flujo de trabajo orientado a desarrollo.
+
+##### Agregado
+
+* Montaje de volumen `./frontend:/app` para sincronización en tiempo real entre host y contenedor.
+* Volumen anónimo `/app/node_modules` para aislar dependencias Linux del contenedor respecto al host Windows.
+* Exposición directa del puerto `5173` para acceso al servidor Vite.
+
+##### Corregido
+
+* Configuración de CORS adaptada al entorno Docker local.
+* Separación de responsabilidades entre `HOST` (Express) y `DB_HOST` (PostgreSQL).
+* Eliminadas dependencias implícitas de ejecución local fuera de contenedores.
+
+### Desarrollo
+
+##### Agregado
+
+* Flujo de desarrollo unificado mediante:
+
+  docker compose up
+
+  Backend, frontend y PostgreSQL quedan disponibles sin instalación local de dependencias.
+
+##### Documentado
+
+* Estrategia de despliegue separada de la estrategia de desarrollo.
+* La configuración actual prioriza velocidad de iteración y hot reload.
+* La configuración productiva será mantenida en archivos Docker independientes.
+
 ## [1.0.8] — Correcciones de arranque con Docker Compose
 
 ### Backend · `src/config/configEnv.js`

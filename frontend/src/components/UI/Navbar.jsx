@@ -9,7 +9,7 @@ import {
 } from '@tabler/icons-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 
-import '../../styles/components/navbar.css';
+import '../../styles/components/UI/navbar.css';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -184,7 +184,9 @@ const Navbar = () => {
           </button>
         ) : (
           <div className="navbar__mobile-auth">
-            <Button fullWidth variant="contained" onClick={() => {navigate('/auth'); setMenuOpen(false)}}>Login</Button>
+            <button className="navbar__mobile-auth-btn" onClick={() => { navigate('/auth'); setMenuOpen(false); }}>
+              <IconLogin size={18} /> Iniciar sesión
+            </button>
           </div>
         )}
       </div>

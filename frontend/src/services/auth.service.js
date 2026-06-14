@@ -9,17 +9,16 @@ export async function login(dataUser) {
       email: dataUser.email,
       password: dataUser.password,
     });
-    const { status, data } = response;
-    if (status === 200) {
-      const { nombreCompleto, email, rut, rol } = jwtDecode(data.data.token);
-      const userData = { nombreCompleto, email, rut, rol };
-      sessionStorage.setItem('usuario', JSON.stringify(userData));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-      cookies.set('jwt-auth', data.data.token, { path: '/' });
+    console.log('Response completo:', response);
+    console.log('Response data:', response.data);
+    if (response.status === 200) {
+      const token = response.data.data.token;
+      cookies.set('jwt-auth', token, { path: '/' });
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       return response.data;
     }
   } catch (error) {
-    return error.response.data;
+    return error.response?.data;
   }
 }
 

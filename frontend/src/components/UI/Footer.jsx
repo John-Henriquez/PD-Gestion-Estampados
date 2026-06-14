@@ -1,17 +1,30 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, Instagram } from 'lucide-react';
-import '../../styles/components/footer.css';
+import '../../styles/components/UI/footer.css';
 
 const Footer = () => {
   return (
     <footer className="footer">
       <div className="footer-container">
-        {/* Sección 1: Info Empresa */}
         <div className="footer-section">
-          <h3 className="footer-title">Vibra Estampados</h3>
+          <img
+            src="/logoMorado.jpg"
+            alt="Vibra Estampados"
+            className="footer-logo"
+          />
+
+          <h3 className="footer-title">
+            Vibra Estampados
+          </h3>
+
           <p className="footer-text">
-            Transformamos tus ideas en productos únicos. Expertos en personalización de textiles y
-            artículos promocionales con la mejor calidad del mercado.
+            Transformamos tus ideas en productos únicos.
+            Expertos en personalización de textiles y
+            artículos promocionales con la mejor calidad.
+          </p>
+
+          <p className="footer-highlight">
+            Diseños personalizados • Calidad premium • Atención cercana
           </p>
         </div>
 
